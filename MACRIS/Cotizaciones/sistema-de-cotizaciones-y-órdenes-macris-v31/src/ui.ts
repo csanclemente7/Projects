@@ -667,6 +667,17 @@ export function renderCatalogItemsList() {
     D.itemsListContainer.innerHTML = html + `</tbody></table>`;
 }
 
+export function getAuthorColor(author: string): string {
+    if (!author || author === 'N/A') return 'var(--color-text-secondary)';
+    const colors = ['#0284c7', '#16a34a', '#ea580c', '#7c3aed', '#e11d48', '#0d9488', '#ca8a04', '#0f766e', '#be123c', '#4338ca'];
+    let hash = 0;
+    for (let i = 0; i < author.length; i++) {
+        hash = author.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+}
+
 export function renderSavedQuotesPageList() {
     D.savedQuotesCountBadge.textContent = State.getQuotes().length.toString();
     const term = D.savedQuotesSearchInput.value.toLowerCase();
@@ -684,7 +695,8 @@ export function renderSavedQuotesPageList() {
             const createdTime = formatCreatedTime(q.created_at || q.date);
             const total = q.items.reduce((s, i) => s + i.quantity * i.price, 0) * (1 + q.taxRate / 100);
             const author = State.getQuoteAuthor(q.id);
-            return `<tr data-id="${q.id}" title="Haz clic para abrir esta cotización"><td style="cursor:pointer;"><strong>${client}</strong><br><small>#${q.manualId} &bull; ${date}</small><br><small class="quote-author">Por: ${author} &bull; ${createdTime}</small></td><td>${client}</td><td>${date}</td><td>${formatCurrency(total)}</td><td class="actions"><button class="btn btn-icon-only btn-accent create-order-btn" data-id="${q.id}" title="Crear Orden"><i class="fas fa-clipboard-check"></i></button><button class="btn btn-icon-only btn-danger delete-btn" data-id="${q.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`;
+            const authorColor = getAuthorColor(author);
+            return `<tr data-id="${q.id}" title="Haz clic para abrir esta cotización"><td style="cursor:pointer;"><strong>${client}</strong><br><small>#${q.manualId} &bull; ${date}</small><br><small class="quote-author">Por: <span style="color: ${authorColor}; font-weight: 600;">${author}</span> &bull; ${createdTime}</small></td><td>${client}</td><td>${date}</td><td>${formatCurrency(total)}</td><td class="actions" style="white-space: nowrap;"><button class="btn btn-secondary edit-quote-btn" data-id="${q.id}" title="Editar Cotización"><i class="fas fa-edit"></i> Editar cotización</button> <button class="btn btn-primary create-order-btn" data-id="${q.id}" title="Crear Orden"><i class="fas fa-clipboard-check"></i> Crear orden</button><button class="btn btn-icon-only btn-danger delete-btn" data-id="${q.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`;
         }).join('');
     }
     D.savedQuotesPageContainer.innerHTML = html + `</tbody></table>`;
@@ -1087,7 +1099,7 @@ export function renderOrdersList() {
             return `
                 <tr>
                     <td class="desktop-cell">${order.manualId}</td>
-                    <td class="desktop-cell"><strong>${client?.name || 'N/A'}</strong><br><small class="order-author">Creada por: ${author} &bull; ${createdAt}</small></td>
+                    <td class="desktop-cell"><strong>${client?.name || 'N/A'}</strong><br><small class="order-author">Creada por: <span style="color: ${getAuthorColor(author)}; font-weight: 500;">${author}</span> &bull; ${createdAt}</small></td>
                     <td class="desktop-cell">${serviceDate}</td>
                     <td class="desktop-cell">${order.service_time || '-'}</td>
                     <td class="desktop-cell">${duration}</td>
@@ -1103,7 +1115,7 @@ export function renderOrdersList() {
                                 <span>#${order.manualId}</span>
                                 <span class="status-badge ${order.status}">${statusText[order.status]}</span>
                             </div>
-                            <div class="card-subtitle">${client?.name || 'N/A'}<br><small class="order-author">Creada por: ${author} &bull; ${createdAt}</small></div>
+                            <div class="card-subtitle">${client?.name || 'N/A'}<br><small class="order-author">Creada por: <span style="color: ${getAuthorColor(author)}; font-weight: 500;">${author}</span> &bull; ${createdAt}</small></div>
                         </div>
                         <div class="card-body">
                             <div class="card-info-item"><i class="fas fa-calendar-alt"></i> ${serviceDate}</div>
@@ -1228,7 +1240,18 @@ export function renderOrderWorkspace(order: Order | null) {
 
     (D.orderDateInput as any)._flatpickr.setDate(order.service_date, false);
     D.orderTimeInput.value = order.service_time || '';
-    D.orderTypeSelect.value = order.order_type;
+    const optionExists = Array.from(D.orderTypeSelect.options).some(opt => opt.value === order.order_type) && order.order_type !== 'Otro';
+    if (order.order_type && !optionExists) {
+        D.orderTypeSelect.value = 'Otro';
+        D.orderTypeCustomInput.value = order.order_type;
+        D.orderTypeCustomInput.style.display = 'block';
+        D.orderTypeCustomInput.required = true;
+    } else {
+        D.orderTypeSelect.value = order.order_type || '';
+        D.orderTypeCustomInput.value = '';
+        D.orderTypeCustomInput.style.display = 'none';
+        D.orderTypeCustomInput.required = false;
+    }
     D.orderStatusSelect.value = order.status;
     D.orderNotesTextarea.value = order.notes || '';
     
@@ -1422,7 +1445,15 @@ export function handleOrderItemChange(e: Event) {
 export function handleOrderDetailsChange() {
     const order = State.getCurrentOrder();
     if (!order) return;
-    order.order_type = D.orderTypeSelect.value as Order['order_type'];
+    if (D.orderTypeSelect.value === 'Otro') {
+        D.orderTypeCustomInput.style.display = 'block';
+        D.orderTypeCustomInput.required = true;
+        order.order_type = D.orderTypeCustomInput.value as any;
+    } else {
+        D.orderTypeCustomInput.style.display = 'none';
+        D.orderTypeCustomInput.required = false;
+        order.order_type = D.orderTypeSelect.value as any;
+    }
     order.status = D.orderStatusSelect.value as Order['status'];
     order.notes = D.orderNotesTextarea.value;
     order.service_date = (D.orderDateInput as any)._flatpickr.input.value;
@@ -1604,6 +1635,20 @@ function checkTechnicianConflict(technicianId: string): { conflict: boolean, mes
 
 // --- Agenda/Calendar ---
 
+function getServiceTypeStyle(type: string | undefined): string {
+    if (!type) return '';
+    const lowerType = type.toLowerCase();
+    let color = 'var(--color-text-secondary)';
+    if (lowerType.includes('preventivo')) {
+        color = '#007bff'; // blue
+    } else if (lowerType.includes('montaje') || lowerType.includes('instalación')) {
+        color = '#fd7e14'; // orange
+    } else {
+        color = 'var(--color-accent-primary)'; // teal (default, neither red nor green)
+    }
+    return `color: ${color}; text-decoration: underline; font-style: italic;`;
+}
+
 /**
  * Gets the date for the Monday of the week that contains the given date.
  * @param d The date to find the week for.
@@ -1743,8 +1788,8 @@ function renderMonthView() {
         html += `<div class="day-orders">`;
         dailyOrders.forEach(order => {
             const client = State.getClients().find(c => c.id === order.clientId);
-            const formattedTime = formatTime(order.service_time);
-            const serviceType = order.order_type ? `(${order.order_type.substring(0, 10)})` : '';
+            const serviceTypeStyle = getServiceTypeStyle(order.order_type);
+            const serviceType = order.order_type ? `<span style="${serviceTypeStyle}">(${order.order_type.substring(0, 10)})</span>` : '';
             const needsTech = order.technicianIds.length === 0 || (order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID);
             const techWarningIcon = needsTech ? `<i class="fas fa-user-slash" style="color: var(--color-warning); margin-right: 3px;" title="Sin técnico asignado"></i>` : '';
             
@@ -1802,7 +1847,8 @@ function renderTimelineView(days: Date[]) {
         let allDayHtml = '';
         allDayOrders.forEach(order => {
             const client = State.getClients().find(c => c.id === order.clientId);
-            const serviceType = order.order_type ? `(${order.order_type.substring(0, 10)})` : '';
+            const serviceTypeStyle = getServiceTypeStyle(order.order_type);
+            const serviceType = order.order_type ? `<span style="${serviceTypeStyle}">(${order.order_type.substring(0, 10)})</span>` : '';
             const needsTech = order.technicianIds.length === 0 || (order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID);
             const techWarningIcon = needsTech ? `<i class="fas fa-user-slash" style="color: var(--color-warning); margin-right: 3px;" title="Sin técnico asignado"></i>` : '';
             
@@ -1882,7 +1928,7 @@ function renderTimelineView(days: Date[]) {
                 <strong class="event-title">${techWarningIcon}${client?.name || 'Cliente'}</strong>
                 ${addressHtml}
                 <span class="event-time">${formattedTime} - #${order.manualId}</span>
-                <span class="event-type">${order.order_type}</span>
+                <span class="event-type" style="${getServiceTypeStyle(order.order_type)}">${order.order_type}</span>
                 <em class="event-techs">${techs.map(t => t.name?.split(' ')[0]).join(', ')}</em>
             </div>`;
         });
@@ -1939,11 +1985,22 @@ function renderListWeekView() {
             .sort((a, b) => (a.service_time || '00:00').localeCompare(b.service_time || '00:00'));
 
         const isToday = day.getTime() === today.getTime();
+        const numOrders = dailyOrders.length;
+        
+        // --- Day Saturation Logic ---
+        let saturationClass = '';
+        let saturationLabel = '';
+        if (numOrders >= 7) {
+            saturationClass = 'day-saturated-heavy';
+            saturationLabel = ' <span class="saturation-label" style="font-size: 0.8rem; font-weight: 500; color: #dc3545; margin-left: 10px; background-color: rgba(220,53,69,0.1); padding: 2px 8px; border-radius: 12px; border: 1px solid rgba(220,53,69,0.2);">Día saturado</span>';
+        } else if (numOrders >= 3) {
+            saturationClass = 'day-saturated-medium';
+        }
 
         html += `
-            <div class="day-section">
+            <div class="day-section ${saturationClass}">
                 <div class="day-header ${isToday ? 'today' : ''}">
-                    ${dayNames[day.getDay()]} ${day.getDate()}
+                    ${dayNames[day.getDay()]} ${day.getDate()}${saturationLabel}
                 </div>
                 <div class="day-orders-list">
         `;
@@ -1967,7 +2024,7 @@ function renderListWeekView() {
                         <div class="order-details">
                             <div class="order-client">${client?.name || 'Cliente'} (#${order.manualId})${techWarningIcon}</div>
                             ${addressHtml}
-                            <div class="order-type-mobile">${order.order_type}</div>
+                            <div class="order-type-mobile" style="${getServiceTypeStyle(order.order_type)}">${order.order_type}</div>
                             <div class="order-techs">${techs.map(t => t.name?.split(' ')[0]).join(', ') || 'Sin técnico'}</div>
                         </div>
                     </div>

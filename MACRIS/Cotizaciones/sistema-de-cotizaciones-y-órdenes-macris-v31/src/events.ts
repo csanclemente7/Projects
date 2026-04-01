@@ -242,6 +242,7 @@ function setupGlobalActionListeners() {
 
         const deleteBtn = target.closest('.delete-btn');
         const createOrderBtn = target.closest('.create-order-btn');
+        const editQuoteBtn = target.closest('.edit-quote-btn');
 
         if (deleteBtn) {
             e.stopPropagation();
@@ -249,6 +250,9 @@ function setupGlobalActionListeners() {
         } else if (createOrderBtn) {
             e.stopPropagation();
             UI.navigateToOrderWorkspace(null, quoteRow.dataset.id);
+        } else if (editQuoteBtn) {
+            e.stopPropagation();
+            UI.loadQuote(quoteRow.dataset.id);
         } else {
             UI.loadQuote(quoteRow.dataset.id);
         }
@@ -301,6 +305,7 @@ function setupOrderWorkspaceEventListeners() {
 
     D.orderItemsTableBody.addEventListener('input', UI.handleOrderItemChange);
     D.orderTypeSelect.addEventListener('change', UI.handleOrderDetailsChange);
+    D.orderTypeCustomInput.addEventListener('input', UI.handleOrderDetailsChange);
     D.orderStatusSelect.addEventListener('change', UI.handleOrderDetailsChange);
     D.orderNotesTextarea.addEventListener('input', UI.handleOrderDetailsChange);
     D.orderDateInput.addEventListener('input', UI.handleOrderDetailsChange);

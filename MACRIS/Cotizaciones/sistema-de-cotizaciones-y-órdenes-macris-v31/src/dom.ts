@@ -72,6 +72,7 @@ export const orderItemSearchInput = document.getElementById('order-item-search')
 export const orderItemSearchResults = document.getElementById('order-item-search-results') as HTMLDivElement;
 export const orderAddNewItemBtn = document.getElementById('order-add-new-item-btn') as HTMLButtonElement;
 export const orderTypeSelect = document.getElementById('order-type') as HTMLSelectElement;
+export const orderTypeCustomInput = document.getElementById('order-type-custom') as HTMLInputElement;
 export const orderStatusSelect = document.getElementById('order-status') as HTMLSelectElement;
 export const orderNotesTextarea = document.getElementById('order-notes') as HTMLTextAreaElement;
 export const saveOrderBtn = document.getElementById('save-order-btn') as HTMLButtonElement;
