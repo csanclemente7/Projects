@@ -1,0 +1,542 @@
+/* Login Screen */
+#login-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, var(--color-bg-dark) 0%, #010409 100%);
+    padding: 20px;
+}
+
+.login-container {
+    background-color: var(--color-bg-medium);
+    padding: 35px 40px;
+    border-radius: var(--border-radius-sharp);
+    box-shadow: var(--shadow-dark), 0 0 25px rgba(0, 223, 255, 0.1);
+    border: 1px solid var(--color-border-light);
+    width: 100%;
+    max-width: 450px; 
+    text-align: center;
+}
+
+.login-logo {
+    max-width: 220px; 
+    height: auto; 
+    margin-bottom: 25px;
+}
+
+.login-container h2 {
+    margin-bottom: 30px;
+    color: var(--color-text-primary); 
+    font-weight: 600;
+    font-size: 1.6rem; 
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.login-container h2 .fas {
+    margin-right: 10px;
+    vertical-align: middle;
+    color: var(--color-accent-primary);
+}
+
+/* Development Login Buttons */
+.dev-login-buttons-container {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px dashed var(--color-border-medium);
+}
+.dev-info-text {
+    font-size: 0.8rem;
+    color: var(--color-text-secondary);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* App Screen */
+#app-screen header {
+    background-color: var(--color-bg-medium);
+    color: var(--color-text-primary);
+    padding: 10px 15px; /* Symmetrical padding */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid var(--color-border-light);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    height: 60px;
+    gap: 10px; /* Gap between header-content and header-actions */
+}
+
+.header-content { /* Contains logo and h1 */
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-shrink: 1; /* Allow this container to shrink */
+    min-width: 0; /* Important for children with ellipsis */
+    overflow: hidden; /* Hide overflow */
+}
+
+.header-logo {
+    max-height: 40px; 
+    width: auto; 
+    flex-shrink: 0; /* Prevent logo from shrinking */
+}
+
+#app-screen header h1 { /* The title "Reportes" */
+    margin: 0;
+    font-size: 1.2rem; 
+    font-weight: 500;
+    color: var(--color-text-primary);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 50px; /* Minimum space for the title before it's completely gone */
+}
+#app-screen header h1 .fas {
+    margin-right: 10px;
+    font-size: 1.1rem; 
+    color: var(--color-accent-primary); 
+}
+
+.header-actions { /* Contains user-display and logout-button */
+    display: flex;
+    align-items: center;
+    flex-shrink: 1; /* Allow this group to shrink to prevent overflow */
+    min-width: 0; /* Let children overflow correctly */
+    justify-content: flex-end; /* Push items to the right */
+    gap: 10px; /* Gap between user display and logout button */
+}
+
+#current-user-display { /* "Usuario: Administrador Principal" */
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px; /* Default max-width, adjust in media queries */
+    text-align: right; /* Align text to right if it's shorter than max-width */
+}
+
+#logout-button {
+    flex-shrink: 0; /* Prevent logout button from shrinking */
+}
+
+
+main {
+    padding: 20px;
+    padding-bottom: calc(var(--bottom-nav-height) + 20px); 
+}
+
+.section-header-actions {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap; 
+}
+.section-header-actions .btn {
+    flex-grow: 1; 
+    justify-content: center;
+}
+.section-header-actions.vertical {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+}
+.section-header-actions.vertical .btn {
+    margin-bottom: 5px;
+}
+
+.section-footer-actions {
+    margin-top: 25px;
+    padding-top: 15px;
+    border-top: 1px dashed var(--color-border-light);
+    text-align: center;
+}
+
+
+/* Sections */
+section.data-section {
+    background-color: var(--color-bg-medium);
+    padding: 20px;
+    margin-bottom: 25px;
+    border-radius: var(--border-radius-sharp);
+    box-shadow: var(--shadow-dark);
+    border: 1px solid var(--color-border-light);
+}
+
+.section-header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--color-border-light);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+.section-header-container h2 {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+.header-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.btn-subtle-icon {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+    background: transparent !important;
+    border: 1px solid var(--color-danger);
+    color: var(--color-danger);
+    opacity: 0.7;
+}
+.btn-subtle-icon:hover {
+    opacity: 1;
+    background-color: var(--color-danger) !important;
+    color: var(--corporate-white) !important;
+    box-shadow: 0 0 8px var(--color-danger);
+}
+.btn-subtle-icon .fas {
+    margin: 0;
+}
+
+section.data-section h2 {
+    margin-top: 0;
+    color: var(--color-text-primary);
+    border-bottom: 1px solid var(--color-border-light);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    font-size: 1.2rem; 
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+section.data-section h2 .fas {
+    margin-right: 10px;
+    font-size: 1.1rem; 
+    color: var(--color-accent-primary); 
+}
+section.data-section h3 { /* For sub-headings within sections, e.g., tabs */
+    margin-top: 10px;
+    margin-bottom: 15px;
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    font-weight: 500;
+    border-bottom: 1px dashed var(--color-border-light);
+    padding-bottom: 8px;
+}
+section.data-section h3 .fas, section.data-section h3 .far {
+    margin-right: 8px;
+    color: var(--color-accent-secondary);
+}
+
+/* Report Filters Grid */
+#toggle-filters-btn, #toggle-order-filters-btn {
+    display: none;
+}
+#admin-filters-collapsible-area, #admin-order-filters-collapsible-area {
+    display: block;
+}
+
+.filters-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.filters-grid .form-group {
+    margin-bottom: 0; /* Remove bottom margin as gap is handled by grid */
+}
+
+/* Bottom Navigation Bar */
+#bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: var(--bottom-nav-height);
+    background-color: var(--color-bg-medium);
+    border-top: 1px solid var(--color-border-light);
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 100;
+}
+
+.nav-item {
+    background: none;
+    border: none;
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    text-align: center;
+    height: 100%;
+    transition: color 0.2s ease-in-out;
+}
+
+.nav-item i { /* fas or far */
+    font-size: 1.5rem;
+    margin-bottom: 4px;
+}
+
+.nav-item span {
+    font-size: 0.70rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.nav-item.active {
+    color: var(--color-accent-primary);
+}
+.nav-item:hover:not(.active) {
+    color: var(--corporate-white);
+}
+
+/* Search Controls for Tables */
+.search-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.search-controls input[type="search"] {
+    flex-grow: 1; 
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    background-color: var(--corporate-bg-medium);
+    border: 1px solid var(--color-border-light);
+    color: var(--color-text-primary);
+    border-radius: var(--border-radius-sharp);
+    line-height: normal;
+}
+.search-controls input[type="search"]::placeholder {
+    color: var(--color-text-placeholder);
+}
+.search-controls input[type="search"]:focus {
+    border-color: var(--color-accent-primary);
+    box-shadow: var(--shadow-glow-small);
+    outline: none;
+}
+.search-controls input[type="search"]::-webkit-search-decoration,
+.search-controls input[type="search"]::-webkit-search-cancel-button,
+.search-controls input[type="search"]::-webkit-search-results-button,
+.search-controls input[type="search"]::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+    display: none;
+}
+
+
+/* Role-based Visibility */
+body[data-user-role="worker"] .price-col {
+    display: none !important;
+}
+
+
+/* Responsiveness */
+@media (max-width: 768px) {
+    #toggle-filters-btn, #toggle-order-filters-btn {
+        display: inline-flex;
+    }
+    #admin-filters-collapsible-area, #admin-order-filters-collapsible-area {
+        display: none;
+    }
+    #admin-filters-collapsible-area.active, #admin-order-filters-collapsible-area.active {
+        display: block;
+        margin-top: 15px;
+    }
+
+    .filters-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); /* Adjust minmax for smaller screens */
+    }
+
+    #app-screen header h1 { /* Title in header */
+        font-size: 1.1rem;
+    }
+    #current-user-display { /* User display in header */
+        max-width: 120px; 
+        font-size: 0.8em;
+    }
+
+    /* Make tables responsive with card layout (example for admin-reports-table) */
+    /* You can apply this pattern to other tables by changing the ID */
+    #admin-reports-table thead, 
+    #my-reports-table thead, 
+    #admin-equipment-table thead, 
+    #admin-schedule-table thead, 
+    #employees-table thead,
+    #order-items-table thead { /* Hide all table heads for card view */
+        display: none; 
+    }
+    #admin-reports-table tbody tr, 
+    #my-reports-table tbody tr, 
+    #admin-equipment-table tbody tr, 
+    #admin-schedule-table tbody tr, 
+    #employees-table tbody tr,
+    #order-items-table tbody tr {
+        display: block;
+        margin-bottom: 20px;
+        border: 1px solid var(--color-border-medium);
+        border-radius: var(--border-radius-sharp);
+        padding: 15px;
+        background-color: var(--color-bg-light); /* Slightly distinct background for cards */
+        box-shadow: var(--shadow-dark);
+    }
+     #admin-reports-table tbody tr:hover, 
+     #my-reports-table tbody tr:hover, 
+     #admin-equipment-table tbody tr:hover, 
+     #admin-schedule-table tbody tr:hover, 
+     #employees-table tbody tr:hover,
+     #order-items-table tbody tr:hover {
+        background-color: var(--corporate-bg-medium);
+    }
+
+    #admin-reports-table td, 
+    #my-reports-table td, 
+    #admin-equipment-table td, 
+    #admin-schedule-table td, 
+    #employees-table td,
+    #order-items-table td {
+        display: block;
+        text-align: right; 
+        padding: 8px 5px 8px 140px; 
+        border-bottom: 1px dashed var(--color-border-light); 
+        position: relative; 
+        font-size: 0.9rem;
+    }
+
+    #order-items-table td[data-label="Descripción"] {
+        text-align: left;
+        word-break: break-word;
+    }
+    
+    #admin-reports-table td:last-child, 
+    #my-reports-table td:last-child, 
+    #admin-equipment-table td:last-child, 
+    #admin-schedule-table td:last-child, 
+    #employees-table td:last-child,
+    #order-items-table td:last-child {
+        border-bottom: none; 
+    }
+    #admin-reports-table td::before, 
+    #my-reports-table td::before, 
+    #admin-equipment-table td::before, 
+    #admin-schedule-table td::before, 
+    #employees-table td::before,
+    #order-items-table td::before {
+        content: attr(data-label); /* Ensure data-label is set in JS for these tables */
+        position: absolute;
+        left: 0;
+        padding-right: 10px;
+        white-space: nowrap;
+        text-align: left; 
+        font-weight: 600;
+        color: var(--color-text-primary);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    /* Special handling for ID cell in card view */
+    #admin-equipment-table td[data-label="ID Equipo"] .equipment-id-table-cell-container {
+        justify-content: flex-end; /* Push button to right of text */
+        width: 100%; /* Ensure it takes full available width in card view */
+    }
+     #admin-equipment-table td[data-label="ID Equipo"] .equipment-id-table-cell-container .equipment-id-short {
+        flex-grow: 1; /* Allow text to take space */
+        text-align: right; /* Align text to right if needed, though button pushes it */
+     }
+
+
+    /* Actions cell in card view */
+    #admin-reports-table td[data-label="Acciones"], 
+    #my-reports-table td[data-label="Acciones"], 
+    #admin-equipment-table td[data-label="Acciones"], 
+    #admin-schedule-table td[data-label="Acciones"], 
+    #employees-table td[data-label="Acciones"] {
+        padding-top: 15px; 
+        text-align: center; 
+        border-bottom: none;
+    }
+    #admin-reports-table td[data-label="Acciones"]::before, 
+    #my-reports-table td[data-label="Acciones"]::before,
+    #admin-equipment-table td[data-label="Acciones"]::before, 
+    #admin-schedule-table td[data-label="Acciones"]::before, 
+    #employees-table td[data-label="Acciones"]::before {
+        display: none;
+    }
+    #admin-reports-table td[data-label="Acciones"] .btn, 
+    #my-reports-table td[data-label="Acciones"] .btn,
+    #admin-equipment-table td[data-label="Acciones"] .btn, 
+    #admin-schedule-table td[data-label="Acciones"] .btn, 
+    #employees-table td[data-label="Acciones"] .btn {
+        width: auto; /* Allow multiple buttons to sit side-by-side if they fit */
+        margin: 3px;
+    }
+
+
+    /* General Search Controls Responsiveness */
+    .search-controls {
+        flex-direction: column; 
+        align-items: stretch; 
+    }
+    .search-controls input[type="search"] {
+        width: 100%; 
+    }
+    .search-controls .btn-icon-only {
+        width: 100%; 
+        justify-content: center;
+    }
+
+    .tabs {
+        justify-content: space-around; /* Better for mobile tabs */
+    }
+    .tab-link {
+        flex-grow: 1; /* Allow tabs to take equal width */
+        text-align: center;
+        padding: 8px 5px; /* Smaller padding for mobile tabs */
+        font-size: 0.8rem;
+    }
+    .tab-link .fas, .tab-link .far { font-size: 1rem; margin-bottom: 2px; display:block; margin-right:0; } /* Stack icon and text */
+
+    #toggle-fullscreen-button {
+         /* Already position:fixed, display managed by JS for iOS */
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 14px;
+    }
+    #app-screen header {
+        padding: 5px 10px; /* Reduce header padding */
+        gap: 5px;
+    }
+    .header-content {
+        gap: 10px;
+    }
+     #app-screen header h1 { /* Title in header */
+        font-size: 1.1rem; /* Match icon size better */
+     }
+     .header-title-text,
+     #current-user-display,
+     .header-actions .btn-text {
+        display: none; /* Hide header title, user name, and button text */
+     }
+     .header-actions .btn {
+         padding: 8px; /* Make buttons a bit smaller/squarer */
+     }
+     .order-card .view-details-btn span {
+        display: none;
+    }
+}

@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self'; 
+                   script-src 'self' 'unsafe-inline' https://esm.sh https://cdn.jsdelivr.net https://www.macrisrefrigeracion.com https://macrisrefrigeracion.com data:;
+                   style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com https://cdn.jsdelivr.net; 
+                   img-src 'self' https://www.macrisrefrigeracion.com https://macrisrefrigeracion.com data: blob:; 
+                   font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; 
+                   connect-src 'self' https://ctitnuadeqdwsgulhpjg.supabase.co wss://ctitnuadeqdwsgulhpjg.supabase.co https://fzcalgofrhbqvowazdpk.supabase.co wss://fzcalgofrhbqvowazdpk.supabase.co https://*.supabase.co wss://*.supabase.co https://formsubmit.co;
+                   frame-src 'self' blob: data:;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cotizaciones - Macris</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&family=Caveat:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="index.css">
+<script type="importmap">
+{
+  "imports": {
+    "jspdf": "https://esm.sh/jspdf@2.5.1",
+    "jspdf-autotable": "https://esm.sh/jspdf-autotable@3.8.2",
+    "jsqr": "https://esm.sh/jsqr@^1.4.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.51.0",
+    "qrcode": "https://esm.sh/qrcode@^1.5.4",
+    "signature_pad": "https://esm.sh/signature_pad@^5.0.10",
+    "flatpickr": "https://esm.sh/flatpickr@4.6.13",
+    "flatpickr/": "https://esm.sh/flatpickr@4.6.13/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body>
+    <div id="login-overlay">
+        <div class="login-container">
+            <img src="MacrisLogoBlanco.png" alt="Macris Logo" class="login-logo">
+            <h3>Iniciar Sesión</h3>
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username-input">Usuario</label>
+                    <input type="text" id="username-input" required autocomplete="username" placeholder="admin">
+                </div>
+                <div class="form-group">
+                    <label for="password-input">Clave de Acceso</label>
+                    <input type="password" id="password-input" required autocomplete="current-password">
+                </div>
+                <p id="login-error-msg" class="login-error"></p>
+                <button type="submit" class="btn btn-primary login-btn">Ingresar</button>
+                <button id="user-recovery-open" class="login-recovery-link" type="button">Olvidé la clave</button>
+                <a id="admin-portal-link" class="btn btn-accent admin-login-link" href="#">Ir a Portal Admin</a>
+            </form>
+        </div>
+    </div>
+
+    <div id="loader-overlay">
+        <img src="MacrisLogoBlanco.png" alt="Cargando..." class="loader-logo">
+        <div class="spinner"></div>
+        <p class="loader-text">Cargando datos...</p>
+    </div>
+
+    <div id="app-container" hidden>
+        <aside id="main-nav">
+            <div class="nav-header">
+                <img src="MacrisLogoBlanco.png" alt="Macris Logo" class="logo">
+            </div>
+            <nav class="nav-links">
+                <a href="#" class="nav-link active" data-page="page-quotes"><i class="fas fa-file-invoice-dollar"></i><span>Nueva cotización</span></a>
+                <a href="#" class="nav-link" data-page="page-saved-quotes"><i class="fas fa-archive"></i><span>Mis Cotizaciones</span></a>
+                <a href="#" class="nav-link" data-page="page-orders"><i class="fas fa-clipboard-list"></i><span>Órdenes</span></a>
+                <a href="#" class="nav-link" data-page="page-agenda"><i class="fas fa-calendar-alt"></i><span>Agenda</span></a>
+                <a href="#" class="nav-link" data-page="page-clients"><i class="fas fa-users"></i><span>Clientes</span></a>
+                <a href="#" class="nav-link" data-page="page-items"><i class="fas fa-box-open"></i><span>Insumos</span></a>
+                <a href="#" class="nav-link" data-page="page-technicians"><i class="fas fa-hard-hat"></i><span>Técnicos</span></a>
+                <a href="#" class="nav-link" data-page="page-settings"><i class="fas fa-cog"></i><span>Ajustes</span></a>
+            </nav>
+             <div id="connection-status">
+                <div class="status-indicator"></div>
+                <span class="status-text">En línea</span>
+            </div>
+        </aside>
+
+        <main id="main-content-area">
+            <div id="current-user-badge" class="current-user-badge">
+                <i class="fas fa-user-circle"></i>
+                <span id="current-user-name"></span>
+                <button id="current-user-logout" class="current-user-logout" title="Cerrar sesión">
+                    <i class="fas fa-sign-out-alt"></i>
+                </button>
+            </div>
+            <!-- QUOTES PAGE -->
+            <div id="page-quotes" class="page active">
+                <header class="app-header">
+                    <div class="header-main-title">
+                        <i class="fas fa-file-signature"></i>
+                        <h1>Generador de Cotizaciones</h1>
+                    </div>
+                </header>
+                <div id="quote-tabs-bar"></div>
+                <div class="page-content">
+                    <div class="quote-workspace">
+                        <div class="quote-header card">
+                            <div class="quote-header-left">
+                                <h2>Cotización <span id="quote-id-display">#...</span></h2>
+                                <div class="form-group">
+                                    <label for="quote-date">Fecha</label>
+                                    <input type="text" id="quote-date" placeholder="Seleccionar fecha...">
+                                </div>
+                            </div>
+                            <div class="quote-header-right">
+                                <h3>Cliente</h3>
+                                <div class="form-group">
+                                    <div class="input-with-button">
+                                        <input type="text" id="client-search" placeholder="Buscar por nombre o ID...">
+                                        <button id="add-client-btn" class="btn btn-add-inline" title="Nuevo Cliente"><i class="fas fa-plus"></i></button>
+                                        <button id="edit-client-btn" class="btn btn-add-inline" title="Editar Cliente"><i class="fas fa-edit"></i></button>
+                                    </div>
+                                    <div id="client-search-results"></div>
+                                </div>
+                                <div id="client-details" class="client-details-display"></div>
+                            </div>
+                        </div>
+
+                        <div class="quote-items card">
+                            <h3>Ítems de la Cotización</h3>
+                            <div class="table-container">
+                                <table id="quote-items-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-desc">Descripción</th>
+                                            <th class="col-qty">Cant.</th>
+                                            <th class="col-price">Vlr. Unitario</th>
+                                            <th class="col-total">Vlr. Total</th>
+                                            <th class="col-actions"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="quote-items-tbody">
+                                        <!-- Items will be added here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="add-item-form-container">
+                                <div class="form-group">
+                                    <label for="item-search">Agregar Ítem</label>
+                                    <div class="input-with-button">
+                                        <input type="text" id="item-search" placeholder="Buscar por código o nombre...">
+                                        <button id="add-new-item-quote-page-btn" class="btn btn-add-inline" title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div id="item-search-results"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="quote-summary-terms card">
+                             <div class="summary-and-terms-wrapper">
+                                <div class="quote-summary">
+                                    <h3>Resumen</h3>
+                                    <div class="summary-row">
+                                        <span>Subtotal</span>
+                                        <span id="summary-subtotal">$0</span>
+                                    </div>
+                                    <div class="summary-row">
+                                        <div class="vat-toggle-container">
+                                            <label class="switch-label" for="vat-toggle-switch">Incluir IVA</label>
+                                            <label class="switch">
+                                                <input type="checkbox" id="vat-toggle-switch">
+                                                <span class="slider round"></span>
+                                            </label>
+                                        </div>
+                                        <span id="summary-tax-amount">$0</span>
+                                    </div>
+                                    <div class="summary-row total-row">
+                                        <span>Total</span>
+                                        <span id="summary-total">$0</span>
+                                    </div>
+                                </div>
+                                <div class="quote-terms">
+                                    <h3>Términos y Condiciones</h3>
+                                    <textarea id="quote-terms-textarea"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="quote-main-actions card">
+                            <button id="delete-current-quote-btn" class="btn btn-danger btn-danger-solid" style="display: none;"><i class="fas fa-trash"></i><span>Eliminar</span></button>
+                            <button id="save-quote-btn" class="btn btn-success"><i class="fas fa-save"></i> Guardar Cotización</button>
+                            <button id="generate-pdf-btn" class="btn btn-secondary"><i class="fas fa-file-pdf"></i> Generar PDF</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ORDER WORKSPACE PAGE (hidden by default) -->
+            <div id="page-order-workspace" class="page">
+                 <header class="app-header">
+                    <div class="header-main-title">
+                        <i class="fas fa-clipboard-check"></i>
+                        <h1 id="order-workspace-title">Nueva Orden de Servicio</h1>
+                    </div>
+                     <button id="back-to-orders-list-btn" class="btn btn-secondary"><i class="fas fa-arrow-left"></i><span>Volver</span></button>
+                </header>
+                <div class="page-content">
+                    <div class="quote-workspace"> <!-- Reusing styling -->
+                        
+                        <!-- Order Details: Client, Date, Time, Techs -->
+                        <div class="card">
+                             <div class="quote-header"> <!-- Reusing styling -->
+                                <div class="quote-header-left">
+                                    <h3>Datos del Servicio</h3>
+                                    <div class="form-group">
+                                        <label for="order-date">Fecha de Servicio</label>
+                                        <input type="text" id="order-date" placeholder="Seleccionar fecha...">
+                                    </div>
+                                    <div class="form-group-row">
+                                        <div class="form-group">
+                                            <label for="order-time">Hora de Inicio</label>
+                                            <input type="time" id="order-time" class="form-control">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="order-duration-hours">Duración Estimada</label>
+                                            <div class="duration-input-group">
+                                                <input type="number" id="order-duration-hours" min="0" placeholder="hh">
+                                                <span class="duration-separator">h</span>
+                                                <input type="number" id="order-duration-minutes" min="0" max="59" step="15" placeholder="mm">
+                                                <span class="duration-separator">m</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                     <div class="form-group">
+                                        <label for="order-type">Tipo de Orden</label>
+                                        <select id="order-type">
+                                            <!-- Options will be populated by JS -->
+                                            <option value="" disabled selected>Cargando...</option>
+                                        </select>
+                                    </div>
+                                     <div class="form-group">
+                                        <label for="order-status">Estado</label>
+                                        <select id="order-status">
+                                            <option value="pending">Pendiente</option>
+                                            <option value="scheduled">Programada</option>
+                                            <option value="in_progress">En Progreso</option>
+                                            <option value="completed">Completada</option>
+                                            <option value="cancelled">Cancelada</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="quote-header-right">
+                                    <h3>Cliente</h3>
+                                    <div class="form-group">
+                                        <div class="input-with-button">
+                                            <input type="text" id="order-client-search" placeholder="Buscar por nombre o ID...">
+                                            <button id="order-add-client-btn" class="btn btn-add-inline" title="Nuevo Cliente"><i class="fas fa-plus"></i></button>
+                                            <button id="order-edit-client-btn" class="btn btn-add-inline" title="Editar Cliente"><i class="fas fa-edit"></i></button>
+                                        </div>
+                                        <div id="order-client-search-results"></div>
+                                    </div>
+                                    <div id="order-client-details" class="client-details-display"></div>
+                                    <div class="form-group">
+                                        <label for="order-client-city">Ciudad del Servicio</label>
+                                        <input type="text" id="order-client-city" class="form-control" placeholder="Ej: Buga, Cali...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="form-group">
+                                <label for="technician-selector">Técnicos Asignados</label>
+                                <div id="technician-selector" class="custom-select-container" tabindex="0">
+                                    <div id="technician-selected-pills" class="pill-input-container">
+                                        <!-- Selected technician pills will be injected here -->
+                                        <span class="custom-select-placeholder">Seleccionar técnicos...</span>
+                                    </div>
+                                    <i class="fas fa-chevron-down custom-select-arrow"></i>
+                                </div>
+                                <div id="technician-dropdown" class="custom-select-dropdown search-results-popover">
+                                    <!-- Technician list will be injected here -->
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Order Items -->
+                        <div class="quote-items card">
+                             <h3>Ítems de la Orden</h3>
+                            <div class="table-container">
+                                <table id="order-items-table">
+                                     <thead>
+                                        <tr>
+                                            <th class="col-desc">Descripción</th>
+                                            <th class="col-qty">Cant.</th>
+                                            <th class="col-price">Vlr. Unitario</th>
+                                            <th class="col-total">Vlr. Total</th>
+                                            <th class="col-actions"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="order-items-tbody"></tbody>
+                                </table>
+                            </div>
+                            <div class="add-item-form-container">
+                                <div class="form-group">
+                                    <label for="order-item-search">Agregar Ítem</label>
+                                    <div class="input-with-button">
+                                        <input type="text" id="order-item-search" placeholder="Buscar por código o nombre...">
+                                        <button id="order-add-new-item-btn" class="btn btn-add-inline" title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div id="order-item-search-results"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order Status & Notes -->
+                        <div class="card">
+                            <div class="summary-and-terms-wrapper">
+                                <div class="quote-terms"> <!-- Reusing class -->
+                                     <h3>Notas Internas</h3>
+                                    <div class="form-group">
+                                        <label for="order-notes">Notas (No visibles para el cliente)</label>
+                                        <textarea id="order-notes" rows="6"></textarea>
+                                    </div>
+                                </div>
+                                <div class="quote-summary"> <!-- Reusing class -->
+                                    <h3>Resumen de Costos</h3>
+                                     <div class="summary-row">
+                                        <span>Subtotal</span>
+                                        <span id="order-summary-subtotal">$0</span>
+                                    </div>
+                                    <div class="summary-row">
+                                        <div class="vat-toggle-container">
+                                            <label class="switch-label" for="order-vat-toggle-switch">Incluir IVA</label>
+                                            <label class="switch">
+                                                <input type="checkbox" id="order-vat-toggle-switch">
+                                                <span class="slider round"></span>
+                                            </label>
+                                        </div>
+                                        <span id="order-summary-tax-amount">$0</span>
+                                    </div>
+                                    <div class="summary-row total-row">
+                                        <span>Total</span>
+                                        <span id="order-summary-total">$0</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Order Actions -->
+                        <div class="quote-main-actions card">
+                            <button id="save-order-btn" class="btn btn-success"><i class="fas fa-save"></i> Guardar Orden</button>
+                            <button id="generate-order-pdf-btn" class="btn btn-secondary"><i class="fas fa-file-pdf"></i> Generar PDF</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ORDERS PAGE -->
+            <div id="page-orders" class="page">
+                 <header class="page-header">
+                    <div class="page-header-main">
+                        <h2>Gestión de Órdenes <span id="order-count-badge" class="header-count-badge"></span></h2>
+                        <div class="page-actions">
+                            <input type="text" id="order-list-search" placeholder="Buscar orden...">
+                            <button id="add-new-order-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i> <span>Nueva Orden</span></button>
+                        </div>
+                    </div>
+                </header>
+                <div class="tabs-container">
+                    <button class="tab-link active" data-tab="pending">Pendientes</button>
+                    <button class="tab-link" data-tab="completed">Completadas</button>
+                </div>
+                 <div class="page-content">
+                    <div id="orders-list-container" class="management-list-container">
+                        <!-- Orders table will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- AGENDA PAGE -->
+            <div id="page-agenda" class="page">
+                <header class="page-header">
+                    <div class="page-header-main">
+                        <h2 class="agenda-main-title">Agenda de Servicios</h2>
+                        <div class="page-actions" id="agenda-controls">
+                            <div id="agenda-view-switcher" class="btn-group">
+                                <button class="btn btn-secondary" data-view="day">Día</button>
+                                <button class="btn btn-secondary active" data-view="week">Semana</button>
+                                <button class="btn btn-secondary" data-view="month">Mes</button>
+                            </div>
+                            <div id="agenda-nav">
+                                 <button id="agenda-prev-btn" class="btn btn-secondary btn-icon-only" title="Anterior"><i class="fas fa-chevron-left"></i></button>
+                                 <h3 id="agenda-title"></h3>
+                                 <button id="agenda-next-btn" class="btn btn-secondary btn-icon-only" title="Siguiente"><i class="fas fa-chevron-right"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+                 <div class="page-content" id="agenda-page-content">
+                    <div id="agenda-container">
+                        <!-- Calendar/Timeline will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- CLIENTS PAGE -->
+            <div id="page-clients" class="page">
+                <header class="page-header">
+                    <div class="page-header-main">
+                        <h2>Gestión de Clientes <span id="client-count-badge" class="header-count-badge"></span></h2>
+                        <div class="page-actions">
+                            <input type="text" id="client-list-search" placeholder="Buscar cliente...">
+                            <button id="add-new-client-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i> <span>Agregar Cliente</span></button>
+                        </div>
+                    </div>
+                    <button id="delete-all-clients-btn" class="btn btn-icon-only btn-subtle-danger" title="Eliminar todos los clientes"><i class="fas fa-trash-alt"></i></button>
+                </header>
+                 <div class="page-content">
+                    <div id="clients-list-container" class="management-list-container">
+                        <!-- Client table will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ITEMS PAGE -->
+            <div id="page-items" class="page">
+                 <header class="page-header">
+                     <div class="page-header-main">
+                        <h2>Gestión de Insumos <span id="item-count-badge" class="header-count-badge"></span></h2>
+                        <div class="page-actions">
+                            <input type="text" id="item-list-search" placeholder="Buscar insumo o servicio...">
+                            <button id="add-new-item-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i> <span>Agregar Insumo</span></button>
+                        </div>
+                    </div>
+                    <button id="delete-all-items-btn" class="btn btn-icon-only btn-subtle-danger" title="Eliminar todos los insumos"><i class="fas fa-trash-alt"></i></button>
+                </header>
+                 <div class="page-content">
+                    <div id="items-list-container" class="management-list-container">
+                         <!-- Item table will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TECHNICIANS PAGE -->
+            <div id="page-technicians" class="page">
+                 <header class="page-header">
+                     <div class="page-header-main">
+                        <h2>Gestión de Técnicos <span id="technician-count-badge" class="header-count-badge"></span></h2>
+                        <div class="page-actions">
+                            <input type="text" id="technician-list-search" placeholder="Buscar técnico...">
+                            <button id="add-new-technician-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i> <span>Agregar Técnico</span></button>
+                        </div>
+                    </div>
+                </header>
+                 <div class="page-content">
+                    <div id="technicians-list-container" class="management-list-container">
+                         <!-- Technician table will be rendered here -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SAVED QUOTES PAGE -->
+            <div id="page-saved-quotes" class="page">
+                <header class="page-header">
+                    <div class="page-header-main">
+                        <h2>Mis Cotizaciones <span id="saved-quotes-count-badge" class="header-count-badge"></span></h2>
+                        <div class="page-actions">
+                            <input type="text" id="saved-quotes-search" placeholder="Buscar por ID o cliente...">
+                        </div>
+                    </div>
+                    <button id="delete-all-quotes-btn" class="btn btn-icon-only btn-subtle-danger" title="Eliminar todas las cotizaciones"><i class="fas fa-trash-alt"></i></button>
+                </header>
+                <div class="page-content">
+                    <div id="saved-quotes-page-container" class="management-list-container">
+                        <!-- Saved quotes table will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS PAGE -->
+            <div id="page-settings" class="page">
+                <header class="page-header">
+                    <h2>Ajustes</h2>
+                </header>
+                <div class="page-content">
+                    <div class="quote-workspace">
+                        <div class="card">
+                            <h3>Apariencia</h3>
+                            <p class="text-secondary-p">Personalice el aspecto de la aplicación.</p>
+                            <div class="settings-group">
+                                <div class="setting-item">
+                                    <h4>Tema de la Aplicación</h4>
+                                     <div id="theme-options-container" class="theme-options">
+                                        <label class="theme-option">
+                                            <input type="radio" name="theme" value="light">
+                                            <div class="theme-preview-box">
+                                                <i class="fas fa-sun"></i>
+                                                <span>Claro</span>
+                                            </div>
+                                        </label>
+                                        <label class="theme-option">
+                                            <input type="radio" name="theme" value="dark">
+                                            <div class="theme-preview-box">
+                                                <i class="fas fa-moon"></i>
+                                                <span>Oscuro</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Tamaño de la Fuente</h4>
+                                    <div class="font-size-control">
+                                        <input type="range" id="font-size-slider" min="14" max="20" step="1" value="16">
+                                        <span id="font-size-value">16px</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Datos de la Empresa</h3>
+                            <p class="text-secondary-p">Esta información aparecerá en los encabezados de sus documentos PDF.</p>
+                            <div class="settings-group" style="flex-direction: column;">
+                                <div class="setting-item">
+                                    <h4>Nombre de la Empresa</h4>
+                                    <div class="form-group">
+                                        <input type="text" id="company-name-setting" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Dirección (Línea 1)</h4>
+                                    <div class="form-group">
+                                        <input type="text" id="company-address1-setting" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Dirección (Línea 2)</h4>
+                                    <div class="form-group">
+                                        <input type="text" id="company-address2-setting" class="form-control" placeholder="Ej: Buga, Valle del Cauca">
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Sitio Web</h4>
+                                    <div class="form-group">
+                                        <input type="text" id="company-website-setting" class="form-control" placeholder="Ej: www.miempresa.com">
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Teléfono de Contacto</h4>
+                                    <div class="form-group">
+                                        <input type="text" id="company-phone-setting" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Email de Contacto</h4>
+                                    <div class="form-group">
+                                        <input type="email" id="company-email-setting" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                             <div class="modal-actions" style="margin-top: 10px; justify-content: flex-end;">
+                                <button id="save-company-data-btn" class="btn btn-primary"><i class="fas fa-save"></i> <span>Guardar Datos</span></button>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Impuestos</h3>
+                            <p class="text-secondary-p">Configure los valores de impuestos por defecto.</p>
+                            <div class="settings-group">
+                                <div class="setting-item">
+                                    <h4>Valor del IVA (%)</h4>
+                                    <div class="form-group">
+                                        <input type="number" id="vat-rate-setting" class="form-control" min="0" step="0.1" value="19">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Textos de Cotización y PDF</h3>
+                            <p class="text-secondary-p">Personalice los textos por defecto que aparecen en las cotizaciones y los documentos PDF.</p>
+                            <div class="settings-group" style="flex-direction: column;">
+                                <div class="setting-item">
+                                    <h4>Términos y Condiciones (Sin IVA)</h4>
+                                    <div class="form-group">
+                                        <textarea id="terms-no-vat-setting" class="form-control" rows="5"></textarea>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Términos y Condiciones (Con IVA)</h4>
+                                    <div class="form-group">
+                                        <textarea id="terms-with-vat-setting" class="form-control" rows="5"></textarea>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Texto de Pie de Página (PDF)</h4>
+                                    <div class="form-group">
+                                        <textarea id="pdf-footer-text-setting" class="form-control" rows="4"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                             <div class="modal-actions" style="margin-top: 10px; justify-content: flex-end;">
+                                <button id="save-texts-btn" class="btn btn-primary"><i class="fas fa-save"></i> <span>Guardar Textos</span></button>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Seguridad</h3>
+                            <p class="text-secondary-p">Cambie la clave de acceso para iniciar sesión en la aplicación.</p>
+                            <form id="change-password-form">
+                                <div class="settings-group" style="flex-direction: column;">
+                                    <div class="setting-item">
+                                        <h4>Clave Actual</h4>
+                                        <div class="form-group">
+                                            <input type="password" id="current-password" class="form-control" required autocomplete="current-password">
+                                        </div>
+                                    </div>
+                                    <div class="setting-item">
+                                        <h4>Nueva Clave</h4>
+                                        <div class="form-group">
+                                            <input type="password" id="new-password" class="form-control" required autocomplete="new-password">
+                                        </div>
+                                    </div>
+                                    <div class="setting-item">
+                                        <h4>Confirmar Nueva Clave</h4>
+                                        <div class="form-group">
+                                            <input type="password" id="confirm-password" class="form-control" required autocomplete="new-password">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-actions" style="margin-top: 10px; justify-content: flex-end;">
+                                    <button type="submit" id="change-password-btn" class="btn btn-primary"><i class="fas fa-key"></i> <span>Cambiar Clave</span></button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <div class="card">
+                            <h3>Diseño de PDF</h3>
+                            <p class="text-secondary-p">Elija una plantilla para sus cotizaciones en PDF y previsualícela.</p>
+                            <div id="pdf-template-options-container" class="template-options-container">
+                                <!-- PDF Template Options will be injected here by UI.ts -->
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Generación de PDF</h3>
+                            <p class="text-secondary-p">Seleccione cómo se debe mostrar el PDF después de generarlo.</p>
+                             <div id="pdf-output-options-container" class="theme-options">
+                                <label class="theme-option">
+                                    <input type="radio" name="pdf-output" value="preview" checked>
+                                    <div class="theme-preview-box">
+                                        <i class="fas fa-window-maximize"></i>
+                                        <span>Vista Previa</span>
+                                    </div>
+                                </label>
+                                <label class="theme-option">
+                                    <input type="radio" name="pdf-output" value="download">
+                                    <div class="theme-preview-box">
+                                        <i class="fas fa-download"></i>
+                                        <span>Descarga Directa</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="card">
+                            <h3>Datos de la Aplicación</h3>
+                             <p class="text-secondary-p">Guarde una copia de seguridad o restaure sus datos. También puede eliminar todos los datos para empezar de cero.</p>
+                             <div class="database-actions">
+                                <button id="backup-btn" class="btn btn-primary"><i class="fas fa-download"></i> <span>Descargar Copia</span></button>
+                                <label for="restore-input" class="btn btn-secondary"><i class="fas fa-upload"></i> <span>Restaurar Archivo</span></label>
+                                <input type="file" id="restore-input" accept=".json" style="display: none;">
+                                <button id="logout-btn" class="btn btn-warning"><i class="fas fa-sign-out-alt"></i> <span>Cerrar Sesión</span></button>
+                                <button id="reset-app-btn" class="btn btn-danger"><i class="fas fa-power-off"></i> <span>Reiniciar Aplicación</span></button>
+                             </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <nav id="mobile-nav-bar" hidden>
+        <a href="#" class="nav-link active" data-page="page-quotes"><i class="fas fa-file-invoice-dollar"></i><span>Cotizar</span></a>
+        <a href="#" class="nav-link" data-page="page-saved-quotes"><i class="fas fa-archive"></i><span>Guardadas</span></a>
+        <a href="#" class="nav-link" data-page="page-orders"><i class="fas fa-clipboard-list"></i><span>Órdenes</span></a>
+        <a href="#" class="nav-link" data-page="page-agenda"><i class="fas fa-calendar-alt"></i><span>Agenda</span></a>
+        <a href="#" class="nav-link" data-page="page-clients"><i class="fas fa-users"></i><span>Clientes</span></a>
+        <a href="#" class="nav-link" data-page="page-items"><i class="fas fa-box-open"></i><span>Insumos</span></a>
+        <a href="#" class="nav-link" data-page="page-technicians"><i class="fas fa-hard-hat"></i><span>Técnicos</span></a>
+    </nav>
+    <a href="#" id="mobile-settings-btn" class="nav-link" data-page="page-settings" title="Ajustes">
+        <i class="fas fa-cog"></i>
+    </a>
+    <a id="admin-portal-btn" class="admin-fab" href="#" title="Portal Admin">
+        <i class="fas fa-user-shield"></i>
+        <span class="admin-fab-label">Admin</span>
+    </a>
+
+    <!-- Generic Modal for Client/Item/Technician Editing -->
+    <div id="entity-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-btn">&times;</span>
+            <h3 id="modal-title">Editar Entidad</h3>
+            <form id="modal-form">
+                <div id="modal-fields"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary cancel-modal-btn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Source Modal -->
+    <div id="order-source-modal" class="modal">
+        <div class="modal-content modal-content-confirm">
+            <span class="close-modal-btn">&times;</span>
+            <h3>Crear Nueva Orden</h3>
+            <p>¿Cómo desea crear la orden de servicio?</p>
+            <div class="modal-actions">
+                <input type="text" id="order-source-quote-search" class="form-control" placeholder="Buscar cotización por ID o cliente..." style="display: none; margin-bottom: 10px;">
+                <div id="order-source-quote-search-results" class="search-results-popover"></div>
+                <button id="create-order-from-quote-btn" class="btn btn-primary"><i class="fas fa-file-import"></i> Desde Cotización</button>
+                <button id="create-order-manually-btn" class="btn btn-secondary"><i class="fas fa-pencil-alt"></i> Manualmente</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- PDF Preview Modal -->
+    <div id="pdf-preview-modal" class="modal">
+        <div class="modal-content modal-content-pdf">
+            <div class="pdf-modal-header">
+                <h3>Vista Previa de Cotización</h3>
+                <div class="modal-actions">
+                    <button id="download-pdf-btn" class="btn btn-primary"><i class="fas fa-download"></i> <span>Descargar y guardar</span></button>
+                    <span class="close-modal-btn">&times;</span>
+                </div>
+            </div>
+            <iframe id="pdf-iframe"></iframe>
+        </div>
+    </div>
+
+    <!-- Description Edit Modal -->
+    <div id="description-edit-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-btn">&times;</span>
+            <h3 id="description-modal-title">Editar Descripción</h3>
+            <form id="description-edit-form">
+                <div class="form-group">
+                    <label for="description-edit-textarea">Descripción del Ítem</label>
+                    <textarea id="description-edit-textarea" class="form-control" rows="5" required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary cancel-modal-btn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Value Edit Modal -->
+    <div id="value-edit-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-btn">&times;</span>
+            <h3 id="value-modal-title">Editar Valor</h3>
+            <form id="value-edit-form">
+                <div class="form-group">
+                    <label id="value-modal-label" for="value-edit-input">Valor</label>
+                    <input id="value-edit-input" class="form-control" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary cancel-modal-btn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content modal-content-confirm">
+            <h3 id="confirmation-modal-title">Confirmar Acción</h3>
+            <p id="confirmation-modal-text">¿Está seguro de que desea continuar?</p>
+            <div class="modal-actions">
+                <button id="confirmation-modal-cancel-btn" class="btn btn-secondary">Cancelar</button>
+                <button id="confirmation-modal-confirm-btn" class="btn btn-danger">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-area"></div>
+
+    <div id="user-recovery-modal" class="modal">
+        <div class="modal-content">
+            <span id="user-recovery-close" class="close-modal-btn">&times;</span>
+            <h3>Recuperar clave</h3>
+            <p class="text-secondary-p">Ingresa tu usuario para enviar un codigo de recuperacion.</p>
+            <div id="user-recovery-step-send">
+                <div class="form-group">
+                    <label for="recovery-username">Usuario</label>
+                    <input id="recovery-username" type="text" placeholder="usuario">
+                </div>
+                <p class="text-secondary-p">Se enviara el codigo a: <span id="recovery-user-email">-</span></p>
+                <button id="recovery-user-send" class="btn btn-primary">Enviar codigo</button>
+            </div>
+            <div id="user-recovery-step-verify" style="display:none;">
+                <div class="form-group">
+                    <label for="recovery-user-code">Codigo</label>
+                    <input id="recovery-user-code" type="text" placeholder="000000" maxlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="recovery-user-password">Nueva clave</label>
+                    <input id="recovery-user-password" type="password" placeholder="Nueva clave">
+                </div>
+                <div class="form-group">
+                    <label for="recovery-user-confirm">Confirmar clave</label>
+                    <input id="recovery-user-confirm" type="password" placeholder="Confirmar clave">
+                </div>
+                <button id="recovery-user-verify" class="btn btn-primary">Actualizar clave</button>
+            </div>
+            <p id="recovery-user-error" class="login-error"></p>
+        </div>
+    </div>
+
+    <script type="module" src="index.tsx"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

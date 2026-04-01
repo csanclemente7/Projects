@@ -1,0 +1,423 @@
+
+[
+  {
+    "id": "e4f8d5b8-5c4d-4c3e-9b2a-7c9d1f3b0e1a",
+    "manualId": "201",
+    "name": "MANTENIMIENTO PREVENTIVO MINISPLIT",
+    "price": 90000
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-1234-567890abcdef",
+    "manualId": "202",
+    "name": "MANTENIMIENTO PREVENTIVO AIRE CENTRAL",
+    "price": 150000
+  },
+  {
+    "id": "b2c3d4e5-f6a7-8901-2345-67890abcdef1",
+    "manualId": "203",
+    "name": "MANTENIMIENTO PREVENTIVO PISO TECHO",
+    "price": 100000
+  },
+  {
+    "id": "c3d4e5f6-a7b8-9012-3456-7890abcdef12",
+    "manualId": "204",
+    "name": "MANTENIMIENTO PREVENTIVO TIPO CASSETTE",
+    "price": 100000
+  },
+  {
+    "id": "d4e5f6a7-b8c9-0123-4567-890abcdef123",
+    "manualId": "205",
+    "name": "CABLE 4 X 14",
+    "price": 13000
+  },
+  {
+    "id": "e5f6a7b8-c9d0-1234-5678-90abcdef1234",
+    "manualId": "206",
+    "name": "CABLE 3 X 12",
+    "price": 13000
+  },
+  {
+    "id": "f6a7b8c9-d0e1-2345-6789-0abcdef12345",
+    "manualId": "207",
+    "name": "TUBERIA COBRE 1/2",
+    "price": 24000
+  },
+  {
+    "id": "a7b8c9d0-e1f2-3456-7890-bcdef1234567",
+    "manualId": "208",
+    "name": "TUBERIA COBRE 3/8",
+    "price": 19500
+  },
+  {
+    "id": "b8c9d0e1-f2a3-4567-8901-cdef12345678",
+    "manualId": "209",
+    "name": "TUBERIA COBRE 1/4",
+    "price": 14000
+  },
+  {
+    "id": "c9d0e1f2-a3b4-5678-9012-def123456789",
+    "manualId": "210",
+    "name": "TUBERIA COBRE 5/8",
+    "price": 32000
+  },
+  {
+    "id": "d0e1f2a3-b4c5-6789-0123-ef1234567890",
+    "manualId": "211",
+    "name": "TUBERIA COBRE 7/8",
+    "price": 43000
+  },
+  {
+    "id": "e1f2a3b4-c5d6-7890-1234-f12345678901",
+    "manualId": "212",
+    "name": "RUBATEX",
+    "price": 12000
+  },
+  {
+    "id": "f2a3b4c5-d6e7-8901-2345-123456789012",
+    "manualId": "213",
+    "name": "MINIBREAKER CON CAJA 2 X 40",
+    "price": 80000
+  },
+  {
+    "id": "a3b4c5d6-e7f8-9012-3456-234567890123",
+    "manualId": "214",
+    "name": "BREAKER 2 X 20",
+    "price": 50000
+  },
+  {
+    "id": "b4c5d6e7-f8a9-0123-4567-345678901234",
+    "manualId": "215",
+    "name": "BOMBA CONDENSADO",
+    "price": 350000
+  },
+  {
+    "id": "c5d6e7f8-a9b0-1234-5678-456789012345",
+    "manualId": "216",
+    "name": "MANO DE OBRA INSTALACION MINISPLIT",
+    "price": 350000
+  },
+  {
+    "id": "d6e7f8a9-b0c1-2345-6789-567890123456",
+    "manualId": "217",
+    "name": "BASE PEQUEÑA PARA CONDENSADORA",
+    "price": 70000
+  },
+  {
+    "id": "e7f8a9b0-c1d2-3456-7890-678901234567",
+    "manualId": "218",
+    "name": "AIRE ACONDICIONADO MINISPLIT MIRAGE INVERTER 24000 BTU",
+    "price": 2800000
+  },
+  {
+    "id": "f8a9b0c1-d2e3-4567-8901-789012345678",
+    "manualId": "219",
+    "name": "AIRE ACONDICIONADO MINISPLIT MIDEA CONVENCIONAL R410 12000 BTU",
+    "price": 1200000
+  },
+  {
+    "id": "a9b0c1d2-e3f4-5678-9012-890123456789",
+    "manualId": "220",
+    "name": "AIRE ACONDICIONADO MINISPLIT MIDEA INVERTER 12000 BTU",
+    "price": 1470588
+  },
+  {
+    "id": "b0c1d2e3-f4a5-6789-0123-901234567890",
+    "manualId": "221",
+    "name": "AIRE ACONDICIONADO MINISPLIT LG INVERTER 12000 BTU",
+    "price": 2400000
+  },
+  {
+    "id": "c1d2e3f4-a5b6-7890-1234-012345678901",
+    "manualId": "222",
+    "name": "AIRE ACONDICIONADO MINISPLIT LG INVERTER 24000 BTU",
+    "price": 2900000
+  },
+  {
+    "id": "d2e3f4a5-b6c7-8901-2345-123456789012",
+    "manualId": "223",
+    "name": "AIRE ACONDICIONADO MINISPLIT MIDEA INVERTER 36000 BTU",
+    "price": 4601000
+  },
+  {
+    "id": "e3f4a5b6-c7d8-9012-3456-234567890123",
+    "manualId": "224",
+    "name": "MANGUERA DE DESAGUE",
+    "price": 4000
+  },
+  {
+    "id": "f4a5b6c7-d8e9-0123-4567-345678901234",
+    "manualId": "225",
+    "name": "MINIBREAKER CON CAJA 2 X 20",
+    "price": 70000
+  },
+  {
+    "id": "a5b6c7d8-e9f0-1234-5678-456789012345",
+    "manualId": "226",
+    "name": "CARGA REFRIGRANTE 410",
+    "price": 180000
+  },
+  {
+    "id": "b6c7d8e9-f0a1-2345-6789-567890123456",
+    "manualId": "227",
+    "name": "TUBO PVC PARA DESAGUE",
+    "price": 3000
+  },
+  {
+    "id": "c7d8e9f0-a1b2-3456-7890-678901234567",
+    "manualId": "228",
+    "name": "CANALETA 20 X 12 X 2 METROS LA UNIDAD",
+    "price": 13000
+  },
+  {
+    "id": "d8e9f0a1-b2c3-4567-8901-789012345678",
+    "manualId": "229",
+    "name": "AA MINISPLIT LG INVERTER 9000 BTU",
+    "price": 1765200
+  },
+  {
+    "id": "e9f0a1b2-c3d4-5678-9012-890123456789",
+    "manualId": "230",
+    "name": "BASE GRANDE PARA CONDENSADORA",
+    "price": 80000
+  },
+  {
+    "id": "f0a1b2c3-d4e5-6789-0123-901234567890",
+    "manualId": "231",
+    "name": "MANTENIMIENTO PREVENTIVO CUARTO FRIO X 9E 3C",
+    "price": 1000000
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-1234-a1b2c3d4e5f6",
+    "manualId": "232",
+    "name": "AIRE ACONDICIONADO MINISPLIT MIRAGE INVERTER 12000 BTU",
+    "price": 2100000
+  },
+  {
+    "id": "b2c3d4e5-f6a7-8901-2345-b2c3d4e5f6a7",
+    "manualId": "233",
+    "name": "CANALETA 100x45",
+    "price": 65000
+  },
+  {
+    "id": "c3d4e5f6-a7b8-9012-3456-c3d4e5f6a7b8",
+    "manualId": "234",
+    "name": "CINTA DE VINILO POR ROLLO",
+    "price": 12000
+  },
+  {
+    "id": "d4e5f6a7-b8c9-0123-4567-d4e5f6a7b8c9",
+    "manualId": "235",
+    "name": "RECARGA DE REFRIGERANTE X KG",
+    "price": 50000
+  },
+  {
+    "id": "e5f6a7b8-c9d0-1234-5678-e5f6a7b8c9d0",
+    "manualId": "236",
+    "name": "CODO COBRE DE 1/2",
+    "price": 1500
+  },
+  {
+    "id": "f6a7b8c9-d0e1-2345-6789-f6a7b8c9d0e1",
+    "manualId": "237",
+    "name": "AIRE ACONDICIONADO PISOTECHO INNOVAIR 36000 BTU R410 ECOLOGICO",
+    "price": 4100000
+  },
+  {
+    "id": "a7b8c9d0-e1f2-3456-7890-a7b8c9d0e1f2",
+    "manualId": "238",
+    "name": "MANO DE OBRA INSTALACION PISO TECHO",
+    "price": 700000
+  },
+  {
+    "id": "b8c9d0e1-f2a3-4567-8901-b8c9d0e1f2a3",
+    "manualId": "239",
+    "name": "BASE METALICA PARA CONDENSADORA 36000 BTU",
+    "price": 150000
+  },
+  {
+    "id": "c9d0e1f2-a3b4-5678-9012-c9d0e1f2a3b4",
+    "manualId": "240",
+    "name": "MANGUERA DE DESAGUE PARA BOMBA CONDENSADO",
+    "price": 3000
+  },
+  {
+    "id": "d0e1f2a3-b4c5-6789-0123-d0e1f2a3b4c5",
+    "manualId": "241",
+    "name": "DESMONTE DE AIRE ACONDICIONADO MINISPLIT",
+    "price": 180000
+  },
+  {
+    "id": "e1f2a3b4-c5d6-7890-1234-e1f2a3b4c5d6",
+    "manualId": "242",
+    "name": "BASE DE SUELO PARA CONDENSADora HASTA 5 TON",
+    "price": 130000
+  },
+  {
+    "id": "f2a3b4c5-d6e7-8901-2345-f2a3b4c5d6e7",
+    "manualId": "243",
+    "name": "AIRE ACONDICIONADO MINISPLIT INV MIDEA DE 21.000 BTU",
+    "price": 3200000
+  },
+  {
+    "id": "a3b4c5d6-e7f8-9012-3456-a3b4c5d6e7f8",
+    "manualId": "244",
+    "name": "AIRE ACONDICIONADO MINISPLIT CONVENCIONAL 24.000 BTU",
+    "price": 2100000
+  },
+  {
+    "id": "b4c5d6e7-f8a9-0123-4567-b4c5d6e7f8a9",
+    "manualId": "245",
+    "name": "CAJA DE BREAKER 2*20",
+    "price": 150000
+  },
+  {
+    "id": "c5d6e7f8-a9b0-1234-5678-c5d6e7f8a9b0",
+    "manualId": "246",
+    "name": "TUBO EMT 1/2",
+    "price": 25000
+  },
+  {
+    "id": "d6e7f8a9-b0c1-2345-6789-d6e7f8a9b0c1",
+    "manualId": "247",
+    "name": "CURVA EMT 1/2",
+    "price": 12000
+  },
+  {
+    "id": "e7f8a9b0-c1d2-3456-7890-e7f8a9b0c1d2",
+    "manualId": "248",
+    "name": "CABLE ENCAUCHETADO # 8",
+    "price": 25000
+  },
+  {
+    "id": "f8a9b0c1-d2e3-4567-8901-f8a9b0c1d2e3",
+    "manualId": "249",
+    "name": "VIGA FALSA - INCLUYE MATERIALES",
+    "price": 450000
+  },
+  {
+    "id": "a9b0c1d2-e3f4-5678-9012-a9b0c1d2e3f4",
+    "manualId": "250",
+    "name": "CABLE 7 HILOS *3",
+    "price": 8000
+  },
+  {
+    "id": "b0c1d2e3-f4a5-6789-0123-b0c1d2e3f4a5",
+    "manualId": "251",
+    "name": "AIRE ACONDICIONADO INVERTER 12000 BTU - MONTADO A TODO COSTO",
+    "price": 2100000
+  },
+  {
+    "id": "c1d2e3f4-a5b6-7890-1234-c1d2e3f4a5b6",
+    "manualId": "252",
+    "name": "CAPACITOR 10MF",
+    "price": 80000
+  },
+  {
+    "id": "d2e3f4a5-b6c7-8901-2345-d2e3f4a5b6c7",
+    "manualId": "253",
+    "name": "CANALETA 40X40",
+    "price": 35000
+  },
+  {
+    "id": "e3f4a5b6-c7d8-9012-3456-e3f4a5b6c7d8",
+    "manualId": "254",
+    "name": "MANO DE OBRA",
+    "price": 200000
+  },
+  {
+    "id": "f4a5b6c7-d8e9-0123-4567-f4a5b6c7d8e9",
+    "manualId": "255",
+    "name": "AIRE ACONDICIONADO MIRAGE 12K INVERTER A 110V EF22",
+    "price": 2100000
+  },
+  {
+    "id": "a5b6c7d8-e9f0-1234-5678-a5b6c7d8e9f0",
+    "manualId": "256",
+    "name": "AIRE ACONDICIONADO MIDEA SILK 12000 BTU INVERTER A 110V",
+    "price": 1700000
+  },
+  {
+    "id": "b6c7d8e9-f0a1-2345-6789-b6c7d8e9f0a1",
+    "manualId": "257",
+    "name": "AIRE ACONDICIONADO 36000 BTU INVERTER MIDEA",
+    "price": 4100000
+  },
+  {
+    "id": "c7d8e9f0-a1b2-3456-7890-c7d8e9f0a1b2",
+    "manualId": "258",
+    "name": "CARGA REFRIGRANTE R22",
+    "price": 200000
+  },
+  {
+    "id": "d8e9f0a1-b2c3-4567-8901-d8e9f0a1b2c3",
+    "manualId": "259",
+    "name": "SOLDADURA Y PRESURIZADO DE TUBERÍA",
+    "price": 80000
+  },
+  {
+    "id": "e9f0a1b2-c3d4-5678-9012-e9f0a1b2c3d4",
+    "manualId": "260",
+    "name": "AIRE ACONDICIONADO PISO TECHO 36000 BTU INVERTER MIDEA",
+    "price": 0
+  },
+  {
+    "id": "f0a1b2c3-d4e5-6789-0123-f0a1b2c3d4e5",
+    "manualId": "261",
+    "name": "AIRE ACONDICIONADO MIRAGE X32 12000 BTU INVERTER A 110V",
+    "price": 1700000
+  },
+  {
+    "id": "a1b2c3d4-e5f6-7890-1234-a1b2c3d4e5f7",
+    "manualId": "262",
+    "name": "TUBERIA DE COBRE RIGIDA DE 3/4\" X METRO",
+    "price": 54000
+  },
+  {
+    "id": "b2c3d4e5-f6a7-8901-2345-b2c3d4e5f6a8",
+    "manualId": "263",
+    "name": "FILTRO SECADOR ROSCA 3/8\"",
+    "price": 60000
+  },
+  {
+    "id": "c3d4e5f6-a7b8-9012-3456-c3d4e5f6a7b9",
+    "manualId": "264",
+    "name": "CONTROL UNIVERSAL",
+    "price": 50000
+  },
+  {
+    "id": "d4e5f6a7-b8c9-0123-4567-d4e5f6a7b8d0",
+    "manualId": "265",
+    "name": "TUERCA DE BRONCE 5/8",
+    "price": 5000
+  },
+  {
+    "id": "e5f6a7b8-c9d0-1234-5678-e5f6a7b8c9d1",
+    "manualId": "266",
+    "name": "TUERCA DE BRONCE 1/2",
+    "price": 4000
+  },
+  {
+    "id": "f6a7b8c9-d0e1-2345-6789-f6a7b8c9d0e2",
+    "manualId": "267",
+    "name": "TUERCA DE BRONCE 1/4",
+    "price": 2000
+  },
+  {
+    "id": "a7b8c9d0-e1f2-3456-7890-a7b8c9d0e1f3",
+    "manualId": "268",
+    "name": "TUERCA DE BRONCE 3/8",
+    "price": 3500
+  },
+  {
+    "id": "b8c9d0e1-f2a3-4567-8901-b8c9d0e1f2a4",
+    "manualId": "269",
+    "name": "CABLE 3 X 10",
+    "price": 15000
+  },
+  {
+    "id": "c9d0e1f2-a3b4-5678-9012-c9d0e1f2a3b5",
+    "manualId": "270",
+    "name": "AIRE ACONDICIONADO 18000 BTU INVERTER MIRAGE",
+    "price": 2200000
+  }
+]

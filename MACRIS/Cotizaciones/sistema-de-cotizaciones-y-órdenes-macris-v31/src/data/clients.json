@@ -1,0 +1,1621 @@
+
+[
+  {
+    "id": "c01d4b68-80e4-44e2-811c-1c8821033a39",
+    "manualId": "101",
+    "name": "ADALBERTO RESTREPO"
+  },
+  {
+    "id": "f5e9d9e6-b3c1-4b7c-8e1f-8a9d8c7b6a5d",
+    "manualId": "102",
+    "name": "ACOLSURE",
+    "address": "CALLE 7 #2E ESQUINA",
+    "city": "BUGA",
+    "phone": "3104547807"
+  },
+  {
+    "id": "a8b9c0d1-e2f3-4a5b-8c9d-0e1f2a3b4c5d",
+    "manualId": "103",
+    "name": "ENSUCASA SAS",
+    "address": "CARRERA 19 #6A 24",
+    "city": "BUGA",
+    "phone": "3013216931"
+  },
+  {
+    "id": "b9c0d1e2-f3a4-5b6c-9d0e-1f2a3b4c5d6e",
+    "manualId": "104",
+    "name": "CERVALLE GRANJA PRIEDAS GORDAS",
+    "address": "VEREDA GUASIMAL POSTE SOS 73",
+    "city": "ZARZAL",
+    "phone": "3174346641",
+    "email": "comprasgranjas@cervalle.com",
+    "contactPerson": "LADY GALLEGO"
+  },
+  {
+    "id": "c0d1e2f3-a4b5-6c7d-0e1f-2a3b4c5d6e7f",
+    "manualId": "105",
+    "name": "JAIME HERNANDEZ",
+    "address": "CALLE 1SUR #6A 36",
+    "city": "BUGA",
+    "phone": "3226129122",
+    "email": "OPTICA INGLESA"
+  },
+  {
+    "id": "d1e2f3a4-b5c6-7d8e-1f2a-3b4c5d6e7f8a",
+    "manualId": "106",
+    "name": "HOSPITAL ULPIANO TASCON QUINTERO",
+    "address": "CALLE 3 CARRERA 4 ESQUINA",
+    "city": "SAN PEDRO",
+    "phone": "2238724",
+    "contactPerson": "OSWALDO"
+  },
+  {
+    "id": "e2f3a4b5-c6d7-8e9f-2a3b-4c5d6e7f8a9b",
+    "manualId": "107",
+    "name": "ALDEMAR LLANOS",
+    "address": "CARRERA 56 #8F 11 CAMINO REAL",
+    "city": "CALI",
+    "phone": "3164785450"
+  },
+  {
+    "id": "f3a4b5c6-d7e8-9f0a-3b4c-5d6e7f8a9b0c",
+    "manualId": "108",
+    "name": "BERNARDO - AFILIAMOS",
+    "address": "CALLE 6 #11 29",
+    "city": "BUGA",
+    "phone": "3164228726",
+    "email": "afiliamoscomercialbuga@hotmail.com",
+    "contactPerson": "BERNARDO"
+  },
+  {
+    "id": "a4b5c6d7-e8f9-0a1b-4c5d-6e7f8a9b0c1d",
+    "manualId": "109",
+    "name": "ONVACATION",
+    "address": "CALLE 7 #10 51",
+    "city": "BUGA",
+    "phone": "3162766411",
+    "email": "administracioncali@onvacation.com",
+    "contactPerson": "NASLY GUZMAN"
+  },
+  {
+    "id": "b5c6d7e8-f9a0-1b2c-5d6e-7f8a9b0c1d2e",
+    "manualId": "110",
+    "name": "KLAM",
+    "address": "CARRERA 1 CON 8 ESQUINA",
+    "city": "BUGA",
+    "phone": "3174948465",
+    "contactPerson": "FELIPE"
+  },
+  {
+    "id": "c6d7e8f9-a0b1-2c3d-6e7f-8a9b0c1d2e3f",
+    "manualId": "111",
+    "name": "CASINO VERANO",
+    "city": "CALI",
+    "phone": "3148887578",
+    "contactPerson": "CARLOS"
+  },
+  {
+    "id": "d7e8f9a0-b1c2-3d4e-7f8a-9b0c1d2e3f4a",
+    "manualId": "112",
+    "name": "DISTRITIENDAS DE COLOMBIA",
+    "address": "CARRERA",
+    "city": "CALI",
+    "phone": "3108366865",
+    "email": "alexander.falla@distritiendasdecolombia.com",
+    "contactPerson": "ALEXANDER FALLA"
+  },
+  {
+    "id": "e8f9a0b1-c2d3-4e5f-8a9b-0c1d2e3f4a5b",
+    "manualId": "113",
+    "name": "LINA MARTINEZ",
+    "city": "UNION",
+    "phone": "3006535292",
+    "email": "linamariamartinezt@gmail.com"
+  },
+  {
+    "id": "f9a0b1c2-d3e4-5f6a-9b0c-1d2e3f4a5b6c",
+    "manualId": "114",
+    "name": "DIEGO BOLAÑOS",
+    "address": "SENA",
+    "city": "BUGA",
+    "phone": "3156591473",
+    "email": "dfbolanos@sena.edu.co"
+  },
+  {
+    "id": "a0b1c2d3-e4f5-6a7b-0c1d-2e3f4a5b6c7d",
+    "manualId": "115",
+    "name": "IGLESIA CRISTIANA CRUZADA",
+    "address": "Cl. 20 # 18-03",
+    "city": "BUGA",
+    "phone": "3207274793"
+  },
+  {
+    "id": "b1c2d3e4-f5a6-7b8c-1d2e-3f4a5b6c7d8e",
+    "manualId": "116",
+    "name": "EMERGENT COLD",
+    "address": "CRA. 21 #1 Sur-129",
+    "city": "BUGA",
+    "phone": "3125874562",
+    "email": "jeiddy.paiba@emergentcold.com"
+  },
+  {
+    "id": "c2d3e4f5-a6b7-8c9d-2e3f-4a5b6c7d8e9f",
+    "manualId": "117",
+    "name": "CORPORACION UNIVERSITARIA MINUTO DE DIOS",
+    "address": "Cra. 25 #No 2 - 01",
+    "city": "CALI",
+    "phone": "25545554",
+    "email": "enrique.jara@uniminuto.edu",
+    "contactPerson": "ENRIQUE BEJARANO"
+  },
+  {
+    "id": "d3e4f5a6-b7c8-9d0e-3f4a-5b6c7d8e9f0a",
+    "manualId": "118",
+    "name": "PROGRESAR",
+    "city": "BUGA",
+    "email": "auxcontableprogresar@hotmail.com"
+  },
+  {
+    "id": "e4f5a6b7-c8d9-0e1f-4a5b-6c7d8e9f0a1b",
+    "manualId": "119",
+    "name": "REDCONOCER",
+    "address": "Cra. 18 #4-37",
+    "city": "BUGA",
+    "phone": "3176794931"
+  },
+  {
+    "id": "f5a6b7c8-d9e0-1f2a-5b6c-7d8e9f0a1b2c",
+    "manualId": "120",
+    "name": "CLINICA OFTALMOLOGICA DE BUGA",
+    "address": "Cra. 16 #5 71",
+    "city": "BUGA",
+    "phone": "6022360660"
+  },
+  {
+    "id": "a6b7c8d9-e0f1-2a3b-6c7d-8e9f0a1b2c3d",
+    "manualId": "121",
+    "name": "HOLISTICA J EASTMANN",
+    "address": "Cl. 9 #62c-07",
+    "city": "CALI",
+    "phone": "3168787066",
+    "email": "holisticajeastman@hotmail.com",
+    "contactPerson": "PATRICIA"
+  },
+  {
+    "id": "b7c8d9e0-f1a2-3b4c-7d8e-9f0a1b2c3d4e",
+    "manualId": "122",
+    "name": "DR JAVIER VILLAVICENCIO",
+    "address": "CARRERA 13 #8-26",
+    "city": "CERRITO",
+    "phone": "3212417870"
+  },
+  {
+    "id": "c8d9e0f1-a2b3-4c5d-8e9f-0a1b2c3d4e5f",
+    "manualId": "123",
+    "name": "FRANJAVA SAS",
+    "address": "CARRERA 24A 1DN 04",
+    "city": "BUGA",
+    "phone": "3167524713",
+    "email": "franjava16@gmail.com",
+    "contactPerson": "NATALIA"
+  },
+  {
+    "id": "d9e0f1a2-b3c4-5d6e-9f0a-1b2c3d4e5f6a",
+    "manualId": "124",
+    "name": "COLOMBIANA DE MOLDEADOS SAS NIT 890.320.250-7",
+    "address": "Km 1.5 vía BUGA",
+    "city": "BUGA",
+    "phone": "22280400",
+    "email": "rodrigo.rudas@molpack.net",
+    "contactPerson": "RODRIGO RUDA"
+  },
+  {
+    "id": "e0f1a2b3-c4d5-6e7f-0a1b-2c3d4e5f6a7b",
+    "manualId": "125",
+    "name": "JORGE ENRIQUE ESCOBAR",
+    "address": "CASA 91 MIRAVALLE",
+    "city": "BUGA"
+  },
+  {
+    "id": "f1a2b3c4-d5e6-7f8a-1b2c-3d4e5f6a7b8c",
+    "manualId": "126",
+    "name": "ASOEMTRANS",
+    "city": "BUGA",
+    "email": "mmontano@asoemtrans.co",
+    "contactPerson": "MARISOL"
+  },
+  {
+    "id": "a2b3c4d5-e6f7-8a9b-2c3d-4e5f6a7b8c9d",
+    "manualId": "127",
+    "name": "DANIELA CARDENAS",
+    "address": "SAN JOSE DEL PARQUE",
+    "city": "BUGA",
+    "phone": "3105951520"
+  },
+  {
+    "id": "b3c4d5e6-f7a8-9b0c-3d4e-5f6a7b8c9d0e",
+    "manualId": "128",
+    "name": "INGENIO CARMELITA",
+    "address": "Troncal de Occidente, Media Canoa",
+    "city": "YOTOCO",
+    "phone": "2260420",
+    "email": "eorobio@ingeniocarmelita.com",
+    "contactPerson": "VICTOR JIMENEZ"
+  },
+  {
+    "id": "c4d5e6f7-a8b9-0c1d-4e5f-6a7b8c9d0e1f",
+    "manualId": "129",
+    "name": "ADRIANA",
+    "address": "CL 5 8-88",
+    "city": "BUGA",
+    "phone": "3175842129",
+    "email": "huachangbuga@gmail.com",
+    "contactPerson": "adriana"
+  },
+  {
+    "id": "d5e6f7a8-b9c0-1d2e-5f6a-7b8c9d0e1f2a",
+    "manualId": "130",
+    "name": "SOLLA",
+    "address": "Carrera 42 # 33-80 Autopista",
+    "city": "ITAGUI",
+    "phone": "3148880423",
+    "email": "celoaiza@solla.com"
+  },
+  {
+    "id": "e6f7a8b9-c0d1-2e3f-6a7b-8c9d0e1f2a3b",
+    "manualId": "131",
+    "name": "GRUPO LA BAKANA SAS",
+    "address": "CL 7 CON 18",
+    "city": "BUGA",
+    "email": "auxiliarlabakana@hotmail.com"
+  },
+  {
+    "id": "f7a8b9c0-d1e2-3f4a-7b8c-9d0e1f2a3b4c",
+    "manualId": "132",
+    "name": "COOTRARIS",
+    "address": "EDS ZONA T",
+    "city": "BUGA",
+    "phone": "3155654906"
+  },
+  {
+    "id": "a8b9c0d1-e2f3-4a5b-8c9d-0e1f2a3b4c5e",
+    "manualId": "133",
+    "name": "SANDRA",
+    "address": "CRA 8 5-26",
+    "city": "BUGA"
+  },
+  {
+    "id": "b9c0d1e2-f3a4-5b6c-9d0e-1f2a3b4c5d6f",
+    "manualId": "134",
+    "name": "GILDARDO",
+    "city": "BUGA"
+  },
+  {
+    "id": "c0d1e2f3-a4b5-6c7d-0e1f-2a3b4c5d6e7g",
+    "manualId": "135",
+    "name": "IPS MEDIC",
+    "address": "CRA 13 # 2 28",
+    "city": "BUGA",
+    "phone": "3207019172"
+  },
+  {
+    "id": "d1e2f3a4-b5c6-7d8e-1f2a-3b4c5d6e7f8b",
+    "manualId": "136",
+    "name": "CONGREGACION MITA",
+    "address": "CRA 8 # 25 16",
+    "city": "BUGA"
+  },
+  {
+    "id": "e2f3a4b5-c6d7-8e9f-2a3b-4c5d6e7f8a9c",
+    "manualId": "137",
+    "name": "REDESIMAT CLINICA DE FRACTURAS SAS",
+    "address": "CL 4 # 17-66",
+    "city": "BUGA",
+    "phone": "2360333"
+  },
+  {
+    "id": "f3a4b5c6-d7e8-9f0a-3b4c-5d6e7f8a9b0d",
+    "manualId": "138",
+    "name": "UNIVERSIDAD DEL VALLE",
+    "address": "CRA 13 # 5-21",
+    "city": "BUGA",
+    "phone": "2370000"
+  },
+  {
+    "id": "a4b5c6d7-e8f9-0a1b-4c5d-6e7f8a9b0c1e",
+    "manualId": "139",
+    "name": "ANDRES",
+    "address": "CALLE 19 D SUR # 10A - 80",
+    "city": "BUGA",
+    "phone": "3175046367"
+  },
+  {
+    "id": "b5c6d7e8-f9a0-1b2c-5d6e-7f8a9b0c1d2f",
+    "manualId": "140",
+    "name": "INSTITUCION EDUCATIVA PEDRO VICENTE ABADIA",
+    "address": "CL 1 10 39",
+    "city": "GUACARI",
+    "phone": "2538449"
+  },
+  {
+    "id": "c6d7e8f9-a0b1-2c3d-6e7f-8a9b0c1d2e3g",
+    "manualId": "141",
+    "name": "UTEDE - UNIDAD TECNICA PARA EL DESARROLLO PROFESIONAL",
+    "address": "CRA 12 # 26C 74",
+    "city": "BUGA",
+    "phone": "6023996023"
+  },
+  {
+    "id": "d7e8f9a0-b1c2-3d4e-7f8a-9b0c1d2e3f4b",
+    "manualId": "142",
+    "name": "JUAN DAVID GUZMAN",
+    "address": "Calle 34 # 24 62",
+    "city": "TULUA"
+  },
+  {
+    "id": "e8f9a0b1-c2d3-4e5f-8a9b-0c1d2e3f4a5c",
+    "manualId": "143",
+    "name": "DUGOTEX S.A",
+    "address": "Cl 64 C 88 A 19",
+    "city": "BOGOTA"
+  },
+  {
+    "id": "f9a0b1c2-d3e4-5f6a-9b0c-1d2e3f4a5b6d",
+    "manualId": "144",
+    "name": "COMPAÑÍA INTEGRAL DE TRANSPORTES SAS",
+    "address": "AUTOCENTRO CAPRI VÍA BUENAVENTURA"
+  },
+  {
+    "id": "a0b1c2d3-e4f5-6a7b-0c1d-2e3f4a5b6c7e",
+    "manualId": "145",
+    "name": "5 ELEMENTS ENTERPRISES",
+    "address": "CL 5 1 -67",
+    "city": "BUGA",
+    "phone": "3016131247",
+    "email": "lideroperaciones@5elemntsenterprises.com"
+  },
+  {
+    "id": "b1c2d3e4-f5a6-7b8c-1d2e-3f4a5b6c7d8f",
+    "manualId": "146",
+    "name": "L Y L INGENIERIA",
+    "address": "CRA 8 # 20-37",
+    "city": "BUGA"
+  },
+  {
+    "id": "c2d3e4f5-a6b7-8c9d-2e3f-4a5b6c7d8e9g",
+    "manualId": "147",
+    "name": "INSTITUTO JULIAN MENDOZA GUERRERO",
+    "address": "CRA 14 4 60",
+    "city": "BUGA"
+  },
+  {
+    "id": "d3e4f5a6-b7c8-9d0e-3f4a-5b6c7d8e9f0b",
+    "manualId": "148",
+    "name": "LICEO DE LOS ANDES",
+    "address": "Salida sur SN S/N, Cra. 12 #1460",
+    "city": "BUGA"
+  },
+  {
+    "id": "e4f5a6b7-c8d9-0e1f-4a5b-6c7d8e9f0a1c",
+    "manualId": "149",
+    "name": "CHARLY",
+    "address": "CRA 25 18-80 APTO 302 BLOQUE 3",
+    "city": "BUGA"
+  },
+  {
+    "id": "f5a6b7c8-d9e0-1f2a-5b6c-7d8e9f0a1b2d",
+    "manualId": "150",
+    "name": "MARIA MUNAREZ",
+    "address": "CL 31 37-56",
+    "city": "PALMIRA",
+    "phone": "3214396405"
+  },
+  {
+    "id": "a6b7c8d9-e0f1-2a3b-6c7d-8e9f0a1b2c3e",
+    "manualId": "151",
+    "name": "DIANA SAAVEDRA",
+    "city": "GUACARI"
+  },
+  {
+    "id": "b7c8d9e0-f1a2-3b4c-7d8e-9f0a1b2c3d4f",
+    "manualId": "152",
+    "name": "PROFINAS S.A",
+    "address": "Cra. 40 #13-153",
+    "city": "YUMBO"
+  },
+  {
+    "id": "c8d9e0f1-a2b3-4c5d-8e9f-0a1b2c3d4e5g",
+    "manualId": "153",
+    "name": "MARLON",
+    "address": "CL 6A SUR 13-99",
+    "city": "BUGA",
+    "phone": "3183006669"
+  },
+  {
+    "id": "d9e0f1a2-b3c4-5d6e-9f0a-1b2c3d4e5f6b",
+    "manualId": "154",
+    "name": "DISTRAVES SAS",
+    "address": "CARRERA 17 #60-170",
+    "city": "GIRON"
+  },
+  {
+    "id": "e0f1a2b3-c4d5-6e7f-0a1b-2c3d4e5f6a7c",
+    "manualId": "155",
+    "name": "AVIDESA DE OCCIDENTE S.A",
+    "address": "Km 3 Carretera Central Vía Buga-Tuluá",
+    "city": "BUGA",
+    "phone": "3158937478",
+    "email": "German David Arenas T."
+  },
+  {
+    "id": "f1a2b3c4-d5e6-7f8a-1b2c-3d4e5f6a7b8d",
+    "manualId": "156",
+    "name": "GO AMBIENT GROUP S.A.S.",
+    "address": "CARRERA 43A #16S-47 OFICINA 1202",
+    "city": "MEDELLIN",
+    "phone": "3006988644",
+    "email": "gogroupsas@gmail.com"
+  },
+  {
+    "id": "a2b3c4d5-e6f7-8a9b-2c3d-4e5f6a7b8c9e",
+    "manualId": "157",
+    "name": "ALMA CREATIVA"
+  },
+  {
+    "id": "b3c4d5e6-f7a8-9b0c-3d4e-5f6a7b8c9d0f",
+    "manualId": "158",
+    "name": "ARLEY",
+    "address": "CRA 11 14 SUR 33",
+    "city": "BUGA"
+  },
+  {
+    "id": "c4d5e6f7-a8b9-0c1d-4e5f-6a7b8c9d0e1g",
+    "manualId": "159",
+    "name": "INGENIERO LUIS HERNEY",
+    "address": "OBRA JAMUNDI"
+  },
+  {
+    "id": "d5e6f7a8-b9c0-1d2e-5f6a-7b8c9d0e1f2b",
+    "manualId": "160",
+    "name": "CONFECCIONES CIELITO"
+  },
+  {
+    "id": "e6f7a8b9-c0d1-2e3f-6a7b-8c9d0e1f2a3c",
+    "manualId": "161",
+    "name": "CERDOS DEL VALLE",
+    "address": "BODEGA LAS PALMAS",
+    "city": "BUGA",
+    "phone": "6024881818"
+  },
+  {
+    "id": "f7a8b9c0-d1e2-3f4a-7b8c-9d0e1f2a3b4d",
+    "manualId": "162",
+    "name": "PAOLA",
+    "address": "CRA 9 CON 5 SUR LOCAL 2",
+    "city": "BUGA"
+  },
+  {
+    "id": "a8b9c0d1-e2f3-4a5b-8c9d-0e1f2a3b4c5f",
+    "manualId": "163",
+    "name": "NATALIA",
+    "address": "CALLE 11 14-28",
+    "city": "BUGA",
+    "phone": "3164986438"
+  },
+  {
+    "id": "b9c0d1e2-f3a4-5b6c-9d0e-1f2a3b4c5d6g",
+    "manualId": "164",
+    "name": "DOCTOR ALBEAR",
+    "address": "CRA 10 ENTRE 7 Y 8",
+    "city": "BUGA"
+  },
+  {
+    "id": "c0d1e2f3-a4b5-6c7d-0e1f-2a3b4c5d6e7h",
+    "manualId": "165",
+    "name": "DOCTORA ADRIANA KABALAN",
+    "address": "CENTRO EMPRESARIAL CHIPICHAPE OFC 705",
+    "city": "CALI"
+  },
+  {
+    "id": "d1e2f3a4-b5c6-7d8e-1f2a-3b4c5d6e7f8c",
+    "manualId": "166",
+    "name": "CEDIMA SAS",
+    "address": "CRA 46 25B 88",
+    "city": "CALI",
+    "phone": "5249898"
+  },
+  {
+    "id": "e2f3a4b5-c6d7-8e9f-2a3b-4c5d6e7f8a9d",
+    "manualId": "167",
+    "name": "CONSORCIO INTER CANDELARIA 2023"
+  },
+  {
+    "id": "f3a4b5c6-d7e8-9f0a-3b4c-5d6e7f8a9b0e",
+    "manualId": "168",
+    "name": "CLARA MARIA GONZALEZ",
+    "address": "CRA 7A 5 SUR 73",
+    "city": "BUGA",
+    "phone": "3102133393"
+  },
+  {
+    "id": "a4b5c6d7-e8f9-0a1b-4c5d-6e7f8a9b0c1f",
+    "manualId": "169",
+    "name": "DOCTORA ANDREA CAMPO",
+    "city": "BUGA"
+  },
+  {
+    "id": "b5c6d7e8-f9a0-1b2c-5d6e-7f8a9b0c1d2g",
+    "manualId": "170",
+    "name": "DACARE",
+    "address": "CL 9 SUR CON 13",
+    "city": "BUGA"
+  },
+  {
+    "id": "c6d7e8f9-a0b1-2c3d-6e7f-8a9b0c1d2e3h",
+    "manualId": "171",
+    "name": "Emergent cold.",
+    "city": "BUGA",
+    "phone": "3164655761"
+  },
+  {
+    "id": "d7e8f9a0-b1c2-3d4e-7f8a-9b0c1d2e3f4c",
+    "manualId": "172",
+    "name": "LUIS FERNANDO QUINTERO ORTIZ",
+    "address": "Calle 4 #10-23 piso 2 / Barrio Santa Barbara",
+    "city": "GUACARI",
+    "phone": "3163898331"
+  },
+  {
+    "id": "e8f9a0b1-c2d3-4e5f-8a9b-0c1d2e3f4a5d",
+    "manualId": "173",
+    "name": "DANIELA",
+    "address": "CRA 6 15-43",
+    "city": "CALI",
+    "phone": "3169000841"
+  },
+  {
+    "id": "f9a0b1c2-d3e4-5f6a-9b0c-1d2e3f4a5b6e",
+    "manualId": "174",
+    "name": "RAMIRO FERRO",
+    "address": "CL 7 8-40",
+    "city": "BUGA"
+  },
+  {
+    "id": "a0b1c2d3-e4f5-6a7b-0c1d-2e3f4a5b6c7f",
+    "manualId": "175",
+    "name": "MATEO SANCHEZ",
+    "address": "CL 4 SUR 9A -27",
+    "city": "BUGA",
+    "phone": "3167581745"
+  },
+  {
+    "id": "b1c2d3e4-f5a6-7b8c-1d2e-3f4a5b6c7d8g",
+    "manualId": "176",
+    "name": "JOSE MAURICIO TASCO MUÑOZ",
+    "address": "CRA 42 CL 12 TORRE 6",
+    "city": "PASTO",
+    "phone": "3228581185"
+  },
+  {
+    "id": "c2d3e4f5-a6b7-8c9d-2e3f-4a5b6c7d8e9h",
+    "manualId": "177",
+    "name": "CLAUDIA",
+    "address": "CL 7 # 5-44 CASA 2",
+    "city": "BUGA",
+    "phone": "3148691310"
+  },
+  {
+    "id": "d3e4f5a6-b7c8-9d0e-3f4a-5b6c7d8e9f0c",
+    "manualId": "178",
+    "name": "JUAN CARLOS OSPINA",
+    "address": "CARRERA 4Ae #6-09",
+    "city": "BUGA",
+    "phone": "3152370940"
+  },
+  {
+    "id": "e4f5a6b7-c8d9-0e1f-4a5b-6c7d8e9f0a1d",
+    "manualId": "179",
+    "name": "CAMILO NEIRA",
+    "address": "CRA 15 #12 - 76",
+    "city": "BUGA",
+    "phone": "3178597114"
+  },
+  {
+    "id": "f5a6b7c8-d9e0-1f2a-5b6c-7d8e9f0a1b2e",
+    "manualId": "180",
+    "name": "SEÑORA AMPARO",
+    "city": "GUABITAS"
+  },
+  {
+    "id": "a6b7c8d9-e0f1-2a3b-6c7d-8e9f0a1b2c3f",
+    "manualId": "181",
+    "name": "SNEAKERS CALIWOOD",
+    "address": "CRA 6 15-43",
+    "city": "CALI",
+    "phone": "3173131651"
+  },
+  {
+    "id": "b7c8d9e0-f1a2-3b4c-7d8e-9f0a1b2c3d4g",
+    "manualId": "182",
+    "name": "LINA MARIEN",
+    "address": "CL 10 A SUR 12 BIS 131 - LA JULIA",
+    "city": "BUGA"
+  },
+  {
+    "id": "c8d9e0f1-a2b3-4c5d-8e9f-0a1b2c3d4e5h",
+    "manualId": "183",
+    "name": "SERVICIOS ELECTRICOS JJ SAS",
+    "address": "CR 30 14 05",
+    "city": "BUGA",
+    "phone": "3155611896"
+  },
+  {
+    "id": "d9e0f1a2-b3c4-5d6e-9f0a-1b2c3d4e5f6c",
+    "manualId": "184",
+    "name": "CONSORCIO AGUAS DE BUGA",
+    "address": "CR 36 5 B 4 17",
+    "city": "BUGA",
+    "phone": "6025583150"
+  },
+  {
+    "id": "e0f1a2b3-c4d5-6e7f-0a1b-2c3d4e5f6a7d",
+    "manualId": "185",
+    "name": "LUIS FERNANDO",
+    "address": "CL 3 11 74",
+    "city": "BUGA"
+  },
+  {
+    "id": "f1a2b3c4-d5e6-7f8a-1b2c-3d4e5f6a7b8e",
+    "manualId": "186",
+    "name": "WACO INGENIERIA",
+    "address": "PLANTA VEOLIA",
+    "city": "BUGA",
+    "phone": "3015099788"
+  },
+  {
+    "id": "a2b3c4d5-e6f7-8a9b-2c3d-4e5f6a7b8c9f",
+    "manualId": "187",
+    "name": "ALMACEN ALBERTO VO5",
+    "address": "CL 6 CON 13 ESQ",
+    "city": "BUGA"
+  },
+  {
+    "id": "b3c4d5e6-f7a8-9b0c-3d4e-5f6a7b8c9d0g",
+    "manualId": "188",
+    "name": "LUZ MIRIAN",
+    "address": "CL 19 9-45",
+    "city": "BUGA"
+  },
+  {
+    "id": "c4d5e6f7-a8b9-0c1d-4e5f-6a7b8c9d0e1h",
+    "manualId": "189",
+    "name": "UNION VIAL CAMINO EL PACIFICO",
+    "address": "CRA 12 # 35 SUR 10",
+    "city": "BUGA",
+    "phone": "3228136612"
+  },
+  {
+    "id": "d5e6f7a8-b9c0-1d2e-5f6a-7b8c9d0e1f2c",
+    "manualId": "190",
+    "name": "PAVIMENTOS DE COLOMBIA",
+    "address": "KM 31 VIA PALMIRA",
+    "city": "BUGA"
+  },
+  {
+    "id": "e6f7a8b9-c0d1-2e3f-6a7b-8c9d0e1f2a3d",
+    "manualId": "191",
+    "name": "TANTRA Beauty Bar",
+    "address": "CL 5 13-23",
+    "city": "BUGA"
+  },
+  {
+    "id": "f7a8b9c0-d1e2-3f4a-7b8c-9d0e1f2a3b4e",
+    "manualId": "192",
+    "name": "JEISON",
+    "address": "CL 30A - 1283",
+    "city": "BUGA"
+  },
+  {
+    "id": "a8b9c0d1-e2f3-4a5b-8c9d-0e1f2a3b4c5g",
+    "manualId": "193",
+    "name": "MEJIA JIMENEZ Y COMPAÑÍA SOCIEDAD SAS",
+    "address": "CRA 42 A 5 C 106",
+    "city": "CALI"
+  },
+  {
+    "id": "b9c0d1e2-f3a4-5b6c-9d0e-1f2a3b4c5d6h",
+    "manualId": "194",
+    "name": "AGROGREIN",
+    "address": "CRA 18 14 21",
+    "city": "BUGA"
+  },
+  {
+    "id": "c0d1e2f3-a4b5-6c7d-0e1f-2a3b4c5d6e7i",
+    "manualId": "195",
+    "name": "PRICE SHOES"
+  },
+  {
+    "id": "d1e2f3a4-b5c6-7d8e-1f2a-3b4c5d6e7f8d",
+    "manualId": "196",
+    "name": "MARIA DEL PILAR Y HENRY",
+    "city": "BUGA"
+  },
+  {
+    "id": "e2f3a4b5-c6d7-8e9f-2a3b-4c5d6e7f8a9e",
+    "manualId": "197",
+    "name": "MARIA TERESA",
+    "address": "CL 22 15B 18",
+    "city": "BUGA"
+  },
+  {
+    "id": "f3a4b5c6-d7e8-9f0a-3b4c-5d6e7f8a9b0f",
+    "manualId": "198",
+    "name": "HENRY",
+    "address": "CL 7 SUR 5-30 LA JULIA",
+    "city": "BUGA"
+  },
+  {
+    "id": "a4b5c6d7-e8f9-0a1b-4c5d-6e7f8a9b0c1g",
+    "manualId": "199",
+    "name": "MARIA TERESA TORRES",
+    "address": "CRA 10 14 SUR -16",
+    "city": "BUGA"
+  },
+  {
+    "id": "b5c6d7e8-f9a0-1b2c-5d6e-7f8a9b0c1d2h",
+    "manualId": "200",
+    "name": "HAROLD MORENO",
+    "address": "CL 3SUR # 9A-61",
+    "city": "BUGA",
+    "phone": "3155746359"
+  },
+  {
+    "id": "c6d7e8f9-a0b1-2c3d-6e7f-8a9b0c1d2e3i",
+    "manualId": "201",
+    "name": "ISABEL",
+    "address": "CL 17S #11A - 54",
+    "city": "BUGA"
+  },
+  {
+    "id": "d7e8f9a0-b1c2-3d4e-7f8a-9b0c1d2e3f4d",
+    "manualId": "202",
+    "name": "ANDRES FELIPE POLANCO",
+    "address": "CALLE 5 #11-50",
+    "city": "GUACARI",
+    "phone": "3153833346"
+  },
+  {
+    "id": "e8f9a0b1-c2d3-4e5f-8a9b-0c1d2e3f4a5e",
+    "manualId": "203",
+    "name": "LEIDY VIVAS",
+    "city": "CALI"
+  },
+  {
+    "id": "f9a0b1c2-d3e4-5f6a-9b0c-1d2e3f4a5b6f",
+    "manualId": "204",
+    "name": "I - LOGISTICA S.A.S.",
+    "address": "CL 16 18 B 180 BG 5 Y 6",
+    "city": "BUGA",
+    "phone": "2361547"
+  },
+  {
+    "id": "a0b1c2d3-e4f5-6a7b-0c1d-2e3f4a5b6c7g",
+    "manualId": "205",
+    "name": "COOPERATIVA DE AHORRO Y CREDITO CAFETERO COFINCAFE",
+    "address": "CR 16 20 06"
+  },
+  {
+    "id": "b1c2d3e4-f5a6-7b8c-1d2e-3f4a5b6c7d8h",
+    "manualId": "206",
+    "name": "CENTRO ORAL",
+    "address": "CALLE 3 #12 - 25",
+    "city": "BUGA"
+  },
+  {
+    "id": "c2d3e4f5-a6b7-8c9d-2e3f-4a5b6c7d8e9i",
+    "manualId": "207",
+    "name": "LEONARDO GAMBA",
+    "city": "BUGA"
+  },
+  {
+    "id": "d3e4f5a6-b7c8-9d0e-3f4a-5b6c7d8e9f0d",
+    "manualId": "208",
+    "name": "CARLOS ARAGON",
+    "city": "VIA RESTREPO",
+    "phone": "3155586868"
+  },
+  {
+    "id": "e4f5a6b7-c8d9-0e1f-4a5b-6c7d8e9f0a1e",
+    "manualId": "209",
+    "name": "VENTUS COLOMBIA SAS",
+    "city": "CHAMBIMBAL"
+  },
+  {
+    "id": "f5a6b7c8-d9e0-1f2a-5b6c-7d8e9f0a1b2f",
+    "manualId": "210",
+    "name": "GESTION CONSTRUCTIVA JM S.A.S",
+    "address": "AV 4 N 23 D 50 OF 501 5 P ED GVS",
+    "city": "BUGA",
+    "phone": "31751667"
+  },
+  {
+    "id": "a6b7c8d9-e0f1-2a3b-6c7d-8e9f0a1b2c3g",
+    "manualId": "211",
+    "name": "COOPERATIVA DE TRANSPORTES LA ANDINA",
+    "address": "CL 14 14 15",
+    "city": "TULUA",
+    "phone": "3103938329"
+  },
+  {
+    "id": "b7c8d9e0-f1a2-3b4c-7d8e-9f0a1b2c3d4h",
+    "manualId": "212",
+    "name": "UNIVERSIDAD ANTONIO NARIÑO",
+    "address": "Callejón Lechugas, salida Norte, Buga",
+    "city": "BUGA"
+  },
+  {
+    "id": "c8d9e0f1-a2b3-4c5d-8e9f-0a1b2c3d4e5i",
+    "manualId": "213",
+    "name": "AJECOLOMBIA S.A.S",
+    "address": "KM 2 VIA FUNZA SIBERIA PARQ IND SAN ANTONIO BOD 1 2 3 BL A"
+  },
+  {
+    "id": "d9e0f1a2-b3c4-5d6e-9f0a-1b2c3d4e5f6d",
+    "manualId": "214",
+    "name": "HOSPITAL SAN ROQUE ESE GUACARI",
+    "address": "CL 5 9-52",
+    "phone": "3217979595"
+  },
+  {
+    "id": "e0f1a2b3-c4d5-6e7f-0a1b-2c3d4e5f6a7e",
+    "manualId": "215",
+    "name": "INMOBILIARIA AMANDA ESCOBAR",
+    "address": "CALLE 5 # 15-60",
+    "city": "BUGA",
+    "phone": "6022362288"
+  },
+  {
+    "id": "f1a2b3c4-d5e6-7f8a-1b2c-3d4e5f6a7b8f",
+    "manualId": "216",
+    "name": "EMPRESA DE LOGISTICA Y SERVICIOS MARIN",
+    "address": "Vía Buga Tuluá Km 5 Cgto",
+    "city": "SAN PEDRO"
+  },
+  {
+    "id": "a2b3c4d5-e6f7-8a9b-2c3d-4e5f6a7b8c9g",
+    "manualId": "217",
+    "name": "EDINSON ZAMBRANO",
+    "address": "CL 6 11-55",
+    "city": "BUGA"
+  },
+  {
+    "id": "b3c4d5e6-f7a8-9b0c-3d4e-5f6a7b8c9d0h",
+    "manualId": "218",
+    "name": "JUAN SEBASTIAN POTES",
+    "city": "VIA PRADERA"
+  },
+  {
+    "id": "c4d5e6f7-a8b9-0c1d-4e5f-6a7b8c9d0e1i",
+    "manualId": "219",
+    "name": "CONCEJO MUNICIPAL DE GUADALAJARA DE BUGA",
+    "address": "CRA 13 6-50",
+    "city": "BUGA"
+  },
+  {
+    "id": "d5e6f7a8-b9c0-1d2e-5f6a-7b8c9d0e1f2d",
+    "manualId": "220",
+    "name": "BE MOVIL",
+    "address": "CRA 13 # 4 -74",
+    "city": "BUGA",
+    "phone": "3026387424"
+  },
+  {
+    "id": "e6f7a8b9-c0d1-2e3f-6a7b-8c9d0e1f2a3e",
+    "manualId": "221",
+    "name": "PLAN B",
+    "address": "CL 6 9-55",
+    "city": "BUGA",
+    "phone": "3184469711"
+  },
+  {
+    "id": "f7a8b9c0-d1e2-3f4a-7b8c-9d0e1f2a3b4f",
+    "manualId": "222",
+    "name": "INDUSTRIA DE HARINAS TULUA S.A.S.",
+    "address": "CR 28 # 32 - 54",
+    "city": "TULUA",
+    "phone": "3105351929",
+    "email": "compras.iht@florsuprema.com"
+  },
+  {
+    "id": "a8b9c0d1-e2f3-4a5b-8c9d-0e1f2a3b4c5h",
+    "manualId": "223",
+    "name": "LA SELECTA GALERIA",
+    "address": "CL 6 10 -18",
+    "city": "BUGA"
+  },
+  {
+    "id": "b9c0d1e2-f3a4-5b6c-9d0e-1f2a3b4c5d6i",
+    "manualId": "224",
+    "name": "ALUMBRADO PUBLICO",
+    "address": "CRA 9 # 20-69",
+    "city": "BUGA",
+    "phone": "3178954511"
+  },
+  {
+    "id": "c0d1e2f3-a4b5-6c7d-0e1f-2a3b4c5d6e7j",
+    "manualId": "225",
+    "name": "DUMIAN MEDICAL SAS   NIT 805027743",
+    "address": "AV ROOSELVET 38 43P 2",
+    "city": "CALI",
+    "phone": "6025185000",
+    "email": "contadordumian@dumianmedical.net"
+  },
+  {
+    "id": "d1e2f3a4-b5c6-7d8e-1f2a-3b4c5d6e7f8e",
+    "manualId": "226",
+    "name": "ORIANA PARRA",
+    "address": "CONJUNTO BOSQUE VERDE",
+    "city": "BUGA",
+    "phone": "3193326235"
+  },
+  {
+    "id": "e2f3a4b5-c6d7-8e9f-2a3b-4c5d6e7f8a9f",
+    "manualId": "227",
+    "name": "CAFIOCCIDENTE",
+    "address": "CALLE 9 10-13",
+    "city": "RESTREPO"
+  },
+  {
+    "id": "f3a4b5c6-d7e8-9f0a-3b4c-5d6e7f8a9b0g",
+    "manualId": "228",
+    "name": "FUNDACION INSTITUTO MAYOR CAMPESINO",
+    "address": "Cra. 12 #35 sur 10",
+    "city": "QUEBRADASECA",
+    "phone": "3162809902"
+  },
+  {
+    "id": "a4b5c6d7-e8f9-0a1b-4c5d-6e7f8a9b0c1h",
+    "manualId": "229",
+    "name": "APPLE BUGA",
+    "address": "CRA 8 # 5-41",
+    "city": "BUGA",
+    "phone": "3184338901"
+  },
+  {
+    "id": "b5c6d7e8-f9a0-1b2c-5d6e-7f8a9b0c1d2i",
+    "manualId": "230",
+    "name": "JEFFRY",
+    "address": "Carrera 7 14 33 monaco plaza local 26",
+    "city": "CALI"
+  },
+  {
+    "id": "c6d7e8f9-a0b1-2c3d-6e7f-8a9b0c1d2e3j",
+    "manualId": "231",
+    "name": "ANDREA CRUZ",
+    "address": "VILLA MERCEDES",
+    "city": "PALMIRA"
+  },
+  {
+    "id": "d7e8f9a0-b1c2-3d4e-7f8a-9b0c1d2e3f4e",
+    "manualId": "232",
+    "name": "NESTOR GIRALDO",
+    "city": "BUGA"
+  },
+  {
+    "id": "e8f9a0b1-c2d3-4e5f-8a9b-0c1d2e3f4a5f",
+    "manualId": "233",
+    "name": "JULIAN SALAZAR",
+    "address": "CARRERA 31B # 13-14",
+    "city": "BUGA"
+  },
+  {
+    "id": "f9a0b1c2-d3e4-5f6a-9b0c-1d2e3f4a5b6g",
+    "manualId": "234",
+    "name": "INDUSTRIAS AXIAL SAS",
+    "address": "CL 15  38 71 P1 ACOPI",
+    "city": "CALI"
+  },
+  {
+    "id": "a0b1c2d3-e4f5-6a7b-0c1d-2e3f4a5b6c7h",
+    "manualId": "235",
+    "name": "FREDDY",
+    "address": "CL 10 11-61",
+    "city": "BUGA"
+  },
+  {
+    "id": "b1c2d3e4-f5a6-7b8c-1d2e-3f4a5b6c7d8i",
+    "manualId": "236",
+    "name": "JORGE RIVERA",
+    "address": "CALLE 9 SUR # 7-60",
+    "city": "BUGA"
+  },
+  {
+    "id": "c2d3e4f5-a6b7-8c9d-2e3f-4a5b6c7d8e9j",
+    "manualId": "237",
+    "name": "MONICA MESA        -   MECANICA DENTAL",
+    "address": "CRA 13 # 12-17",
+    "city": "BUGA",
+    "phone": "3168199155"
+  },
+  {
+    "id": "d3e4f5a6-b7c8-9d0e-3f4a-5b6c7d8e9f0e",
+    "manualId": "238",
+    "name": "JORGE RIVERA",
+    "address": "CL 9 SUR # 7-60",
+    "city": "BUGA"
+  },
+  {
+    "id": "e4f5a6b7-c8d9-0e1f-4a5b-6c7d8e9f0a1f",
+    "manualId": "239",
+    "name": "ASISTENCIA EN SERVICIOS DE SALUD INTEGRALES S.A.S",
+    "address": "AV 5 NORTE 21N 22 OF 407",
+    "city": "CALI"
+  },
+  {
+    "id": "f5a6b7c8-d9e0-1f2a-5b6c-7d8e9f0a1b2g",
+    "manualId": "240",
+    "name": "FERNANDO CALDERON",
+    "address": "CRA 12 # 29-10",
+    "city": "BUGA",
+    "phone": "3178673755"
+  },
+  {
+    "id": "a6b7c8d9-e0f1-2a3b-6c7d-8e9f0a1b2c3h",
+    "manualId": "241",
+    "name": "HUGO HERMES PEREZ",
+    "address": "CALLE 1 FN # 20A-34",
+    "city": "BUGA"
+  },
+  {
+    "id": "b7c8d9e0-f1a2-3b4c-7d8e-9f0a1b2c3d4i",
+    "manualId": "242",
+    "name": "CENTRO DE RECONOCIMIENTO DE CONDUCTORES DE BUGA LTDA",
+    "city": "BUGA"
+  },
+  {
+    "id": "c8d9e0f1-a2b3-4c5d-8e9f-0a1b2c3d4e5j",
+    "manualId": "243",
+    "name": "HOSPITAL SAN JOSE",
+    "city": "BUGA",
+    "phone": "3144590404"
+  },
+  {
+    "id": "d9e0f1a2-b3c4-5d6e-9f0a-1b2c3d4e5f6e",
+    "manualId": "244",
+    "name": "URIEL RAMIREZ",
+    "city": "BUGA"
+  },
+  {
+    "id": "e0f1a2b3-c4d5-6e7f-0a1b-2c3d4e5f6a7f",
+    "manualId": "245",
+    "name": "CAROLINA",
+    "city": "BUGA"
+  },
+  {
+    "id": "f1a2b3c4-d5e6-7f8a-1b2c-3d4e5f6a7b8g",
+    "manualId": "246",
+    "name": "TALLER INDUSTRIAL COMESA",
+    "address": "carrera 24 # 1 sur 97",
+    "city": "BUGA",
+    "phone": "3176612993"
+  },
+  {
+    "id": "a2b3c4d5-e6f7-8a9b-2c3d-4e5f6a7b8c9h",
+    "manualId": "247",
+    "name": "EDUARDO ALBERTO TORRES",
+    "city": "BUGA"
+  },
+  {
+    "id": "b3c4d5e6-f7a8-9b0c-3d4e-5f6a7b8c9d0i",
+    "manualId": "248",
+    "name": "DULCES DEL VALLE",
+    "address": "CRA 11 3-52",
+    "city": "BUGA"
+  },
+  {
+    "id": "c4d5e6f7-a8b9-0c1d-4e5f-6a7b8c9d0e1j",
+    "manualId": "249",
+    "name": "CENTRO LOGÍSTICO INDUSTRIAL DEL PACÍFICO CLIP",
+    "address": "Km. 112 Vía Buenaventura – Buga",
+    "city": "MEDIACANOA",
+    "phone": "(57 602) 660 0101"
+  },
+  {
+    "id": "d5e6f7a8-b9c0-1d2e-5f6a-7b8c9d0e1f2e",
+    "manualId": "250",
+    "name": "LENIN",
+    "address": "CRA 18A # 22 - 21",
+    "city": "BUGA",
+    "phone": "3232836330"
+  },
+  {
+    "id": "e6f7a8b9-c0d1-2e3f-6a7b-8c9d0e1f2a3f",
+    "manualId": "251",
+    "name": "CONFECCIONES LUBER",
+    "address": "C.C LA HERRADURA",
+    "city": "TULUA"
+  },
+  {
+    "id": "f7a8b9c0-d1e2-3f4a-7b8c-9d0e1f2a3b4g",
+    "manualId": "252",
+    "name": "JARINSON NINCO SILVA",
+    "address": "CRA 27 12 22 SUR"
+  },
+  {
+    "id": "a8b9c0d1-e2f3-4a5b-8c9d-0e1f2a3b4c5i",
+    "manualId": "253",
+    "name": "WILLIAN",
+    "address": "CALLE 11 # 13-80",
+    "city": "BUGA"
+  },
+  {
+    "id": "b9c0d1e2-f3a4-5b6c-9d0e-1f2a3b4c5d6j",
+    "manualId": "254",
+    "name": "CLUB DE LEONES",
+    "address": "CL 7 CON 10",
+    "city": "BUGA"
+  },
+  {
+    "id": "c0d1e2f3-a4b5-6c7d-0e1f-2a3b4c5d6e7k",
+    "manualId": "255",
+    "name": "FINANCIERA JURISCOOP",
+    "address": "CRA 14 5 39",
+    "city": "BUGA"
+  },
+  {
+    "id": "d1e2f3a4-b5c6-7d8e-1f2a-3b4c5d6e7f8f",
+    "manualId": "256",
+    "name": "MELBA",
+    "address": "CL 12 SUR 9-63",
+    "city": "BUGA"
+  },
+  {
+    "id": "e2f3a4b5-c6d7-8e9f-2a3b-4c5d6e7f8a9g",
+    "manualId": "257",
+    "name": "MEJIA JIMENEZ Y COMPAÑÍA SOCIEDAD SAS",
+    "address": "CRA 42A 5C-106",
+    "city": "CALI"
+  },
+  {
+    "id": "f3a4b5c6-d7e8-9f0a-3b4c-5d6e7f8a9b0h",
+    "manualId": "258",
+    "name": "JULIAN",
+    "address": "CALLE 6 13-56",
+    "city": "BUGA"
+  },
+  {
+    "id": "a4b5c6d7-e8f9-0a1b-4c5d-6e7f8a9b0c1i",
+    "manualId": "259",
+    "name": "VIVIANA SANCHEZ",
+    "address": "CRA 14 6 42",
+    "city": "BUGA",
+    "phone": "3172803951"
+  },
+  {
+    "id": "b5c6d7e8-f9a0-1b2c-5d6e-7f8a9b0c1d2j",
+    "manualId": "260",
+    "name": "MARIO GERMAN CALDAS"
+  },
+  {
+    "id": "c6d7e8f9-a0b1-2c3d-6e7f-8a9b0c1d2e3k",
+    "manualId": "261",
+    "name": "MYG SOLUCIONES EFECTIVA SAS",
+    "address": "CL 147 7F 12AP 701",
+    "city": "BOGOTA"
+  },
+  {
+    "id": "d7e8f9a0-b1c2-3d4e-7f8a-9b0c1d2e3f4f",
+    "manualId": "262",
+    "name": "CATALINA RODRIGUEZ"
+  },
+  {
+    "id": "e8f9a0b1-c2d3-4e5f-8a9b-0c1d2e3f4a5g",
+    "manualId": "263",
+    "name": "CENTRO COMERCIAL BUGA PLAZA",
+    "address": "CL 4 23 86",
+    "city": "BUGA"
+  },
+  {
+    "id": "f9a0b1c2-d3e4-5f6a-9b0c-1d2e3f4a5b6h",
+    "manualId": "264",
+    "name": "HCV INGENIERIA",
+    "city": "BUGA",
+    "email": "ingenieria@hcvingenieria.com"
+  },
+  {
+    "id": "a0b1c2d3-e4f5-6a7b-0c1d-2e3f4a5b6c7i",
+    "manualId": "265",
+    "name": "COOBUTRANS",
+    "address": "CL 16 # 18B -44",
+    "city": "BUGA"
+  },
+  {
+    "id": "b1c2d3e4-f5a6-7b8c-1d2e-3f4a5b6c7d8j",
+    "manualId": "266",
+    "name": "JEISON"
+  },
+  {
+    "id": "c2d3e4f5-a6b7-8c9d-2e3f-4a5b6c7d8e9k",
+    "manualId": "267",
+    "name": "GRUPO IE INGENIERIA Y PUBLICIDAD",
+    "city": "YUMBO"
+  },
+  {
+    "id": "d3e4f5a6-b7c8-9d0e-3f4a-5b6c7d8e9f0f",
+    "manualId": "268",
+    "name": "INDUSTRIA COLOMBIANA DE CONFECCIONES S.A. EN REORGANIZACI",
+    "address": "AV 30 DE AGOSTO 100 120",
+    "city": "PEREIRA"
+  },
+  {
+    "id": "e4f5a6b7-c8d9-0e1f-4a5b-6c7d8e9f0a1g",
+    "manualId": "269",
+    "name": "MANUCHAR LOGISTIC SAS",
+    "address": "AV CL 26 85D 55 LC 124A",
+    "city": "BUGOTA",
+    "phone": "3214499647"
+  },
+  {
+    "id": "f5a6b7c8-d9e0-1f2a-5b6c-7d8e9f0a1b2h",
+    "manualId": "270",
+    "name": "MEDICAL BOUTIQUE",
+    "address": "CL 6 CON 11",
+    "city": "BUGA"
+  },
+  {
+    "id": "a6b7c8d9-e0f1-2a3b-6c7d-8e9f0a1b2c3i",
+    "manualId": "271",
+    "name": "NATHALY OCAMPO",
+    "city": "CALI"
+  },
+  {
+    "id": "b7c8d9e0-f1a2-3b4c-7d8e-9f0a1b2c3d4j",
+    "manualId": "272",
+    "name": "LABORATORIO C.I.C",
+    "city": "BUGA"
+  },
+  {
+    "id": "c8d9e0f1-a2b3-4c5d-8e9f-0a1b2c3d4e5k",
+    "manualId": "274",
+    "name": "WILLIAM",
+    "address": "CRA 9 21",
+    "city": "BUGA",
+    "phone": "3214640459"
+  },
+  {
+    "id": "d9e0f1a2-b3c4-5d6e-9f0a-1b2c3d4e5f6f",
+    "manualId": "275",
+    "name": "JORGE LEYES",
+    "address": "CRA 16 #5",
+    "city": "BUGA"
+  },
+  {
+    "id": "e0f1a2b3-c4d5-6e7f-0a1b-2c3d4e5f6a7g",
+    "manualId": "276",
+    "name": "CORAZON Y AORTA",
+    "city": "BUGA"
+  },
+  {
+    "id": "f1a2b3c4-d5e6-7f8a-1b2c-3d4e5f6a7b8h",
+    "manualId": "277",
+    "name": "DIEGO GRILLO",
+    "address": "FINCA BETANIA PRESIDENTE",
+    "city": "BUGA",
+    "phone": "3174019485"
+  },
+  {
+    "id": "a2b3c4d5-e6f7-8a9b-2c3d-4e5f6a7b8c9i",
+    "manualId": "278",
+    "name": "LUIS FERNANDO FAJARDO",
+    "city": "CALI"
+  },
+  {
+    "id": "b3c4d5e6-f7a8-9b0c-3d4e-5f6a7b8c9d0j",
+    "manualId": "279",
+    "name": "HOTEL SEÑORA INES",
+    "address": "CRA 12 # 5 40",
+    "city": "BUGA"
+  },
+  {
+    "id": "c4d5e6f7-a8b9-0c1d-4e5f-6a7b8c9d0e1k",
+    "manualId": "280",
+    "name": "RUTH"
+  },
+  {
+    "id": "d5e6f7a8-b9c0-1d2e-5f6a-7b8c9d0e1f2f",
+    "manualId": "281",
+    "name": "JHONATHAN ORTIZ LIBREROS",
+    "city": "PALMIRA",
+    "phone": "3122044482"
+  },
+  {
+    "id": "e6f7a8b9-c0d1-2e3f-6a7b-8c9d0e1f2a3g",
+    "manualId": "282",
+    "name": "GARCES Y GOMEZ"
+  },
+  {
+    "id": "f7a8b9c0-d1e2-3f4a-7b8c-9d0e1f2a3b4h",
+    "manualId": "283",
+    "name": "CONSORCIO CONSTRUCTOR NUEVA MALLA VIAL VALLE",
+    "address": "CALLE 84 A 10 50 PISO 9",
+    "city": "BOGOTA"
+  },
+  {
+    "id": "a8b9c0d1-e2f3-4a5b-8c9d-0e1f2a3b4c5j",
+    "manualId": "284",
+    "name": "RIFAS LA GINEBRA",
+    "city": "GINEBRA",
+    "phone": "3152193591"
+  },
+  {
+    "id": "b9c0d1e2-f3a4-5b6c-9d0e-1f2a3b4c5d6k",
+    "manualId": "285",
+    "name": "ANDRES GARCIA",
+    "address": "CARRERA 14 CON CALLE 21",
+    "city": "BUGA",
+    "phone": "3152858310"
+  },
+  {
+    "id": "c0d1e2f3-a4b5-6c7d-0e1f-2a3b4c5d6e7l",
+    "manualId": "286",
+    "name": "NADIA",
+    "address": "CALLE 7 A SUR # 13 - 87",
+    "city": "BUGA",
+    "phone": "3016653764"
+  },
+  {
+    "id": "d1e2f3a4-b5c6-7d8e-1f2a-3b4c5d6e7f8g",
+    "manualId": "287",
+    "name": "NATILONDON SAS",
+    "address": "CL 47 NORTE # 5 A - 73 BR LA FLORA",
+    "city": "CALI"
+  },
+  {
+    "id": "e2f3a4b5-c6d7-8e9f-2a3b-4c5d6e7f8a9h",
+    "manualId": "288",
+    "name": "CARLOS CERVERA",
+    "address": "CALLE 14 SUR #5-07",
+    "city": "BUGA"
+  },
+  {
+    "id": "f3a4b5c6-d7e8-9f0a-3b4c-5d6e7f8a9b0i",
+    "manualId": "289",
+    "name": "NATALIA CRIOLLO",
+    "address": "CALLE 7 SUR # 14 - 58",
+    "city": "BUGA",
+    "phone": "3205447040"
+  },
+  {
+    "id": "a4b5c6d7-e8f9-0a1b-4c5d-6e7f8a9b0c1j",
+    "manualId": "290",
+    "name": "PERSONERIA",
+    "city": "BUGA"
+  },
+  {
+    "id": "b5c6d7e8-f9a0-1b2c-5d6e-7f8a9b0c1d2k",
+    "manualId": "291",
+    "name": "LA COOPERATIVA DE AHORRO Y CREDITO SUCREDITO",
+    "address": "CALLE 21 # 22-46",
+    "city": "MANIZALES"
+  },
+  {
+    "id": "c6d7e8f9-a0b1-2c3d-6e7f-8a9b0c1d2e3l",
+    "manualId": "292",
+    "name": "ALEXANDRA",
+    "address": "CRA 16 # 14-48",
+    "city": "BUGA"
+  },
+  {
+    "id": "d7e8f9a0-b1c2-3d4e-7f8a-9b0c1d2e3f4g",
+    "manualId": "293",
+    "name": "GUSTAVO CAÑAS",
+    "city": "BUGA"
+  },
+  {
+    "id": "e8f9a0b1-c2d3-4e5f-8a9b-0c1d2e3f4a5h",
+    "manualId": "294",
+    "name": "AGROCEREALES DEL VALLE",
+    "address": "Km 1 vía Buga, Tulua - Cali",
+    "city": "BUGA"
+  },
+  {
+    "id": "f9a0b1c2-d3e4-5f6a-9b0c-1d2e3f4a5b6i",
+    "manualId": "295",
+    "name": "SOCIEDAD FERRETERA DE COMERCIO",
+    "address": "CL 7 10 50",
+    "city": "BUGA"
+  },
+  {
+    "id": "a0b1c2d3-e4f5-6a7b-0c1d-2e3f4a5b6c7j",
+    "manualId": "296",
+    "name": "INSTITUCION EDUCATIVA GRAN COLOMBIA NIT 815.004.366-5",
+    "address": "Sede Central - Carrera 14 No. 16 - 67",
+    "city": "BUGA"
+  },
+  {
+    "id": "b1c2d3e4-f5a6-7b8c-1d2e-3f4a5b6c7d8k",
+    "manualId": "297",
+    "name": "ESCUELA ENFERMERIA DEL VALLE SAS",
+    "address": "Cl. 5b # 25 - 109",
+    "city": "CALI",
+    "phone": "3009120181"
+  },
+  {
+    "id": "c2d3e4f5-a6b7-8c9d-2e3f-4a5b6c7d8e9l",
+    "manualId": "298",
+    "name": "JHON FREDDY GAVIRIA",
+    "city": "BUGA"
+  },
+  {
+    "id": "d3e4f5a6-b7c8-9d0e-3f4a-5b6c7d8e9f0g",
+    "manualId": "299",
+    "name": "PADRE HECTOR MARIO",
+    "address": "IGLESIA SAN PEDRO",
+    "city": "SAN PEDRO"
+  },
+  {
+    "id": "e4f5a6b7-c8d9-0e1f-4a5b-6c7d8e9f0a1h",
+    "manualId": "300",
+    "name": "FUNDACION PARA LA EDUCACION FUNED",
+    "address": "CRA 12 SALIDA SUR",
+    "city": "BUGA"
+  },
+  {
+    "id": "f5a6b7c8-d9e0-1f2a-5b6c-7d8e9f0a1b2i",
+    "manualId": "301",
+    "name": "KELVIN",
+    "address": "CL 6 A SUR # 13B-93",
+    "city": "BUGA"
+  },
+  {
+    "id": "a6b7c8d9-e0f1-2a3b-6c7d-8e9f0a1b2c3j",
+    "manualId": "302",
+    "name": "SURTIDROGAS",
+    "city": "CALI",
+    "phone": "3183438100",
+    "email": "s11versalles@medisfarma.com.co"
+  },
+  {
+    "id": "b7c8d9e0-f1a2-3b4c-7d8e-9f0a1b2c3d4k",
+    "manualId": "303",
+    "name": "HOTEL EL MILAGROSO",
+    "city": "BUGA"
+  },
+  {
+    "id": "c8d9e0f1-a2b3-4c5d-8e9f-0a1b2c3d4e5l",
+    "manualId": "304",
+    "name": "EXPRESO PALMIRA",
+    "city": "TULUA"
+  },
+  {
+    "id": "d9e0f1a2-b3c4-5d6e-9f0a-1b2c3d4e5f6g",
+    "manualId": "305",
+    "name": "MAURICIO AGUDELO",
+    "address": "CL 8 # 21B -",
+    "city": "BUGA"
+  },
+  {
+    "id": "e0f1a2b3-c4d5-6e7f-0a1b-2c3d4e5f6a7h",
+    "manualId": "306",
+    "name": "ARQ. BEATRIZ SANCLEMENTE",
+    "city": "BUGA"
+  },
+  {
+    "id": "f1a2b3c4-d5e6-7f8a-1b2c-3d4e5f6a7b8i",
+    "manualId": "307",
+    "name": "COMERCIALIZADORA LEMIN SAS",
+    "address": "CRA 14 # 18-13 LOCAL 7",
+    "city": "ARMENIA"
+  },
+  {
+    "id": "a2b3c4d5-e6f7-8a9b-2c3d-4e5f6a7b8c9j",
+    "manualId": "308",
+    "name": "SEBASTIAN",
+    "address": "CALLE 17 # 12 - 40",
+    "city": "BUGA",
+    "phone": "3156599943"
+  },
+  {
+    "id": "b3c4d5e6-f7a8-9b0c-3d4e-5f6a7b8c9d0k",
+    "manualId": "309",
+    "name": "OSMAR GOMEZ",
+    "city": "GINEBRA",
+    "phone": "3117139108"
+  },
+  {
+    "id": "c4d5e6f7-a8b9-0c1d-4e5f-6a7b8c9d0e1l",
+    "manualId": "310",
+    "name": "GUSTAVO PELAEZ",
+    "address": "CALI",
+    "city": "CALI"
+  },
+  {
+    "id": "d5e6f7a8-b9c0-1d2e-5f6a-7b8c9d0e1f2g",
+    "manualId": "311",
+    "name": "JUAN DAVID GUZMAN",
+    "address": "TULUA",
+    "city": "TULUA"
+  },
+  {
+    "id": "e6f7a8b9-c0d1-2e3f-6a7b-8c9d0e1f2a3h",
+    "manualId": "312",
+    "name": "FINANFUTURO",
+    "address": "BUGA",
+    "city": "BUGA"
+  },
+  {
+    "id": "f7a8b9c0-d1e2-3f4a-7b8c-9d0e1f2a3b4i",
+    "manualId": "313",
+    "name": "EINER GONZALEZ",
+    "address": "CL 15 SUR # 7-31",
+    "city": "BUGA"
+  },
+  {
+    "id": "a8b9c0d1-e2f3-4a5b-8c9d-0e1f2a3b4c5k",
+    "manualId": "314",
+    "name": "EMO SAS",
+    "address": "CRA 18 11-106",
+    "city": "BUGA"
+  },
+  {
+    "id": "b9c0d1e2-f3a4-5b6c-9d0e-1f2a3b4c5d6l",
+    "manualId": "315",
+    "name": "SERVICIO DIAGNOSTICO MEDICO",
+    "address": "CL 12 A 20 G 37",
+    "city": "CALI"
+  },
+  {
+    "id": "c0d1e2f3-a4b5-6c7d-0e1f-2a3b4c5d6e7m",
+    "manualId": "316",
+    "name": "JHON JAIRO NARANJO",
+    "address": "CRA 7 # 16-14",
+    "city": "BUGA"
+  },
+  {
+    "id": "d1e2f3a4-b5c6-7d8e-1f2a-3b4c5d6e7f8h",
+    "manualId": "317",
+    "name": "EVA MESA",
+    "city": "BUGA"
+  },
+  {
+    "id": "e2f3a4b5-c6d7-8e9f-2a3b-4c5d6e7f8a9i",
+    "manualId": "318",
+    "name": "PAOLA BETANCOURTH",
+    "city": "BUGA"
+  },
+  {
+    "id": "f3a4b5c6-d7e8-9f0a-3b4c-5d6e7f8a9b0j",
+    "manualId": "319",
+    "name": "GRANELES Y CARGA S.A",
+    "address": "CL 5A 39 194 P 10"
+  },
+  {
+    "id": "a4b5c6d7-e8f9-0a1b-4c5d-6e7f8a9b0c1k",
+    "manualId": "320",
+    "name": "IGLESIA PENTECOSTAL UNIDA DE COLOMBIA",
+    "city": "BUGA"
+  },
+  {
+    "id": "b5c6d7e8-f9a0-1b2c-5d6e-7f8a9b0c1d2l",
+    "manualId": "321",
+    "name": "ALEJANDRA RAMIREZ",
+    "address": "CALLE 21 A2 # 4A-45 TERRAZAS DE LLANO CASA 27",
+    "city": "CARTAGO",
+    "phone": "3163163070"
+  },
+  {
+    "id": "c6d7e8f9-a0b1-2c3d-6e7f-8a9b0c1d2e3m",
+    "manualId": "322",
+    "name": "OSCAR GAMBOA",
+    "address": "CALLE 17A SUR # 11A-81",
+    "city": "BUGA",
+    "phone": "3015536425"
+  },
+  {
+    "id": "d7e8f9a0-b1c2-3d4e-7f8a-9b0c1d2e3f4h",
+    "manualId": "323",
+    "name": "POLLOS PIKU",
+    "address": "Km 1 vía canagua, Guacarí, Valle del Cauca",
+    "city": "GUACARI"
+  }
+]
