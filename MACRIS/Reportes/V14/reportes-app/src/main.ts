@@ -1,7 +1,7 @@
-import { 
-    fetchCities, fetchCompanies, fetchDependencies, fetchUsers, 
-    supabaseOrders, fetchServiceTypes, fetchAppSettings, fetchEquipmentTypes, 
-    fetchRefrigerantTypes, fetchAllEquipment, fetchAllEnrichedOrders, fetchAllReports 
+import {
+    fetchCities, fetchCompanies, fetchDependencies, fetchUsers,
+    supabaseOrders, fetchServiceTypes, fetchAppSettings, fetchEquipmentTypes,
+    fetchRefrigerantTypes, fetchAllEquipment, fetchAllEnrichedOrders, fetchAllReports
 } from './api';
 import { setupEventListeners } from './events';
 import { initSignaturePad, hideLoader, showLoader, showAppNotification, populateLoginWorkerSelect } from './ui';
@@ -11,6 +11,8 @@ import { openReportFormModal } from './ui';
 import * as State from './state';
 import { Database, AppSettings, Report } from './types';
 import { checkForPersistedSession } from './auth';
+import { UserPrefsManager } from './user-preferences';
+import { FormAutosave } from './form-autosave';
 import { initDB, getAllFromStore, cacheAllData, resetLocalDatabase } from './lib/local-db';
 import { synchronizeQueue, startPeriodicSync } from './lib/sync';
 import { BackgroundRunner } from '@capacitor/background-runner';
@@ -178,7 +180,7 @@ async function synchronizeAndLoadData() {
         const settings: AppSettings = {};
         localAppSettings.forEach(s => settings[s.key] = s.value);
         State.setAppSettings(settings);
-        
+
         // Combine reports from main cache and queue
         const combinedLocalReports = [...localQueuedReports, ...localReports];
         const localReportMap = new Map(combinedLocalReports.map(r => [r.id, r]));
@@ -187,81 +189,81 @@ async function synchronizeAndLoadData() {
         State.setAllServiceOrders(localOrders);
     }
 
-const isOnline = navigator.onLine;
+    const isOnline = navigator.onLine;
 
-if (isOnline) {
-    try {
-        showLoader(hasLocalData ? 'Actualizando datos...' : 'Descargando datos iniciales...');
+    if (isOnline) {
+        try {
+            showLoader(hasLocalData ? 'Actualizando datos...' : 'Descargando datos iniciales...');
 
-        // 🔹 Intentamos descargar todos los datos desde el servidor
-        const [
-            usersData, appSettingsData, citiesData, companiesData, dependenciesData,
-            equipmentData, serviceTypesData, equipmentTypesData, refrigerantTypesData, allReportsData
-        ] = await Promise.all([
-            fetchUsers(), fetchAppSettings(), fetchCities(), fetchCompanies(), fetchDependencies(),
-            fetchAllEquipment(), fetchServiceTypes(), fetchEquipmentTypes(), fetchRefrigerantTypes(), fetchAllReports({ daysBack: 4 })
-        ]);
+            // 🔹 Intentamos descargar todos los datos desde el servidor
+            const [
+                usersData, appSettingsData, citiesData, companiesData, dependenciesData,
+                equipmentData, serviceTypesData, equipmentTypesData, refrigerantTypesData, allReportsData
+            ] = await Promise.all([
+                fetchUsers(), fetchAppSettings(), fetchCities(), fetchCompanies(), fetchDependencies(),
+                fetchAllEquipment(), fetchServiceTypes(), fetchEquipmentTypes(), fetchRefrigerantTypes(), fetchAllReports({ daysBack: 4 })
+            ]);
 
-        // Si llega aquí, todo bien:
-        State.setUsers(usersData);
-        State.setCities(citiesData);
-        State.setCompanies(companiesData);
-        State.setDependencies(dependenciesData);
-        State.setEquipmentList(equipmentData);
-        State.setServiceTypes(serviceTypesData);
-        State.setEquipmentTypes(equipmentTypesData);
-        State.setRefrigerantTypes(refrigerantTypesData);
-        const settings: AppSettings = {};
-        appSettingsData && Object.entries(appSettingsData).forEach(([key, value]) => settings[key] = value);
-        State.setAppSettings(settings);
+            // Si llega aquí, todo bien:
+            State.setUsers(usersData);
+            State.setCities(citiesData);
+            State.setCompanies(companiesData);
+            State.setDependencies(dependenciesData);
+            State.setEquipmentList(equipmentData);
+            State.setServiceTypes(serviceTypesData);
+            State.setEquipmentTypes(equipmentTypesData);
+            State.setRefrigerantTypes(refrigerantTypesData);
+            const settings: AppSettings = {};
+            appSettingsData && Object.entries(appSettingsData).forEach(([key, value]) => settings[key] = value);
+            State.setAppSettings(settings);
 
-        const allEnrichedOrdersData = await fetchAllEnrichedOrders(usersData, { daysBack: 90, limit: 300 });
-        const allQueuedReportsData = await getAllFromStore('reports_queue');
+            const allEnrichedOrdersData = await fetchAllEnrichedOrders(usersData, { daysBack: 90, limit: 300 });
+            const allQueuedReportsData = await getAllFromStore('reports_queue');
 
-        const combinedReports = [...allQueuedReportsData, ...allReportsData];
-        const reportMap = new Map(combinedReports.map(r => [r.id, r]));
-        State.setReports(Array.from(reportMap.values()));
-        State.setAllServiceOrders(allEnrichedOrdersData);
+            const combinedReports = [...allQueuedReportsData, ...allReportsData];
+            const reportMap = new Map(combinedReports.map(r => [r.id, r]));
+            State.setReports(Array.from(reportMap.values()));
+            State.setAllServiceOrders(allEnrichedOrdersData);
 
-        // 🔹 Cachea todo localmente
-        await Promise.all([
-            cacheAllData('users', usersData),
-            cacheAllData('cities', citiesData),
-            cacheAllData('companies', companiesData),
-            cacheAllData('dependencies', dependenciesData),
-            cacheAllData('equipment', equipmentData),
-            cacheAllData('service_types', serviceTypesData),
-            cacheAllData('equipment_types', equipmentTypesData),
-            cacheAllData('refrigerant_types', refrigerantTypesData),
-            cacheAllData('app_settings', Object.entries(settings).map(([key, value]) => ({ key, value }))),
-            cacheAllData('reports', allReportsData),
-            cacheAllData('orders', allEnrichedOrdersData)
-        ]);
+            // 🔹 Cachea todo localmente
+            await Promise.all([
+                cacheAllData('users', usersData),
+                cacheAllData('cities', citiesData),
+                cacheAllData('companies', companiesData),
+                cacheAllData('dependencies', dependenciesData),
+                cacheAllData('equipment', equipmentData),
+                cacheAllData('service_types', serviceTypesData),
+                cacheAllData('equipment_types', equipmentTypesData),
+                cacheAllData('refrigerant_types', refrigerantTypesData),
+                cacheAllData('app_settings', Object.entries(settings).map(([key, value]) => ({ key, value }))),
+                cacheAllData('reports', allReportsData),
+                cacheAllData('orders', allEnrichedOrdersData)
+            ]);
 
-        await seedInitialUsers(usersData);
-        console.log("✅ Datos iniciales descargados y guardados correctamente.");
+            await seedInitialUsers(usersData);
+            console.log("✅ Datos iniciales descargados y guardados correctamente.");
 
-    } catch (error: any) {
-        console.error("Error al sincronizar datos:", error);
+        } catch (error: any) {
+            console.error("Error al sincronizar datos:", error);
 
-        // 🔸 Solo mostrar error grave si no hay datos locales
-        if (!hasLocalData) {
-            showAppNotification("No se pudieron descargar los datos iniciales. Reintentando en unos segundos...", 'warning');
+            // 🔸 Solo mostrar error grave si no hay datos locales
+            if (!hasLocalData) {
+                showAppNotification("No se pudieron descargar los datos iniciales. Reintentando en unos segundos...", 'warning');
 
-            // 🔁 Reintento automático tras 5 segundos
-            setTimeout(() => synchronizeAndLoadData(), 5000);
-        } else {
-            showAppNotification("Sin conexión. Usando datos locales.", 'info');
+                // 🔁 Reintento automático tras 5 segundos
+                setTimeout(() => synchronizeAndLoadData(), 5000);
+            } else {
+                showAppNotification("Sin conexión. Usando datos locales.", 'info');
+            }
         }
+    } else {
+        // 🔸 Caso sin conexión y sin datos locales (inicio completamente offline)
+        if (!hasLocalData) {
+            showAppNotification("Sin conexión y sin datos locales. Conéctate a internet para la primera carga.", 'error', 10000);
+            return;
+        }
+        showAppNotification("Sin conexión. Usando datos guardados localmente.", 'info');
     }
-} else {
-    // 🔸 Caso sin conexión y sin datos locales (inicio completamente offline)
-    if (!hasLocalData) {
-        showAppNotification("Sin conexión y sin datos locales. Conéctate a internet para la primera carga.", 'error', 10000);
-        return;
-    }
-    showAppNotification("Sin conexión. Usando datos guardados localmente.", 'info');
-}
 
 }
 
@@ -299,7 +301,7 @@ async function loadLocalDataIntoState(): Promise<boolean> {
         const settings: AppSettings = {};
         localAppSettings.forEach(s => settings[s.key] = s.value);
         State.setAppSettings(settings);
-        
+
         // Combine reports from main cache and queue
         const combinedLocalReports = [...localQueuedReports, ...localReports];
         const localReportMap = new Map(combinedLocalReports.map(r => [r.id || (r as any).localId, r]));
@@ -425,30 +427,30 @@ export async function main() {
             console.error('Error al registrar el Service Worker:', error);
         }
     }
-// -------------------------------------------------------
-// 🔥 Registrar BackgroundRunner SOLO en Android
-// -------------------------------------------------------
-if (Capacitor.getPlatform() === 'android') {
-    try {
-        await BackgroundRunner.registerTask({
-            name: 'backgroundSync',
-            description: 'Sincroniza reportes automáticamente incluso con la app cerrada',
-            path: 'background/sync-job'
-        });
+    // -------------------------------------------------------
+    // 🔥 Registrar BackgroundRunner SOLO en Android
+    // -------------------------------------------------------
+    if (Capacitor.getPlatform() === 'android') {
+        try {
+            await BackgroundRunner.registerTask({
+                name: 'backgroundSync',
+                description: 'Sincroniza reportes automáticamente incluso con la app cerrada',
+                path: 'background/sync-job'
+            });
 
-        await BackgroundRunner.start({
-            title: 'Sincronización activa',
-            description: 'La app continúa subiendo reportes automáticamente.',
-            icon: 'ic_launcher'
-        });
+            await BackgroundRunner.start({
+                title: 'Sincronización activa',
+                description: 'La app continúa subiendo reportes automáticamente.',
+                icon: 'ic_launcher'
+            });
 
-        console.log('[BackgroundRunner] Registrado correctamente.');
-    } catch (err) {
-        console.error('[BackgroundRunner] Error al registrar:', err);
+            console.log('[BackgroundRunner] Registrado correctamente.');
+        } catch (err) {
+            console.error('[BackgroundRunner] Error al registrar:', err);
+        }
+    } else {
+        console.log('[BackgroundRunner] No disponible en esta plataforma:', Capacitor.getPlatform());
     }
-} else {
-    console.log('[BackgroundRunner] No disponible en esta plataforma:', Capacitor.getPlatform());
-}
 
 
     // 2. Continuar con el resto de la inicialización de la app
@@ -476,6 +478,8 @@ if (Capacitor.getPlatform() === 'android') {
         startPeriodicSync();
 
         setupEventListeners();
+        UserPrefsManager.initUI();
+        FormAutosave.init();
         initSignaturePad();
 
         initQrScanner({

@@ -13,6 +13,7 @@ import { updateMaintenanceReport, fetchAllReports, fetchReportsForWorker, saveEn
 // FIX: Added JSZip import to handle zip file creation for report downloads.
 import JSZip from 'jszip';
 import { getAllFromStore, updateLocalReport } from './lib/local-db';
+import { FormAutosave } from './form-autosave';
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 import { Filesystem, Directory } from '@capacitor/filesystem'; // <-- AÑADE ESTA LÍNEA
@@ -400,7 +401,7 @@ export function updateUserPointsDisplay(points?: number | null) {
         if (typeof points === 'number') {
             D.userPointsDisplay.innerHTML = `<i class="fas fa-star" style="color: #ffc107;"></i> ${points}`;
             D.userPointsDisplay.title = `${points} Puntos`;
-            D.userPointsDisplay.style.display = 'inline-flex';
+            D.userPointsDisplay.style.display = 'none'; // Force hide as requested by the user
         } else {
             D.userPointsDisplay.style.display = 'none';
         }
@@ -600,6 +601,13 @@ export async function openReportFormModal(options: { report?: Report; equipment?
     D.saveReportButton.innerHTML = report ? '<i class="fas fa-save"></i> Actualizar Reporte' : '<i class="fas fa-save"></i> Guardar Reporte';
     D.aiScanPlateButton.style.display = report ? 'none' : 'block';
     D.aiScanPlateButton.disabled = !navigator.onLine; // Disable button if offline
+    
+    // Attempt RESTORE DRAFT BEFORE setting overrides (only if it's a completely blank 'new manual report')
+    if (!report && !equipment && !order) {
+        if (FormAutosave.restoreDraft()) {
+            showAppNotification('Borrador previo recuperado automáticamente.', 'info');
+        }
+    }
     if (D.aiScanOfflineWarning) {
     D.aiScanOfflineWarning.style.display = navigator.onLine ? 'none' : 'block';
 }
@@ -1948,7 +1956,7 @@ export async function renderMyReportsTable() {
     });
 
     if (paginatedReports.length === 0) {
-        D.myReportsTableBody.innerHTML = `<tr><td colspan="6">No se encontraron reportes que coincidan con su búsqueda.</td></tr>`;
+        D.myReportsTableBody.innerHTML = `<tr><td colspan="6" class="empty-state-td"><i class="fas fa-search" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i> No se encontraron reportes que coincidan con su búsqueda.</td></tr>`;
     }
 
     renderPagination('myReports', D.myReportsPaginationContainer, paginatedReports, filteredReports.length, renderMyReportsTable);
@@ -2374,9 +2382,21 @@ function createOrderCardHTML(order: Order): string {
                     <p class="order-card-label"><i class="fas fa-map-marker-alt"></i> Dirección</p>
                     <p class="order-card-value">${order.clientDetails?.address || 'N/A'}</p>
                 </div>
+                <div class="order-card-row">
+                    <p class="order-card-label"><i class="fas fa-phone-alt"></i> Contacto</p>
+                    <p class="order-card-value">${order.clientDetails?.phone || 'N/A'}</p>
+                </div>
+                <div class="order-card-row">
+                    <p class="order-card-label"><i class="fas fa-tools"></i> Tipo de Servicio</p>
+                    <p class="order-card-value">${order.order_type || 'N/A'}</p>
+                </div>
+                <div class="order-card-row">
+                    <p class="order-card-label"><i class="fas fa-sticky-note"></i> Notas</p>
+                    <p class="order-card-value" style="white-space: pre-line;">${order.notes || 'Ninguna'}</p>
+                </div>
                 <div class="order-card-row order-card-datetime">
                     <span><i class="fas fa-calendar-day"></i> ${formatDate(order.service_date, false)}</span>
-                    <span><i class="fas fa-clock"></i> ${formatTime(order.service_time)}</span>
+                    <span class="time-badge"><i class="fas fa-clock"></i> ${formatTime(order.service_time)}</span>
                 </div>
             </div>
         </div>

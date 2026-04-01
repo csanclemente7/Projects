@@ -22,6 +22,7 @@ import { synchronizeQueue } from './lib/sync';
 import { User, Order, AppSettings, Report } from './types';
 import { checkOnlineStatus, withTimeout } from './utils';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import { UserPrefsManager } from './user-preferences';
 
 let reportRefreshIntervalId: number | null = null;
 let orderRealtimeChannel: RealtimeChannel | null = null;
@@ -494,6 +495,7 @@ async function handlePostLogin(user: User) {
     const userToStore = { ...user };
     delete userToStore.password;
     localStorage.setItem(USER_SESSION_KEY, JSON.stringify(userToStore));
+    UserPrefsManager.applyPrefs();
 
     showLoader('Cargando datos de sesión...');
 

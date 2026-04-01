@@ -11,6 +11,7 @@ import QRCode from 'qrcode';
 import { runAiReconciliation } from './ai';
 import { synchronizeQueue, startPeriodicSync, stopPeriodicSync } from './lib/sync';
 import { currentUser } from './state';
+import { FormAutosave } from './form-autosave';
 
 import { Network } from '@capacitor/network';
 import { App } from '@capacitor/app';
@@ -751,6 +752,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             UI.renderMyReportsTable();
             if (State.currentUser.role === 'admin') UI.renderAdminReportsTable();
             
+            FormAutosave.clearDraft(); // LIMPIAR AUTOGUARDADO TRAS GUARDAR
             UI.showAppNotification('Reporte guardado localmente. Se sincronizará cuando haya conexión.', 'info');
             UI.closeReportFormModal();
             return; // --- EARLY EXIT ---
@@ -806,6 +808,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
                 await cacheAllData('orders', State.allServiceOrders);
             }
 
+            FormAutosave.clearDraft(); // LIMPIAR AUTOGUARDADO TRAS GUARDAR
             await refreshReportsState(); // Refresh from server on success
             UI.closeReportFormModal();
 
@@ -821,6 +824,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
                 UI.renderMyReportsTable();
                 if (State.currentUser.role === 'admin') UI.renderAdminReportsTable();
                 
+                FormAutosave.clearDraft(); // LIMPIAR AUTOGUARDADO TRAS GUARDAR
                 UI.showAppNotification('Sin conexión. Reporte guardado localmente para sincronización.', 'info');
                 UI.closeReportFormModal();
             } else {

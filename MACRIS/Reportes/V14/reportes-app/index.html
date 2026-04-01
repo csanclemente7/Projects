@@ -87,7 +87,6 @@
         </form>
 
         <div class="dev-login-buttons-container">
-          <p class="dev-info-text">Acceso Rápido:</p>
           <button id="admin-login-button" class="btn btn-dev-login">
             <i class="fas fa-user-shield"></i> Acceso Admin
           </button>
@@ -109,10 +108,17 @@
           <span
             id="user-points-display"
             class="user-points-badge"
-            style="display: none"
+            style="display: none !important;"
             title="Puntos Acumulados"
           ></span>
           <span id="current-user-display"></span>
+          <button
+            id="user-settings-button"
+            class="btn btn-secondary btn-icon-only"
+            title="Ajustes Visuales"
+          >
+            <i class="fas fa-cog"></i>
+          </button>
           <button
             id="toggle-fullscreen-button"
             class="btn btn-secondary btn-icon-only"
@@ -160,15 +166,18 @@
             Seleccione una opción para iniciar un nuevo reporte de
             mantenimiento.
           </p>
-          <div class="section-header-actions vertical">
-            <button id="scan-qr-camera-button" class="btn btn-primary">
-              <i class="fas fa-qrcode"></i> Usar Cámara QR
+          <div class="action-grid">
+            <button id="scan-qr-camera-button" class="action-card action-camera">
+              <i class="fas fa-qrcode"></i>
+              <span>Usar Cámara QR</span>
             </button>
-            <button id="create-manual-report-button" class="btn btn-accent">
-              <i class="fas fa-file-signature"></i> Crear Reporte Manual
+            <button id="create-manual-report-button" class="action-card action-manual">
+              <i class="fas fa-file-signature"></i>
+              <span>Crear Reporte Manual</span>
             </button>
-            <button id="search-by-id-button" class="btn btn-secondary">
-              <i class="fas fa-search"></i> Buscar Equipo por ID
+            <button id="search-by-id-button" class="action-card action-search">
+              <i class="fas fa-search"></i>
+              <span>Buscar Equipo por ID</span>
             </button>
           </div>
           <div class="section-footer-actions">
@@ -190,8 +199,18 @@
           class="data-section"
           style="display: none"
         >
-          <h2><i class="fas fa-history"></i> Mis Reportes Enviados</h2>
-          <div class="search-controls">
+          <div class="my-reports-header">
+            <h2><i class="fas fa-history"></i> Mis Reportes Enviados</h2>
+            <button
+              id="toggle-my-reports-view-button"
+              class="btn btn-outline-primary btn-compact"
+            >
+              Ver Todos
+            </button>
+          </div>
+
+          <div class="modern-search-bar">
+            <i class="fas fa-search search-icon"></i>
             <input
               type="search"
               id="my-reports-search"
@@ -200,21 +219,10 @@
             />
             <button
               id="my-reports-search-clear"
-              class="btn btn-secondary btn-icon-only"
+              class="btn-clear-search"
               title="Limpiar búsqueda"
             >
               <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div
-            class="section-header-actions"
-            style="justify-content: flex-end; margin-bottom: 10px"
-          >
-            <button
-              id="toggle-my-reports-view-button"
-              class="btn btn-secondary btn-compact"
-            >
-              Ver Todos
             </button>
           </div>
           <div class="table-container">
@@ -993,10 +1001,7 @@
           <div class="modal-actions">
             <button
               type="button"
-              id="cancel-report-button"
-              class="btn btn-secondary"
-            >
-              Cancelar
+              id="cancel-report-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar
             </button>
             <button
               type="submit"
@@ -1125,10 +1130,7 @@
           <div class="modal-actions">
             <button
               type="button"
-              id="cancel-entity-button"
-              class="btn btn-secondary"
-            >
-              Cancelar
+              id="cancel-entity-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar
             </button>
             <button
               type="submit"
@@ -1178,10 +1180,7 @@
           </button>
           <button
             type="button"
-            id="close-view-report-button"
-            class="btn btn-secondary"
-          >
-            Cerrar
+            id="close-view-report-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cerrar
           </button>
           <button
             type="button"
@@ -1313,10 +1312,7 @@
           <div class="modal-actions">
             <button
               type="button"
-              id="cancel-edit-report-assignment-button"
-              class="btn btn-secondary"
-            >
-              Cancelar
+              id="cancel-edit-report-assignment-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar
             </button>
             <button
               type="submit"
@@ -1407,10 +1403,7 @@
           </button>
           <button
             type="button"
-            id="close-order-details-button"
-            class="btn btn-secondary"
-          >
-            Cerrar
+            id="close-order-details-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cerrar
           </button>
         </div>
       </div>
@@ -1554,10 +1547,7 @@
         </div>
         <div class="modal-actions">
           <button
-            id="cancel-category-selection-button"
-            class="btn btn-secondary"
-          >
-            Cancelar
+            id="cancel-category-selection-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar
           </button>
         </div>
       </div>
@@ -1589,10 +1579,7 @@
         <div class="modal-actions">
           <button
             type="button"
-            id="cancel-equipment-selection-button"
-            class="btn btn-secondary"
-          >
-            Cancelar
+            id="cancel-equipment-selection-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar
           </button>
           <button
             type="button"
@@ -1695,10 +1682,7 @@
           <div class="modal-actions">
             <button
               type="button"
-              id="cancel-redeem-points-button"
-              class="btn btn-secondary"
-            >
-              Cancelar
+              id="cancel-redeem-points-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar
             </button>
             <button
               type="submit"
@@ -1748,7 +1732,56 @@
       ></iframe>
     </div>
 
+    <!-- User Settings Modal -->
+    <div id="user-settings-modal" class="modal">
+      <div class="modal-content modal-content-small">
+        <span class="close-button" id="close-user-settings-modal">&times;</span>
+        <h3><i class="fas fa-sliders-h"></i> Ajustes de Interfaz</h3>
+        <p>Estas preferencias visuales se aplican solo a tu cuenta en este dispositivo.</p>
+        
+        <div class="settings-list" style="margin-top: 20px;">
+          <div class="setting-item">
+            <div class="setting-description" style="flex-grow: 1;">
+              <strong>Modo de Color</strong><br/>
+              <small>Cambia entre modo oscuro y claro</small>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="user-theme-toggle">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          
+          <div class="setting-item">
+            <div class="setting-description" style="flex-grow: 1;">
+              <strong>Tamaño del Texto</strong><br/>
+              <small>Ajusta el tamaño general de las letras (<span id="user-text-scale-display">100%</span>)</small>
+            </div>
+            <div style="display:flex; gap:10px;">
+               <button id="user-text-decrease" class="btn btn-secondary btn-compact"><i class="fas fa-minus"></i></button>
+               <button id="user-text-increase" class="btn btn-secondary btn-compact"><i class="fas fa-plus"></i></button>
+            </div>
+          </div>
+
+          <div class="setting-item">
+            <div class="setting-description" style="flex-grow: 1;">
+              <strong>Tamaño de Botones</strong><br/>
+              <small>Aumenta o reduce el tamaño de la interfaz (<span id="user-btn-scale-display">100%</span>)</small>
+            </div>
+            <div style="display:flex; gap:10px;">
+               <button id="user-btn-decrease" class="btn btn-secondary btn-compact"><i class="fas fa-minus"></i></button>
+               <button id="user-btn-increase" class="btn btn-secondary btn-compact"><i class="fas fa-plus"></i></button>
+            </div>
+          </div>
+        </div>
+        
+        <div class="modal-actions" style="margin-top: 25px;">
+           <button class="btn btn-primary" id="close-user-settings-btn">Guardar y Cerrar</button>
+        </div>
+      </div>
+    </div>
+
     <script type="module" src="index.tsx"></script>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>
+
