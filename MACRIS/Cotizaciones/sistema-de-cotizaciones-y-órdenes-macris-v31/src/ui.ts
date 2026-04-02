@@ -1607,8 +1607,8 @@ function validateTechnicianAssignments() {
     if (order) renderTechnicianPills(order.technicianIds);
 }
 
-function checkTechnicianConflict(technicianId: string): { conflict: boolean, message: string } {
-    const currentOrder = State.getCurrentOrder();
+function checkTechnicianConflict(technicianId: string, orderToCheck?: Order): { conflict: boolean, message: string } {
+    const currentOrder = orderToCheck || State.getCurrentOrder();
     if (!currentOrder || !currentOrder.service_date || !currentOrder.service_time || !currentOrder.estimated_duration) {
         return { conflict: false, message: '' };
     }
@@ -1796,6 +1796,7 @@ function renderMonthView() {
             const addressParts = [client?.address, client?.city].filter(Boolean);
             const addressString = addressParts.length > 0 ? addressParts.join(' - ') : 'Sin dirección';
             const pillTitle = `#${order.manualId} - ${client?.name}\n${addressString}\nTipo: ${order.order_type}`;
+            const formattedTime = formatTime(order.service_time) || '';
 
             html += `<div class="agenda-order-pill status-${order.status}" data-order-id="${order.id}" title="${pillTitle}">${techWarningIcon}${formattedTime} ${client?.name?.split(' ')[0] || ''} ${serviceType}</div>`;
         });
@@ -1811,7 +1812,7 @@ function renderMonthView() {
         el.addEventListener('click', (e) => {
             e.stopPropagation();
             const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
-            if (orderId) navigateToOrderWorkspace(orderId, null);
+            if (orderId) openAgendaEditOrderModal(orderId);
         });
     });
 }
@@ -1855,8 +1856,9 @@ function renderTimelineView(days: Date[]) {
             const addressParts = [client?.address, client?.city].filter(Boolean);
             const addressString = addressParts.length > 0 ? addressParts.join(' - ') : 'Sin dirección';
             const pillTitle = `#${order.manualId} - ${client?.name}\n${addressString}\nTipo: ${order.order_type}`;
+            const formattedTime = formatTime(order.service_time) || '';
 
-            allDayHtml += `<div class="agenda-order-pill status-${order.status}" data-order-id="${order.id}" title="${pillTitle}">${techWarningIcon}${client?.name?.split(' ')[0] || ''} ${serviceType}</div>`;
+            allDayHtml += `<div class="agenda-order-pill status-${order.status}" data-order-id="${order.id}" title="${pillTitle}">${techWarningIcon}${formattedTime} ${client?.name?.split(' ')[0] || ''} ${serviceType}</div>`;
         });
 
         headerHtml += `<div class="header-day ${isToday ? 'today' : ''}">
@@ -1954,7 +1956,7 @@ function renderTimelineView(days: Date[]) {
     D.agendaContainer.querySelectorAll('.order-event, .agenda-order-pill').forEach(el => {
         el.addEventListener('click', (e) => {
             const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
-            if (orderId) navigateToOrderWorkspace(orderId, null);
+            if (orderId) openAgendaEditOrderModal(orderId);
         });
     });
 }
@@ -2017,15 +2019,47 @@ function renderListWeekView() {
                 const addressString = addressParts.join(' - ');
                 const addressHtml = addressString ? `<div class="order-address-mobile"><i class="fas fa-map-marker-alt"></i> ${addressString}</div>` : '';
 
+                let pillsHtml = '';
+                const displayTechs = techs.filter(t => t.id !== NO_ASIGNADO_TECHNICIAN_ID);
+                if (displayTechs.length > 0) {
+                    pillsHtml = `<span style="font-size: 0.9rem; font-weight: 500; color: #10b981;">${displayTechs.map(t => t.name?.split(' ')[0]).join(', ')}</span>`;
+                } else {
+                    pillsHtml = `<span style="font-size: 0.9rem; font-weight: 500; color: var(--color-text-light);">No asignado</span>`;
+                }
+
                 html += `
-                    <div class="order-item" data-order-id="${order.id}">
-                        <div class="order-status-dot status-${order.status}"></div>
-                        <div class="order-time">${formattedTime || 'Todo Día'}</div>
-                        <div class="order-details">
-                            <div class="order-client">${client?.name || 'Cliente'} (#${order.manualId})${techWarningIcon}</div>
-                            ${addressHtml}
-                            <div class="order-type-mobile" style="${getServiceTypeStyle(order.order_type)}">${order.order_type}</div>
-                            <div class="order-techs">${techs.map(t => t.name?.split(' ')[0]).join(', ') || 'Sin técnico'}</div>
+                    <div class="order-item order-item-two-col" data-order-id="${order.id}" style="display: flex; justify-content: space-between; align-items: flex-start; cursor: default;">
+                        <div class="order-item-main" style="display: flex; gap: 15px; flex-grow: 1;">
+                            <div class="order-status-dot status-${order.status}"></div>
+                            <div class="order-time">${formattedTime || 'Todo Día'}</div>
+                            <div class="order-details" style="flex-grow: 1;">
+                                <div class="order-client">${client?.name || 'Cliente'} (#${order.manualId})${techWarningIcon}</div>
+                                ${addressHtml}
+                                <div class="order-type-mobile" style="${getServiceTypeStyle(order.order_type)}">${order.order_type}</div>
+                                
+                                <div style="margin-top: 10px; max-width: 320px;">
+                                    <span style="font-size: 0.75rem; color: var(--color-text-light); margin-bottom: 2px; display: block;">Técnicos Asignados</span>
+                                    <div class="custom-select-container agenda-tech-trigger" data-order-id="${order.id}" tabindex="0" style="min-height: 38px; padding: 5px 30px 5px 8px; border: 1px solid var(--color-primary); border-radius: 6px; position: relative; cursor: pointer; background: transparent;">
+                                        <div class="technician-selected-pills" style="display: flex; flex-wrap: wrap; gap: 4px; pointer-events: none;">
+                                            ${pillsHtml}
+                                        </div>
+                                        <i class="fas fa-chevron-down custom-select-arrow" style="position: absolute; right: 10px; top: 11px; color: var(--color-text-light); pointer-events: none;"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${order.notes ? `
+                            <div class="order-notes-preview" style="flex-grow: 1; border-left: 2px solid var(--color-border); padding-left: 15px; margin-left: 15px; color: var(--color-text-light); font-size: 0.85rem; max-height: 85px; overflow-y: auto; align-self: stretch;">
+                                <div style="font-weight: 600; font-size: 0.70rem; text-transform: uppercase; margin-bottom: 2px; color: var(--color-text-light);">Restricciones / Observaciones</div>
+                                <div style="white-space: pre-wrap; word-break: break-word;">${order.notes}</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                        <div class="order-item-actions" style="margin-left: auto; padding-left: 15px;">
+                            <!-- White button fix -->
+                            <button class="btn edit-order-btn" data-order-id="${order.id}" style="background-color: white; border: 1px solid var(--color-border); color: var(--color-text); padding: 5px 10px; font-size: 0.9rem;">
+                                <i class="fas fa-edit" style="pointer-events:none; color: var(--color-primary);"></i> Editar
+                            </button>
                         </div>
                     </div>
                 `;
@@ -2041,10 +2075,18 @@ function renderListWeekView() {
 
     D.agendaContainer.innerHTML = html;
 
-    D.agendaContainer.querySelectorAll('.order-item').forEach(el => {
+    D.agendaContainer.querySelectorAll('.edit-order-btn').forEach(el => {
         el.addEventListener('click', (e) => {
             const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
-            if (orderId) navigateToOrderWorkspace(orderId, null);
+            if (orderId) openAgendaEditOrderModal(orderId);
+        });
+    });
+
+    D.agendaContainer.querySelectorAll('.agenda-tech-trigger').forEach(el => {
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
+            if (orderId) openAgendaTechDropdown(orderId, e.currentTarget as HTMLElement);
         });
     });
 }
@@ -2107,3 +2149,224 @@ export async function handleChangePassword(e: Event) {
         btn.innerHTML = originalText;
     }
 }
+
+export function openAgendaTechDropdown(orderId: string, triggerEl: HTMLElement, forceOpen: boolean = false) {
+    let agendaTechDropdown = document.getElementById('agenda-tech-dropdown') as HTMLDivElement;
+
+    if (!forceOpen && agendaTechDropdown && agendaTechDropdown.style.display === 'block' && agendaTechDropdown.dataset.activeOrderId === orderId) {
+        agendaTechDropdown.style.display = 'none';
+        agendaTechDropdown.dataset.activeOrderId = '';
+        return;
+    }
+
+    const order = State.getOrders().find(o => o.id === orderId);
+    if (!order) return;
+
+    if (!agendaTechDropdown) {
+        const dropdownHtml = `<div id="agenda-tech-dropdown" class="custom-select-dropdown search-results-popover" style="display: none; position: absolute; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 250px;"></div>`;
+        document.body.insertAdjacentHTML('beforeend', dropdownHtml);
+        agendaTechDropdown = document.getElementById('agenda-tech-dropdown') as HTMLDivElement;
+    }
+
+    const visibleTechnicians = State.getTechnicians().filter(t => t.is_active && t.role !== 'admin');
+
+    agendaTechDropdown.innerHTML = visibleTechnicians.map(tech => {
+        const isSelected = order.technicianIds.includes(tech.id);
+        const { conflict, message } = checkTechnicianConflict(tech.id, order);
+
+        return `
+            <div class="technician-dropdown-item ${isSelected ? 'selected' : ''} ${conflict ? 'conflict' : ''}" data-tech-id="${tech.id}" style="padding: 10px 15px; border-bottom: 1px solid var(--color-border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: ${isSelected ? 'var(--color-bg-light)' : 'transparent'};">
+                <span style="${isSelected ? 'font-weight: bold; color: #10b981;' : ''}">${tech.name} ${isSelected ? '<i class="fas fa-check" style="color: #10b981; margin-left:5px;"></i>' : ''}</span>
+                ${conflict ? `<span class="tech-conflict-label" style="font-size: 0.7rem; color: white; background: var(--color-danger); padding: 2px 5px; border-radius: 4px;">${message}</span>` : ''}
+            </div>
+        `;
+    }).join('');
+
+    // clone node to clear past event listeners
+    const newDropdown = agendaTechDropdown.cloneNode(true) as HTMLDivElement;
+    agendaTechDropdown.parentNode?.replaceChild(newDropdown, agendaTechDropdown);
+    const dropdown = newDropdown;
+    dropdown.dataset.activeOrderId = orderId;
+
+    // Add click listeners
+    dropdown.querySelectorAll('.technician-dropdown-item').forEach(item => {
+        item.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const techId = (e.currentTarget as HTMLElement).dataset.techId;
+            if (!techId) return;
+            
+            // Toggle technician
+            let newIds = [...order.technicianIds];
+            if (newIds.includes(techId)) {
+                newIds = newIds.filter(id => id !== techId);
+            } else {
+                if (techId === NO_ASIGNADO_TECHNICIAN_ID) {
+                    newIds = [NO_ASIGNADO_TECHNICIAN_ID];
+                } else {
+                    newIds = newIds.filter(id => id !== NO_ASIGNADO_TECHNICIAN_ID);
+                    newIds.push(techId);
+                }
+            }
+            if (newIds.length === 0) newIds = [NO_ASIGNADO_TECHNICIAN_ID];
+            order.technicianIds = newIds;
+            
+            // Re-render UI locally for instant feedback
+            openAgendaTechDropdown(orderId, triggerEl, true);
+            
+            // Auto-save logic
+            const savedOrder = await API.saveOrder(order);
+            const orders = [...State.getOrders()];
+            const idx = orders.findIndex(o => o.id === savedOrder.id);
+            if (idx !== -1) orders[idx] = savedOrder;
+            State.setOrders(orders);
+            
+            // Re-render the list week view after state update
+            renderListWeekView();
+        });
+    });
+
+    // Positioning
+    const rect = triggerEl.getBoundingClientRect();
+    dropdown.style.display = 'block';
+    dropdown.style.top = `${rect.bottom + window.scrollY + 5}px`;
+    dropdown.style.left = `${Math.max(10, rect.left + window.scrollX)}px`;
+    
+    // Auto-close logic
+    const activeDoc = document as any;
+    const closeDropdown = (e: MouseEvent) => {
+        if (!dropdown.contains(e.target as Node) && !triggerEl.contains(e.target as Node)) {
+            dropdown.style.display = 'none';
+            document.removeEventListener('click', closeDropdown);
+            activeDoc._agendaClickHandler = null;
+        }
+    };
+    
+    // Remove past listeners and add new one
+    activeDoc._agendaClickHandler && document.removeEventListener('click', activeDoc._agendaClickHandler);
+    activeDoc._agendaClickHandler = closeDropdown;
+    
+    setTimeout(() => {
+        document.addEventListener('click', closeDropdown);
+    }, 10);
+}
+
+
+export function openAgendaEditOrderModal(orderId: string) {
+    const order = State.getOrders().find(o => o.id === orderId);
+    if (!order) return;
+
+    const modal = document.getElementById('agenda-edit-order-modal') as HTMLElement;
+    if (!modal) return;
+    
+    // Fill client data
+    const client = State.getClients().find(c => c.id === order.clientId);
+    if (client) {
+        (document.getElementById('agenda-edit-client-name') as HTMLInputElement).value = client.name || '';
+        (document.getElementById('agenda-edit-client-phone') as HTMLInputElement).value = client.phone || '';
+        (document.getElementById('agenda-edit-client-city') as HTMLInputElement).value = client.city || '';
+        (document.getElementById('agenda-edit-client-address') as HTMLInputElement).value = client.address || '';
+    }
+
+    // Fill data
+    (document.getElementById('agenda-edit-order-id') as HTMLInputElement).value = order.id;
+    (document.getElementById('agenda-edit-service-date') as HTMLInputElement).value = order.service_date;
+    (document.getElementById('agenda-edit-service-time') as HTMLInputElement).value = order.service_time || '';
+    (document.getElementById('agenda-edit-status') as HTMLSelectElement).value = order.status;
+    (document.getElementById('agenda-edit-duration') as HTMLInputElement).value = order.estimated_duration ? order.estimated_duration.toString() : '';
+    (document.getElementById('agenda-edit-notes') as HTMLTextAreaElement).value = order.notes || '';
+
+    // Populate service type options from DB
+    const serviceTypeSelect = document.getElementById('agenda-edit-type') as HTMLSelectElement;
+    serviceTypeSelect.innerHTML = State.getServiceTypes().map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+    
+    // Find matching option (fuzzy/exact match)
+    const options = Array.from(serviceTypeSelect.options);
+    const targetType = (order.order_type || '').trim().toLowerCase();
+    const matchingOption = options.find(opt => opt.value.trim().toLowerCase() === targetType);
+    if (matchingOption) {
+        serviceTypeSelect.value = matchingOption.value;
+    } else if (order.order_type) {
+        serviceTypeSelect.insertAdjacentHTML('beforeend', `<option value="${order.order_type}">${order.order_type} (Personalizado)</option>`);
+        serviceTypeSelect.value = order.order_type;
+    }
+
+    // Clone form to clear previous listeners
+    const form = document.getElementById('agenda-edit-order-form') as HTMLFormElement;
+    const newForm = form.cloneNode(true) as HTMLFormElement;
+    form.parentNode?.replaceChild(newForm, form);
+
+    newForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Update client info if it was changed
+        let clientUpdated = false;
+        if (client) {
+            const newClientName = (document.getElementById('agenda-edit-client-name') as HTMLInputElement).value;
+            const newClientPhone = (document.getElementById('agenda-edit-client-phone') as HTMLInputElement).value;
+            const newClientCity = (document.getElementById('agenda-edit-client-city') as HTMLInputElement).value;
+            const newClientAddress = (document.getElementById('agenda-edit-client-address') as HTMLInputElement).value;
+            
+            if (client.name !== newClientName || client.phone !== newClientPhone || client.city !== newClientCity || client.address !== newClientAddress) {
+                const updatedClient = {
+                    ...client,
+                    name: newClientName,
+                    phone: newClientPhone,
+                    city: newClientCity,
+                    address: newClientAddress
+                };
+                try {
+                    const savedClient = await API.upsertClient(updatedClient);
+                    const clients = [...State.getClients()];
+                    const cIdx = clients.findIndex(c => c.id === savedClient.id);
+                    if (cIdx !== -1) clients[cIdx] = savedClient;
+                    State.setClients(clients);
+                    clientUpdated = true;
+                } catch(err) {
+                    console.error("Error saving client update", err);
+                }
+            }
+        }
+
+        const newDate = (document.getElementById('agenda-edit-service-date') as HTMLInputElement).value;
+        const newTime = (document.getElementById('agenda-edit-service-time') as HTMLInputElement).value || null;
+        const newStatus = (document.getElementById('agenda-edit-status') as HTMLSelectElement).value as any;
+        const durationStr = (document.getElementById('agenda-edit-duration') as HTMLInputElement).value;
+        const newDuration = durationStr ? parseFloat(durationStr) : null;
+        const newType = (document.getElementById('agenda-edit-type') as HTMLSelectElement).value;
+        const newNotes = (document.getElementById('agenda-edit-notes') as HTMLTextAreaElement).value;
+        
+        const updatedOrder = {
+            ...order,
+            service_date: newDate,
+            service_time: newTime,
+            status: newStatus,
+            estimated_duration: newDuration,
+            order_type: newType,
+            notes: newNotes
+        };
+
+        const savedOrder = await API.saveOrder(updatedOrder);
+        const orders = [...State.getOrders()];
+        const idx = orders.findIndex(o => o.id === savedOrder.id);
+        if (idx !== -1) orders[idx] = savedOrder;
+        State.setOrders(orders);
+        
+        modal.style.display = 'none';
+        
+        renderAgendaPage();
+        const msg = clientUpdated ? `Orden #${order.manualId} y Cliente actualizados` : `Orden #${order.manualId} actualizada correctamente`;
+        showNotification(msg, 'success');
+    });
+
+    document.getElementById('agenda-edit-full-workspace-btn')?.addEventListener('click', () => {
+        modal.style.display = 'none';
+        navigateToOrderWorkspace(order.id, null);
+    });
+
+    modal.style.display = 'flex';
+}
+
+
+
+
+

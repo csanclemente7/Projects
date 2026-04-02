@@ -3494,3 +3494,50 @@ body.dark-theme .current-user-badge {
         display: none;
     }
 }
+/* --- Agenda Inline Tech Picker --- */
+.agenda-tech-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+    padding: 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.agenda-tech-pills:hover {
+    background-color: rgba(var(--color-primary-rgb), 0.05);
+}
+
+.tech-pill.agenda-tech-pill {
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    pointer-events: none; /* Let the container handle the click */
+}
+
+.tech-pill.agenda-tech-pill.unassigned {
+    background-color: transparent;
+    color: var(--color-primary);
+    border: 1px dashed var(--color-primary);
+}
+
+.tech-pill.agenda-tech-pill.unassigned:hover {
+    background-color: rgba(var(--color-primary-rgb), 0.1);
+}
+
+#agenda-tech-dropdown {
+    max-height: 250px;
+    overflow-y: auto;
+    border-radius: 8px;
+    padding: 0;
+}
+
+#agenda-tech-dropdown .technician-dropdown-item {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--color-border);
+}
+#agenda-tech-dropdown .technician-dropdown-item:last-child {
+    border-bottom: none;
+}
+

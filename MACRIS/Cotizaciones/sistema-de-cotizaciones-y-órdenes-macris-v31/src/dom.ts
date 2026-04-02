@@ -204,3 +204,5 @@ export const recoveryUserError = document.getElementById('recovery-user-error') 
 
 // Notifications
 export const notificationArea = document.getElementById('notification-area') as HTMLDivElement;
+
+export const agendaTechDropdown = document.getElementById('agenda-tech-dropdown') as HTMLDivElement;

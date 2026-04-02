@@ -400,6 +400,9 @@
                     <div id="agenda-container">
                         <!-- Calendar/Timeline will be rendered here -->
                     </div>
+                    <div id="agenda-tech-dropdown" class="custom-select-dropdown search-results-popover" style="display: none; position: absolute; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 250px;">
+                        <!-- Technician list will be injected here -->
+                    </div>
                 </div>
             </div>
 
@@ -823,6 +826,94 @@
                 <button id="recovery-user-verify" class="btn btn-primary">Actualizar clave</button>
             </div>
             <p id="recovery-user-error" class="login-error"></p>
+        </div>
+    </div>
+
+    <!-- Agenda Quick Edit Modal -->
+    <div id="agenda-edit-order-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span class="close-modal-btn" onclick="document.getElementById('agenda-edit-order-modal').style.display='none'">&times;</span>
+            <h3 style="margin-bottom:20px;">Edición Rápida de Orden</h3>
+            <form id="agenda-edit-order-form">
+                <input type="hidden" id="agenda-edit-order-id">
+                
+                <!-- Client Details Section -->
+                <div style="background:var(--color-bg-light); padding:10px 15px; border-radius:6px; margin-bottom:15px; border:1px solid #e5e7eb;">
+                    <h4 style="margin-top:0; font-size:1rem; border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px; color:var(--color-text);">Datos del Cliente</h4>
+                    
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label>Nombre</label>
+                        <input type="text" id="agenda-edit-client-name" class="form-control" required>
+                    </div>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Teléfono</label>
+                            <input type="text" id="agenda-edit-client-phone" class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Ciudad</label>
+                            <input type="text" id="agenda-edit-client-city" class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Dirección</label>
+                        <input type="text" id="agenda-edit-client-address" class="form-control">
+                    </div>
+                </div>
+
+                <h4 style="font-size:1rem; border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px; color:var(--color-text);">Datos del Servicio</h4>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Fecha de Servicio</label>
+                        <input type="date" id="agenda-edit-service-date" class="form-control" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Hora de Inicio</label>
+                        <input type="time" id="agenda-edit-service-time" class="form-control">
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Estado</label>
+                        <select id="agenda-edit-status" class="form-control" required>
+                            <option value="pending">Pendiente</option>
+                            <option value="scheduled">Programada</option>
+                            <option value="in_progress">En Progreso</option>
+                            <option value="completed">Completada</option>
+                            <option value="cancelled">Cancelada</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Duración Estimada (Horas)</label>
+                        <input type="number" id="agenda-edit-duration" class="form-control" min="0" step="0.5">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Tipo de Servicio</label>
+                    <select id="agenda-edit-type" class="form-control" required>
+                        <!-- Se llena dinámicamente -->
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Notas / Observaciones</label>
+                    <textarea id="agenda-edit-notes" class="form-control" rows="3" placeholder="Añade notas breves..."></textarea>
+                </div>
+
+                <div class="modal-actions" style="display:flex; justify-content:space-between; margin-top:20px;">
+                    <button type="button" class="btn btn-secondary" id="agenda-edit-full-workspace-btn" style="background:#4b5563; border-color:#4b5563; color: white;">
+                        <i class="fas fa-external-link-alt"></i> Usar Vista Avanzada
+                    </button>
+                    <div>
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('agenda-edit-order-modal').style.display='none'" style="margin-right:8px;">Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Cambios</button>
+                    </div>
+                </div>
+            </form>
         </div>
     </div>
 
