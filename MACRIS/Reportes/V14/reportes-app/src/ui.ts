@@ -602,10 +602,20 @@ export async function openReportFormModal(options: { report?: Report; equipment?
     D.aiScanPlateButton.style.display = report ? 'none' : 'block';
     D.aiScanPlateButton.disabled = !navigator.onLine; // Disable button if offline
     
-    // Attempt RESTORE DRAFT BEFORE setting overrides (only if it's a completely blank 'new manual report')
     if (!report && !equipment && !order) {
         if (FormAutosave.restoreDraft()) {
             showAppNotification('Borrador previo recuperado automáticamente.', 'info');
+            
+            // Especial para categoría "Empresa": Restaurar la UI de búsquedas anidadas
+            if (D.reportCompanySelect && D.reportCompanySelect.value !== '') {
+                setReportCompanySelection(D.reportCompanySelect.value, { skipUpdate: false });
+                
+                // setReportCompanySelection asíncronamente refresca dependencias a través de updateLocationDropdownsFromCompany
+                // Llamamos a restoreDraft nuevamente para repoblar la dependencia/equipo seleccionada tras recrearse los `<option>`
+                setTimeout(() => {
+                    FormAutosave.restoreDraft();
+                }, 50);
+            }
         }
     }
     if (D.aiScanOfflineWarning) {
@@ -1183,74 +1193,86 @@ export function showAiReconciliationResults(matches: any[]) {
 
 
 // --- Installation Photo Capture ---
-export async function openPhotoCaptureModal(type: 'internal' | 'external') {
-  if (!D.photoCaptureModal || !D.photoCaptureVideo) return;
-
-  // 🔹 Guarda el tipo actual en el estado y en el atributo del modal
-  State.setCurrentPhotoCaptureType(type);
-  D.photoCaptureModal.setAttribute('data-photo-type', type);
-
-  // 🔹 Configura el título y muestra el modal
-  D.photoCaptureTitle.innerHTML = `<i class="fas fa-camera-retro"></i> Capturar Foto (${type === 'internal' ? 'U. Interna' : 'U. Externa'})`;
-  D.photoCaptureModal.style.display = 'flex';
-  resetModalScroll(D.photoCaptureModal);
-  D.photoCaptureFeedback.textContent = 'Activando cámara...';
-
-  try {
-    // 🔹 Intentar usar la cámara web (getUserMedia)
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-    });
-    photoCaptureStream = stream;
-
-    const video = D.photoCaptureVideo;
-    video.srcObject = stream;
-    video.setAttribute('playsinline', 'true');
-    await video.play();
-
-    // 🔹 Esperar a que el video esté completamente inicializado
-    await new Promise<void>((resolve, reject) => {
-      let checks = 0;
-      const interval = setInterval(() => {
-        if (video.videoWidth > 0 && video.videoHeight > 0) {
-          clearInterval(interval);
-          resolve();
+export async function triggerPhotoCapture(type: 'internal' | 'external', source: 'CAMERA' | 'PHOTOS') {
+    const isCapacitor = !!Capacitor.isNativePlatform();
+    
+    if (isCapacitor) {
+        try {
+            await Camera.requestPermissions();
+            const photo = await Camera.getPhoto({
+                quality: 75,
+                width: 1280,
+                resultType: CameraResultType.DataUrl,
+                source: source === 'CAMERA' ? CameraSource.Camera : CameraSource.Photos,
+                correctOrientation: true,
+            });
+            if (photo?.dataUrl) {
+                applyCapturedPhoto(photo.dataUrl, type);
+                showAppNotification('Foto capturada correctamente.', 'success');
+            }
+            return;
+        } catch (err) {
+            console.warn("Capacitor camera/photos failed, falling back to web methods", err);
         }
-        if (++checks > 30) { // ~3 segundos de espera
-          clearInterval(interval);
-          reject(new Error('Video no inicializó correctamente.'));
-        }
-      }, 100);
-    });
-
-    D.photoCaptureFeedback.textContent = 'Apunta y captura la foto.';
-  } catch (webErr) {
-    console.warn('getUserMedia falló, usando Capacitor Camera...', webErr);
-    try {
-      await Camera.requestPermissions();
-      const photo = await Camera.getPhoto({
-        quality: 80,
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Camera,
-        correctOrientation: true,
-      });
-
-      if (photo?.dataUrl) {
-        // 🔹 Aplica la foto al tipo correcto según el botón que abrió el modal
-        applyCapturedPhoto(photo.dataUrl, type);
-        showAppNotification('Foto capturada correctamente.', 'success');
-      }
-    } catch (camErr) {
-      console.error('Error total al abrir cámara:', camErr);
-      showAppNotification('No se pudo acceder a la cámara.', 'error');
-      closePhotoCaptureModal();
     }
-  }
+    
+    // Web Fallback
+    if (source === 'PHOTOS') {
+        const inputId = type === 'internal' ? 'upload-internal-unit-input' : 'upload-external-unit-input';
+        document.getElementById(inputId)?.click();
+    } else {
+        openPhotoCaptureModal(type);
+    }
 }
 
+export async function openPhotoCaptureModal(type: 'internal' | 'external') {
+    if (!D.photoCaptureModal || !D.photoCaptureVideo) return;
 
+    State.setCurrentPhotoCaptureType(type);
+    D.photoCaptureModal.setAttribute('data-photo-type', type);
 
+    D.photoCaptureTitle.innerHTML = `<i class="fas fa-camera-retro"></i> Capturar Foto (${type === 'internal' ? 'U. Interna' : 'U. Externa'})`;
+    D.photoCaptureModal.style.display = 'flex';
+    resetModalScroll(D.photoCaptureModal);
+    if (D.photoCaptureFeedback) D.photoCaptureFeedback.textContent = 'Activando cámara...';
 
+    // Cleanup previous stream
+    if (photoCaptureStream) {
+        photoCaptureStream.getTracks().forEach((track) => track.stop());
+    }
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+        });
+        photoCaptureStream = stream;
+
+        const video = D.photoCaptureVideo;
+        video.srcObject = stream;
+        video.setAttribute('playsinline', 'true');
+        await video.play();
+
+        await new Promise<void>((resolve, reject) => {
+            let checks = 0;
+            const interval = setInterval(() => {
+                if (video.videoWidth > 0 && video.videoHeight > 0) {
+                    clearInterval(interval);
+                    resolve();
+                }
+                if (++checks > 30) {
+                    clearInterval(interval);
+                    reject(new Error('Video no inicializó correctamente.'));
+                }
+            }, 100);
+        });
+
+        if (D.photoCaptureFeedback) D.photoCaptureFeedback.textContent = 'Apunta y captura la foto.';
+    } catch (webErr) {
+        console.error('getUserMedia falló:', webErr);
+        showAppNotification('No se pudo acceder a la cámara en el navegador web.', 'error');
+        closePhotoCaptureModal();
+    }
+}
 export function closePhotoCaptureModal() {
     if (photoCaptureStream) {
         photoCaptureStream.getTracks().forEach(track => track.stop());
@@ -1303,14 +1325,56 @@ export async function handlePhotoCaptured() {
     return;
   }
 
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
 
-  // 🔹 Capturar contexto de actualización (si viene desde "Mis Reportes")
+      // Guardar contexto
+      const context = State.contextForPhotoUpdate;
+      
+      // Cerrar modal
+      closePhotoCaptureModal();
+      
+      await processPhotoDataUrl(dataUrl, captureType, context);
+}
+
+export async function handlePhotoUploadWeb(file: File) {
+  const modalType = D.photoCaptureModal?.getAttribute('data-photo-type') as 'internal' | 'external';
+  const captureType = modalType || State.currentPhotoCaptureType || 'internal';
   const context = State.contextForPhotoUpdate;
+  
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = async () => {
+      const canvas = D.photoCaptureHiddenCanvas;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        showAppNotification('Error interno.', 'error');
+        return;
+      }
+      
+      // Resize to max width 1280
+      const maxWidth = 1280;
+      let width = img.width;
+      let height = img.height;
+      if (width > maxWidth) {
+        height = Math.round((height * maxWidth) / width);
+        width = maxWidth;
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      ctx.drawImage(img, 0, 0, width, height);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+      
+      closePhotoCaptureModal();
+      await processPhotoDataUrl(dataUrl, captureType, context);
+    };
+    img.src = e.target?.result as string;
+  };
+  reader.readAsDataURL(file);
+}
 
-  // Cerrar modal
-  closePhotoCaptureModal();
-
+async function processPhotoDataUrl(dataUrl: string, captureType: 'internal' | 'external', context: any) {
   // 🔹 Si estamos editando un reporte existente
   if (context && context.reportId) {
     try {
@@ -1564,6 +1628,7 @@ export async function openViewReportDetailsModal(reportId: string) {
 D.downloadReportPdfButton.onclick = async () => {
     showLoader('Generando PDF...');
     try {
+        const isNative = Capacitor.isNativePlatform();
         const pdfOutput = await generateReportPDF(
             report,
             State.cities,
@@ -1571,26 +1636,36 @@ D.downloadReportPdfButton.onclick = async () => {
             State.dependencies,
             formatDate,
             State.allServiceOrders,
-            'open'
+            isNative ? 'open' : 'blob'
         );
 
-        if (typeof pdfOutput === 'string') {
-            if (Capacitor.isNativePlatform()) {
-                try {
-                    await FileOpener.open(pdfOutput, 'application/pdf');
-                    showAppNotification('Reporte abierto en el visor del sistema.', 'success');
-                } catch (openError) {
-                    console.error('Error al abrir el PDF con FileOpener', openError);
-                    showAppNotification('No se pudo abrir el PDF con el visor del sistema.', 'error');
-                }
-            } else {
-                const newWindow = window.open(pdfOutput, '_blank');
-                if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-                    showAppNotification('El navegador bloqueó la ventana emergente. Por favor, habilítelas para ver el PDF.', 'warning');
-                }
+        if (isNative && typeof pdfOutput === 'string') {
+            try {
+                await FileOpener.open(pdfOutput, 'application/pdf');
+                showAppNotification('Reporte abierto en el visor del sistema.', 'success');
+            } catch (openError) {
+                console.error('Error al abrir el PDF con FileOpener', openError);
+                showAppNotification('No se pudo abrir el PDF con el visor del sistema.', 'error');
             }
+        } else if (!isNative && pdfOutput instanceof Blob) {
+            const url = URL.createObjectURL(pdfOutput);
+            const a = document.createElement('a');
+            a.href = url;
+            
+            const clientName = report.equipmentSnapshot.category === 'residencial' 
+                ? report.equipmentSnapshot.client_name 
+                : report.equipmentSnapshot.companyName;
+            const filenameId = report.orderId ? report.orderId : report.id.substring(0, 8);
+            
+            a.download = `Reporte_${clientName?.replace(/\s/g, '_') || 'General'}_${filenameId}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 100);
+            
+            showAppNotification('Descarga de PDF iniciada correctamente.', 'success');
         } else {
-            throw new Error('La generación del PDF no devolvió un formato válido para abrir.');
+            throw new Error('La generación del PDF no devolvió un formato válido.');
         }
     } catch (e: any) {
         console.error("Fallo en la generación o visualización del PDF", e);
@@ -1598,6 +1673,7 @@ D.downloadReportPdfButton.onclick = async () => {
     } finally {
         hideLoader();
     }
+
 };
 
 
@@ -2052,10 +2128,16 @@ export function renderAdminReportsTable() {
     const filteredReports = getFilteredAdminReports();
     const paginatedReports = getPaginatedData('adminReports', filteredReports);
     D.adminReportsTableBody.innerHTML = paginatedReports.map(report => {
-        const clientName = report.equipmentSnapshot.category === 'residencial' 
+        const clientNameFull = report.equipmentSnapshot.category === 'residencial' 
             ? (report.equipmentSnapshot.client_name || 'N/A')
             : (report.equipmentSnapshot.companyName || 'N/A');
+        const clientNameTruncated = clientNameFull.length > 30 ? clientNameFull.substring(0, 30) + '...' : clientNameFull;
+        
         const city = State.cities.find(c => c.id === report.cityId)?.name || 'N/A';
+        
+        const dependencyNameFull = report.equipmentSnapshot.dependencyName || 'N/A';
+        const dependencyNameTruncated = dependencyNameFull.length > 30 ? dependencyNameFull.substring(0, 30) + '...' : dependencyNameFull;
+
         const { isPending } = getPendingStatus(report);
         const paidStatusClass = report.is_paid ? 'paid' : 'unpaid';
         const paidStatusText = report.is_paid ? 'Pagado' : 'No Pagado';
@@ -2065,11 +2147,11 @@ export function renderAdminReportsTable() {
         return `
             <tr class="${rowClass}">
                 <td data-label="Fecha">${formatDate(report.timestamp)}</td>
-                <td data-label="ID Reporte">${report.id.substring(0,8)}...</td>
                 <td data-label="Técnico">${report.workerName}</td>
                 <td data-label="Tipo">${report.serviceType}</td>
                 <td data-label="Equipo">${report.equipmentSnapshot.brand} ${report.equipmentSnapshot.model}</td>
-                <td data-label="Empresa/Cliente">${clientName}</td>
+                <td data-label="Empresa/Cliente" title="${clientNameFull}">${clientNameTruncated}</td>
+                <td data-label="Dependencia" title="${dependencyNameFull}">${dependencyNameTruncated}</td>
                 <td data-label="Ciudad">${city}</td>
                 <td data-label="Pagado"><span class="status-badge ${paidStatusClass}">${paidStatusText}</span></td>
                 <td data-label="Acciones">
@@ -2145,6 +2227,62 @@ export async function handleDownloadReportsZip() {
     } catch (error: any) {
         console.error('Error generating ZIP file:', error);
         showAppNotification(`Error al crear el archivo ZIP: ${error.message}`, 'error');
+    } finally {
+        hideLoader();
+    }
+}
+
+export async function handleDownloadReportsMergedPdf() {
+    showLoader('Preparando documento unificado...');
+    try {
+        const reportsToDownload = getFilteredAdminReports();
+        if (reportsToDownload.length === 0) {
+            showAppNotification('No hay reportes en la vista actual para descargar.', 'info');
+            return;
+        }
+
+        showLoader(`Consolidando ${reportsToDownload.length} reportes en un solo PDF...`);
+
+        let mergedDoc: any = null;
+
+        // Sequence rather than parallel to keep PDF page order correct and pass the same doc ref
+        for (let i = 0; i < reportsToDownload.length; i++) {
+            const report = reportsToDownload[i];
+            
+            showLoader(`Uniendo reporte ${i + 1} de ${reportsToDownload.length}...`);
+            
+            // For the very first iteration, existingDoc will evaluate falsy so it internally instantiates the jsPDF doc
+            mergedDoc = await generateReportPDF(
+                report, 
+                State.cities, 
+                State.companies, 
+                State.dependencies, 
+                formatDate, 
+                State.allServiceOrders, 
+                'doc', 
+                mergedDoc
+            );
+        }
+        
+        if (!mergedDoc) throw new Error('No se pudo inicializar el documento PDF.');
+
+        showLoader('Finalizando documento...');
+        const mergedPdfBlob = mergedDoc.output('blob');
+
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(mergedPdfBlob);
+        const date = new Date().toISOString().slice(0, 10);
+        link.download = `Reportes_Consolidados_${date}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        setTimeout(() => URL.revokeObjectURL(link.href), 100);
+
+        showAppNotification('La descarga del PDF consolidado ha comenzado.', 'success');
+
+    } catch (error: any) {
+        console.error('Error generating merged PDF file:', error);
+        showAppNotification(`Error al crear el archivo PDF: ${error.message}`, 'error');
     } finally {
         hideLoader();
     }

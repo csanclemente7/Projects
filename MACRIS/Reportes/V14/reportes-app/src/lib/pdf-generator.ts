@@ -12,24 +12,42 @@ import { Capacitor } from '@capacitor/core';
  * @param url The path to the local image (e.g., 'MacrisLogo.png').
  * @returns A promise that resolves with the data URL.
  */
-async function getLocalImageAsDataUrl(url: string): Promise<string> {
-    try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Network response was not ok: ${response.statusText}`);
-        }
-        const blob = await response.blob();
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
-    } catch (error) {
-        console.error(`Failed to fetch local image at ${url}:`, error);
-        // Return a placeholder or empty string to prevent total failure
-        return '';
-    }
+async function getLocalImageAsDataUrl(url: string, format = 'image/jpeg'): Promise<string> {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        // Allow cross-origin if needed
+        img.crossOrigin = 'Anonymous';
+        
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            
+            if (!ctx) {
+                return reject(new Error('No 2d context available'));
+            }
+            
+            // Fill background solid white to avoid transparent PNG rendering issues in jsPDF
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            
+            try {
+                resolve(canvas.toDataURL(format, 0.9));
+            } catch (err) {
+                reject(err);
+            }
+        };
+        
+        img.onerror = (err) => {
+            console.error(`Failed to load image from ${url}:`, err);
+            resolve(''); // Return empty fallback on error
+        };
+        
+        // Bust browser cache to ensure load
+        img.src = url + '?t=' + new Date().getTime();
+    });
 }
 
 export async function generateReportPDF(
@@ -39,13 +57,18 @@ export async function generateReportPDF(
     dependencies: Dependency[],
     formatDate: (dateInput?: Date | string, includeTime?: boolean) => string,
     allOrders: Order[],
-    outputType: 'open' | 'blob' = 'open'
-): Promise<Blob | string> { // <-- El cambio está aquí
-    const doc = new jsPDF({
+    outputType: 'open' | 'blob' | 'doc' = 'open',
+    existingDoc?: any
+): Promise<Blob | string | any> { 
+    const doc = existingDoc || new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4'
     });
+
+    if (existingDoc) {
+        doc.addPage();
+    }
 
     const pageHeight = doc.internal.pageSize.height;
     const pageWidth = doc.internal.pageSize.width;
@@ -115,12 +138,12 @@ export async function generateReportPDF(
     
     // --- 1. Header ---
     try {
-        const logoDataUrl = await getLocalImageAsDataUrl('/MacrisLogo.png');
+        const logoDataUrl = await getLocalImageAsDataUrl('/MacrisLogo.png', 'image/jpeg');
         if (logoDataUrl) {
             const aspectRatio = 1823 / 1440;
             const logoHeight = 25;
             const logoWidth = logoHeight * aspectRatio;
-            doc.addImage(logoDataUrl, 'PNG', margin, currentY, logoWidth, logoHeight);
+            doc.addImage(logoDataUrl, 'JPEG', margin, currentY, logoWidth, logoHeight);
         }
     } catch (e) {
         console.error("Could not load logo for PDF", e);
@@ -371,7 +394,17 @@ if (outputType === 'blob') {
   return pdfBlob;
 }
 
-// Para el comportamiento 'open' en Android/iOS, se guarda y abre el archivo usando Capacitor Filesystem.
+// Si se solicita el documento vivo (para PDFs compuestos/merge), retornamos la instancia.
+if (outputType === 'doc') {
+  return doc;
+}
+
+// Para el comportamiento 'open'
+if (!Capacitor.isNativePlatform()) {
+    const pdfBlob = doc.output('blob');
+    return URL.createObjectURL(pdfBlob);
+}
+
 try {
   // Obtenemos el contenido en Base64 (sin encabezado "data:")
   const pdfBase64 = doc.output('datauristring').split(',')[1];
@@ -389,12 +422,9 @@ try {
     path: filename,
   });
 
-const webviewUrl = Capacitor.convertFileSrc(fileUri.uri);
-window.open(webviewUrl, '_blank');
-
-  return fileUri.uri; // Por si necesitas devolver la ruta para depuración
+  return fileUri.uri; // Devuelto para que ui.ts lo abra con FileOpener
 } catch (error) {
-  console.error('Error al guardar o abrir el PDF:', error);
+  console.error('Error al guardar el PDF:', error);
   throw error;
 }
 }

@@ -49,6 +49,7 @@ export const adminOrdersPaginationContainer = document.getElementById('admin-ord
 export const aiReconciliationBtn = document.getElementById('ai-reconciliation-btn') as HTMLButtonElement;
 
 export const downloadZipButton = document.getElementById('download-zip-button') as HTMLButtonElement;
+export const downloadMergedPdfButton = document.getElementById('download-merged-pdf-button') as HTMLButtonElement;
 export const deleteAllReportsButton = document.getElementById('delete-all-reports-button') as HTMLButtonElement;
 export const adminReportsTableBody = document.getElementById('admin-reports-table')?.getElementsByTagName('tbody')[0] as HTMLTableSectionElement;
 export const adminReportsSearchInput = document.getElementById('admin-reports-search') as HTMLInputElement;
@@ -139,9 +140,13 @@ export const reportMeasurementsContainer = document.getElementById('report-measu
 
 // reportInstallationPhotosContainer elements (new)
 export const takeInternalUnitPhotoButton = document.getElementById('take-internal-unit-photo-button') as HTMLButtonElement;
+export const uploadInternalUnitPhotoButton = document.getElementById('upload-internal-unit-photo-button') as HTMLButtonElement;
+export const uploadInternalUnitInput = document.getElementById('upload-internal-unit-input') as HTMLInputElement;
 export const photoInternalUnitPreview = document.getElementById('photo-internal-unit-preview') as HTMLImageElement;
 export const photoInternalUnitPlaceholder = document.getElementById('photo-internal-unit-placeholder') as HTMLDivElement;
 export const takeExternalUnitPhotoButton = document.getElementById('take-external-unit-photo-button') as HTMLButtonElement;
+export const uploadExternalUnitPhotoButton = document.getElementById('upload-external-unit-photo-button') as HTMLButtonElement;
+export const uploadExternalUnitInput = document.getElementById('upload-external-unit-input') as HTMLInputElement;
 export const photoExternalUnitPreview = document.getElementById('photo-external-unit-preview') as HTMLImageElement;
 export const photoExternalUnitPlaceholder = document.getElementById('photo-external-unit-placeholder') as HTMLDivElement;
 
@@ -181,6 +186,8 @@ export const photoCaptureHiddenCanvas = document.getElementById('photo-capture-c
 export const photoCaptureFeedback = document.getElementById('photo-capture-feedback') as HTMLParagraphElement;
 export const cancelPhotoCaptureButton = document.getElementById('cancel-photo-capture-button') as HTMLButtonElement;
 export const capturePhotoButton = document.getElementById('capture-photo-button') as HTMLButtonElement;
+export const photoCaptureUploadInput = document.getElementById('photo-capture-upload-input') as HTMLInputElement;
+export const photoCaptureUploadButton = document.getElementById('photo-capture-upload-button') as HTMLButtonElement;
 
 
 // Entity Form Modal Elements

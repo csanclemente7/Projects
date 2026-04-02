@@ -518,12 +518,20 @@ export async function fetchAssignedOrders(technicianId: string, allUsers: User[]
         console.log("Found assigned order IDs:", assignedOrderIds);
 
         // Step 2: Get base orders with items from Orders DB
+        // OPTIMIZACIÓN OFFLINE: Retener en caché móvil del técnico únicamente:
+        // - Órdenes no completadas/canceladas (siempre)
+        // - Órdenes finalizadas (completadas/canceladas) de los últimos 30 días únicamente.
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - 30);
+        const cutoffString = cutoffDate.toISOString().split('T')[0];
+
         const baseOrders: any[] = [];
         for (const orderIdChunk of splitIntoChunks(assignedOrderIds, SUPABASE_IN_FILTER_CHUNK_SIZE)) {
             const { data, error: ordersError } = await supabaseOrders
                 .from('orders')
                 .select('*, items:order_items(*)')
-                .in('id', orderIdChunk);
+                .in('id', orderIdChunk)
+                .or(`status.in.(pending,en_progreso),and(status.in.(completed,cancelada),service_date.gte.${cutoffString})`);
 
             if (ordersError) throw ordersError;
             baseOrders.push(...(data || []));

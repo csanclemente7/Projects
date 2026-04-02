@@ -1253,11 +1253,60 @@ if (!networkListenerActive) {
     D.takePictureButton?.addEventListener('click', UI.handlePlatePictureTaken);
 
     // Photo Capture
-    D.takeInternalUnitPhotoButton?.addEventListener('click', () => UI.openPhotoCaptureModal('internal'));
-    D.takeExternalUnitPhotoButton?.addEventListener('click', () => UI.openPhotoCaptureModal('external'));
+    D.takeInternalUnitPhotoButton?.addEventListener('click', () => UI.triggerPhotoCapture('internal', 'CAMERA'));
+    D.uploadInternalUnitPhotoButton?.addEventListener('click', () => UI.triggerPhotoCapture('internal', 'PHOTOS'));
+    
+    D.takeExternalUnitPhotoButton?.addEventListener('click', () => UI.triggerPhotoCapture('external', 'CAMERA'));
+    D.uploadExternalUnitPhotoButton?.addEventListener('click', () => UI.triggerPhotoCapture('external', 'PHOTOS'));
+    
     D.closePhotoCaptureModalButton?.addEventListener('click', UI.closePhotoCaptureModal);
     D.cancelPhotoCaptureButton?.addEventListener('click', UI.closePhotoCaptureModal);
     D.capturePhotoButton?.addEventListener('click', UI.handlePhotoCaptured);
+    
+    // Inputs file change events
+    const handleUploadInput = async (e: Event) => {
+        const input = e.target as HTMLInputElement;
+        if (!input.files || input.files.length === 0) return;
+        
+        UI.showLoader("Procesando imagen...");
+        try {
+            const file = input.files[0];
+            // Since we bypassed the modal, we need to temporarily set the type
+            const isInternal = input.id.includes('internal');
+            State.setCurrentPhotoCaptureType(isInternal ? 'internal' : 'external');
+            await UI.handlePhotoUploadWeb(file);
+        } catch (error) {
+            console.error("Upload error", error);
+            UI.showAppNotification("Error procesando imagen", "error");
+        } finally {
+            input.value = ''; // Reset input
+            UI.hideLoader();
+        }
+    };
+    
+    D.uploadInternalUnitInput?.addEventListener('change', handleUploadInput);
+    D.uploadExternalUnitInput?.addEventListener('change', handleUploadInput);
+    
+    D.photoCaptureUploadButton?.addEventListener('click', () => {
+        D.photoCaptureUploadInput?.click();
+    });
+
+    D.photoCaptureUploadInput?.addEventListener('change', async (e) => {
+        const input = e.target as HTMLInputElement;
+        if (!input.files || input.files.length === 0) return;
+        
+        UI.showLoader("Procesando imagen...");
+        try {
+            const file = input.files[0];
+            await UI.handlePhotoUploadWeb(file);
+        } catch (error) {
+            console.error("Upload error", error);
+            UI.showAppNotification("Error procesando imagen", "error");
+        } finally {
+            input.value = ''; // Reset input
+            UI.hideLoader();
+        }
+    });
     
     // --- Table/List Event Delegation ---
     document.body.addEventListener('click', async (e) => {
@@ -1565,6 +1614,7 @@ if (!networkListenerActive) {
     // --- AI Reconciliation ---
     D.aiReconciliationBtn?.addEventListener('click', runAiReconciliation);
     D.downloadZipButton?.addEventListener('click', UI.handleDownloadReportsZip);
+    D.downloadMergedPdfButton?.addEventListener('click', UI.handleDownloadReportsMergedPdf);
 
 
     // --- Filters ---

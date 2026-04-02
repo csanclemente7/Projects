@@ -3,7 +3,7 @@ import { supabaseOrders, upsertMaintenanceReport, updateOrderStatus, awardPointT
 import { showAppNotification, renderMyReportsTable, renderAdminReportsTable, renderAssignedOrdersList, renderAdminOrdersList, updateUserPointsDisplay } from '../ui';
 import * as State from '../state';
 import { EntityType } from '../types';
-import { checkOnlineStatus } from '../utils';
+import { checkOnlineStatus, withTimeout } from '../utils';
 import { Network } from '@capacitor/network';
 
 
@@ -113,16 +113,43 @@ async function syncEntitiesQueue(): Promise<boolean> {
             }
 
             // IMPORTANT: We need to get the created entity back to get its new server-side UUID
-            const { data: newServerEntity, error } = await supabaseOrders
-                .from(tableName)
-                .insert(insertPayload)
-                .select()
-                .single();
+            const { data: newServerEntity, error } = await withTimeout(
+                supabaseOrders.from(tableName).insert(insertPayload).select().single(),
+                15000,
+                `creación de entidad offline ${type}`
+            );
 
             if (error) {
                 if (error.code === '23505') { // Duplicate error
-                    console.warn(`[Sync] Entity ${localId} might already exist. Removing from queue.`);
-                    await removeEntityFromQueue(localId);
+                    console.warn(`[Sync] Entity ${localId} already exists (duplicate). Recovering server ID...`);
+                    
+                    let existingId: string | null = null;
+                    try {
+                        if (type === 'company' && insertPayload.name && insertPayload.city_id) {
+                            const { data } = await supabaseOrders.from('maintenance_companies')
+                                 .select('id').eq('name', insertPayload.name).eq('city_id', insertPayload.city_id).single();
+                            if (data) existingId = data.id;
+                        } else if (type === 'dependency' && insertPayload.name && insertPayload.company_id) {
+                            const { data } = await supabaseOrders.from('maintenance_dependencies')
+                                 .select('id').eq('name', insertPayload.name).eq('company_id', insertPayload.company_id).single();
+                            if (data) existingId = data.id;
+                        } else if (insertPayload.name) {
+                            const { data } = await supabaseOrders.from(tableName)
+                                 .select('id').eq('name', insertPayload.name).single();
+                            if (data) existingId = data.id;
+                        }
+                    } catch (fetchErr) {
+                        console.error(`[Sync] Error recovering existing ID for duplicate ${localId}:`, fetchErr);
+                    }
+
+                    if (existingId) {
+                        localToServerIdMap.set(localId, existingId);
+                        console.log(`[Sync] Mapped duplicate entity ${localId} to server ID: ${existingId}`);
+                        await removeEntityFromQueue(localId);
+                    } else {
+                        console.error(`[Sync] Failed to find existing ID for duplicate ${localId}. Removing from queue.`);
+                        await removeEntityFromQueue(localId);
+                    }
                 } else {
                     throw error;
                 }
@@ -262,7 +289,11 @@ export async function synchronizeQueue(): Promise<void> {
                     order_id: reportToSync.orderId || null,
                 };
 
-                await upsertMaintenanceReport(reportForDb);
+                await withTimeout(
+                    upsertMaintenanceReport(reportForDb), 
+                    15000, 
+                    `subida de reporte offline`
+                );
 
                 if (report.orderId) {
                     await updateOrderStatus(report.orderId, 'completed');

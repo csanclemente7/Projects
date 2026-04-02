@@ -330,11 +330,18 @@
             <h2><i class="fas fa-file-invoice"></i> Reportes</h2>
             <div class="header-actions-group">
               <button
+                id="download-merged-pdf-button"
+                class="btn btn-primary btn-compact"
+                title="Descargar los reportes filtrados unidos en un solo PDF multi-página"
+              >
+                <i class="fas fa-file-pdf"></i> DESCARGA PDF
+              </button>
+              <button
                 id="download-zip-button"
                 class="btn btn-accent btn-compact"
                 title="Descargar los reportes filtrados como un archivo ZIP"
               >
-                <i class="fas fa-file-archive"></i> Descargar ZIP
+                <i class="fas fa-file-archive"></i> DESCARGAR ZIP
               </button>
               <button
                 id="toggle-filters-btn"
@@ -423,11 +430,11 @@
               <thead>
                 <tr>
                   <th>Fecha</th>
-                  <th>ID Reporte</th>
                   <th>Técnico</th>
                   <th>Tipo</th>
                   <th>Equipo</th>
                   <th>Empresa/Cliente</th>
+                  <th>Dependencia</th>
                   <th>Ciudad</th>
                   <th>Pagado</th>
                   <th>Acciones</th>
@@ -866,13 +873,25 @@
                   <div class="photo-card-title">
                     <i class="fas fa-home"></i> Unidad Interna (Evaporadora)
                   </div>
-                  <button
-                    type="button"
-                    id="take-internal-unit-photo-button"
-                    class="btn btn-secondary btn-compact"
-                  >
-                    <i class="fas fa-camera-retro"></i> Tomar Foto
-                  </button>
+                  <div style="display: flex; gap: 5px;">
+                    <button
+                      type="button"
+                      id="take-internal-unit-photo-button"
+                      class="btn btn-secondary btn-compact"
+                      title="Usar Cámara"
+                    >
+                      <i class="fas fa-camera"></i>
+                    </button>
+                    <button
+                      type="button"
+                      id="upload-internal-unit-photo-button"
+                      class="btn btn-secondary btn-compact"
+                      title="Subir de Galería"
+                    >
+                      <i class="fas fa-upload"></i>
+                    </button>
+                    <input type="file" id="upload-internal-unit-input" accept="image/*" style="display:none;" />
+                  </div>
                 </div>
                 <div class="photo-card-body photo-capture-area">
                   <img
@@ -897,13 +916,25 @@
                   <div class="photo-card-title">
                     <i class="fas fa-fan"></i> Unidad Externa (Condensadora)
                   </div>
-                  <button
-                    type="button"
-                    id="take-external-unit-photo-button"
-                    class="btn btn-secondary btn-compact"
-                  >
-                    <i class="fas fa-camera-retro"></i> Tomar Foto
-                  </button>
+                  <div style="display: flex; gap: 5px;">
+                    <button
+                      type="button"
+                      id="take-external-unit-photo-button"
+                      class="btn btn-secondary btn-compact"
+                      title="Usar Cámara"
+                    >
+                      <i class="fas fa-camera"></i>
+                    </button>
+                    <button
+                      type="button"
+                      id="upload-external-unit-photo-button"
+                      class="btn btn-secondary btn-compact"
+                      title="Subir de Galería"
+                    >
+                      <i class="fas fa-upload"></i>
+                    </button>
+                    <input type="file" id="upload-external-unit-input" accept="image/*" style="display:none;" />
+                  </div>
                 </div>
                 <div class="photo-card-body photo-capture-area">
                   <img
@@ -1180,7 +1211,7 @@
           </button>
           <button
             type="button"
-            id="close-view-report-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cerrar
+            id="close-view-report-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Atrás
           </button>
           <button
             type="button"
@@ -1616,6 +1647,14 @@
         ></video>
         <canvas id="photo-capture-canvas-hidden" style="display: none"></canvas>
         <p id="photo-capture-feedback">Apuntando a la cámara...</p>
+        
+        <div style="text-align: center; margin-bottom: 15px;">
+          <input type="file" id="photo-capture-upload-input" accept="image/*" style="display: none;" />
+          <button type="button" id="photo-capture-upload-button" class="btn btn-secondary" style="width: 100%; border: 1px dashed var(--color-border-medium);">
+            <i class="fas fa-images"></i> Subir desde Galería
+          </button>
+        </div>
+
         <div class="modal-actions">
           <button
             type="button"

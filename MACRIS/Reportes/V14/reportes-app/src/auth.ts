@@ -571,8 +571,13 @@ async function handlePostLogin(user: User) {
 
             renderAssignedOrdersList();
             renderMyReportsTable();
-            subscribeToOrderRealtime(user);
-            startOrderPolling(user); // Fallback polling for cuando Realtime no está habilitado
+            
+            // Se desactiva la suscripción por WebSockets (Realtime) ya que Supabase emite un 
+            // error (CHANNEL_ERROR) cuando las políticas o los límites de conexión de ese rol no lo permiten.
+            // Para dispositivos móviles (Capacitor), el Polling es más estable y ahorra batería.
+            // subscribeToOrderRealtime(user); 
+            
+            startOrderPolling(user); // Mantiene las órdenes sincronizadas usando ráfagas (Polling)
             attachVisibilityOrderRefresh(user);
 
             startAppSession();
