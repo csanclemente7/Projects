@@ -224,6 +224,11 @@
                             </div>
                         </div>
 
+                        <div class="card" style="margin-bottom: 20px;">
+                            <h3 style="margin-top: 0; margin-bottom: 15px;">Notas Internas <span style="font-size: 0.8rem; font-weight: normal; color: var(--color-text-secondary);">(Uso interno adm. - NO aparece en PDF)</span></h3>
+                            <textarea id="quote-internal-notes-textarea" class="form-control form-control-textarea" rows="3" placeholder="Observaciones privadas sobre esta cotización..."></textarea>
+                        </div>
+
                         <div class="quote-annex-images card" style="margin-bottom: 20px;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                                 <h3 style="margin: 0; font-size: 15px; color: #5a5a5a; font-weight: 600;"><i class="fas fa-image" style="margin-right: 8px;"></i> Fotografías / Anexos Técnicos (Opcional)</h3>
@@ -388,8 +393,20 @@
                         <div class="card">
                             <h3>Notas Internas</h3>
                             <div class="form-group">
-                                <label for="order-notes">Notas (No visibles para el cliente)</label>
+                                <label for="order-notes">Notas (No visibles para el cliente ni técnicos)</label>
                                 <textarea id="order-notes" rows="6"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="card" style="margin-top: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3 style="margin: 0;"><i class="fas fa-camera" style="color: var(--color-text-secondary); margin-right: 8px;"></i> Fotografías / Anexos (Opcional)</h3>
+                                <label for="order-annex-upload" class="btn btn-outline" style="cursor: pointer; padding: 6px 14px; font-size: 13px; margin: 0;">
+                                    <i class="fas fa-upload"></i> Subir
+                                </label>
+                                <input type="file" id="order-annex-upload" multiple accept="image/*" style="display: none;">
+                            </div>
+                            <div id="order-annex-preview-container" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
                             </div>
                         </div>
 

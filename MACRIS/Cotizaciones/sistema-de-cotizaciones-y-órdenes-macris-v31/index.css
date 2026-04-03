@@ -881,7 +881,8 @@ body.dark-theme .status-badge.cancelled {
     text-align: right;
 }
 
-#quote-terms-textarea {
+#quote-terms-textarea,
+#quote-internal-notes-textarea {
     width: 100%;
     min-height: 120px;
     resize: vertical;
