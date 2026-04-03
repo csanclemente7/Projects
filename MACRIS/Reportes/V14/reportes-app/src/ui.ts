@@ -589,8 +589,8 @@ function setPhotoPreviewStyles(img: HTMLImageElement) {
     img.style.display = 'block';
 }
 
-export async function openReportFormModal(options: { report?: Report; equipment?: Partial<Equipment>; category?: 'empresa' | 'residencial', isFromOrder?: boolean; serviceType?: string; order?: Order } = {}) {
-    const { report, equipment, category, isFromOrder, serviceType, order } = options;
+export async function openReportFormModal(options: { report?: Report; equipment?: Partial<Equipment>; category?: 'empresa' | 'residencial', isFromOrder?: boolean; serviceType?: string; order?: Order, orderItemId?: string } = {}) {
+    const { report, equipment, category, isFromOrder, serviceType, order, orderItemId } = options;
 
     if (!D.maintenanceReportForm || !State.currentUser) return;
     
@@ -598,6 +598,9 @@ export async function openReportFormModal(options: { report?: Report; equipment?
     D.maintenanceReportForm.reset();
     D.reportIdInput.value = report ? report.id : '';
     D.reportOrderIdHidden.value = order?.id || '';
+    if (D.reportOrderItemIdHidden) {
+        D.reportOrderItemIdHidden.value = orderItemId || '';
+    }
     D.saveReportButton.innerHTML = report ? '<i class="fas fa-save"></i> Actualizar Reporte' : '<i class="fas fa-save"></i> Guardar Reporte';
     D.aiScanPlateButton.style.display = report ? 'none' : 'block';
     D.aiScanPlateButton.disabled = !navigator.onLine; // Disable button if offline
@@ -2709,16 +2712,55 @@ export function openOrderDetailsModal(orderId: string) {
     D.orderType.textContent = order.order_type || 'N/A';
     D.orderNotes.textContent = order.notes || 'Sin notas.';
 
+    if (D.orderImagesContainer) {
+        D.orderImagesContainer.innerHTML = '';
+        if (order.image_urls && order.image_urls.length > 0) {
+            order.image_urls.forEach(url => {
+                const imgWrap = document.createElement('div');
+                imgWrap.style.cssText = 'position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); cursor: pointer;';
+                
+                const img = document.createElement('img');
+                img.src = url;
+                img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
+                
+                imgWrap.addEventListener('click', () => {
+                    const win = window.open();
+                    win?.document.write(`<html><body style="margin:0;display:flex;justify-content:center;align-items:center;background:#000;"><img src="${url}" style="max-width:100%;max-height:100%;"></body></html>`);
+                });
+                
+                imgWrap.appendChild(img);
+                D.orderImagesContainer.appendChild(imgWrap);
+            });
+        } else {
+            D.orderImagesContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 0.9em;">Sin fotos adjuntas.</span>';
+        }
+    }
     if (D.orderItemsTableBody) {
         if (order.items && order.items.length > 0) {
-            D.orderItemsTableBody.innerHTML = order.items.map(item => `
-                <tr data-label="Item">
-                    <td data-label="Cantidad">${item.quantity}</td>
+            D.orderItemsTableBody.innerHTML = order.items.map((item, index) => {
+                const completed = item.completed_quantity || 0;
+                const isComplete = completed >= item.quantity;
+                const isWorker = State.currentUser?.role === 'worker';
+                const canReport = (isWorker || (order.assignedTechnicians?.some(t => t.id === State.currentUser?.id))) && !isComplete && order.status !== 'cancelada';
+                
+                let actionHtml = '';
+                if (canReport) {
+                    actionHtml = `<button type="button" class="btn btn-sm btn-action report-item-btn" data-order-id="${order.id}" data-item-id="${item.id}" style="background-color: var(--primary-color); color: white;"><i class="fas fa-plus"></i> Reportar (+1)</button>`;
+                } else if (isComplete) {
+                    actionHtml = `<span class="status-completed" style="font-size: 0.8rem; padding: 2px 6px;">Completado</span>`;
+                }
+
+                return `
+                <tr data-label="Item #${index + 1}">
+                    <td data-label="Item"><strong>#${index + 1}</strong></td>
                     <td data-label="Descripción">${item.description}</td>
-                    <td data-label="Precio Unit." class="price-col">$${item.price.toLocaleString('es-CO')}</td>
-                    <td data-label="Subtotal" class="price-col">$${(item.quantity * item.price).toLocaleString('es-CO')}</td>
+                    <td data-label="Progreso">
+                        <div style="font-size: 0.9rem; font-weight: bold; color: ${isComplete ? 'var(--success-color)' : 'var(--warning-color)'}">${completed} / ${item.quantity}</div>
+                        <progress value="${completed}" max="${item.quantity}" style="width: 100%; height: 8px; border-radius: 4px; border: none; background-color: var(--color-bg-medium); color: ${isComplete ? 'var(--success-color)' : 'var(--primary-color)'};"></progress>
+                    </td>
+                    <td data-label="Acción" style="text-align: center;">${actionHtml}</td>
                 </tr>
-            `).join('');
+            `}).join('');
         } else {
             D.orderItemsTableBody.innerHTML = '<tr><td colspan="4">No hay items en esta orden.</td></tr>';
         }

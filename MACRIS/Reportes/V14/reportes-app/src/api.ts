@@ -466,13 +466,14 @@ const enrichOrders = async (baseOrders: OrderWithItems[], allUsers: User[]): Pro
 
     // 4. Enrich orders with all details
     return baseOrders.map((dbOrder): Order => {
-        const items: OrderItem[] = (dbOrder.items || []).map((item: Database['public']['Tables']['order_items']['Row']): OrderItem => ({
+        const items: OrderItem[] = (dbOrder.items || []).map((item: any): OrderItem => ({
             id: item.id,
-            orderId: item.orderId,
-            itemId: item.itemId,
-            manualId: item.manualId,
+            orderId: item.order_id || item.orderId, // Handle both snake and camel depending on the fetch
+            itemId: item.item_id || item.itemId,
+            manualId: item.manual_id || item.manualId,
             description: item.description,
             quantity: item.quantity,
+            completed_quantity: item.completed_quantity,
             price: item.price,
             created_at: item.created_at,
         }));
@@ -480,15 +481,16 @@ const enrichOrders = async (baseOrders: OrderWithItems[], allUsers: User[]): Pro
         const mappedOrder: Order = {
             id: dbOrder.id,
             created_at: dbOrder.created_at ?? undefined,
-            manualId: dbOrder.manualId,
-            quoteId: dbOrder.quoteId,
-            clientId: dbOrder.clientId,
+            manualId: dbOrder.manual_id || dbOrder.manualId,
+            quoteId: dbOrder.quote_id || dbOrder.quoteId,
+            clientId: dbOrder.client_id || dbOrder.clientId,
             status: dbOrder.status,
             service_date: dbOrder.service_date,
             service_time: dbOrder.service_time,
             order_type: dbOrder.order_type,
             notes: dbOrder.notes,
             estimated_duration: dbOrder.estimated_duration,
+            image_urls: dbOrder.image_urls,
             items: items,
             clientDetails: clientsMap.get(dbOrder.clientId) || null,
             assignedTechnicians: techniciansByOrderId.get(dbOrder.id) || [],
@@ -984,4 +986,38 @@ export async function updateUserPoints(userId: string, newTotalPoints: number) {
         console.error("Error updating user points:", JSON.stringify(error, null, 2));
         throw error;
     }
+}
+
+export async function incrementOrderItemCompletedQuantity(orderItemId: string) {
+    const { data: itemData, error: fetchError } = await supabaseOrders
+        .from('order_items')
+        .select('completed_quantity, quantity, order_id')
+        .eq('id', orderItemId)
+        .single();
+    if (fetchError) throw fetchError;
+    
+    const newQuantity = (itemData.completed_quantity || 0) + 1;
+    const { error: updateError } = await supabaseOrders
+        .from('order_items')
+        .update({ completed_quantity: newQuantity })
+        .eq('id', orderItemId);
+        
+    if (updateError) throw updateError;
+    
+    return { newQuantity, maxQuantity: itemData.quantity, orderId: itemData.order_id };
+}
+
+export async function checkAndCompleteOrderIfFinished(orderId: string) {
+    const { data: items, error: fetchError } = await supabaseOrders
+        .from('order_items')
+        .select('completed_quantity, quantity')
+        .eq('order_id', orderId);
+        
+    if (fetchError) throw fetchError;
+    
+    const isCompleted = (items || []).every((item: any) => (item.completed_quantity || 0) >= item.quantity);
+    if (isCompleted) {
+        await updateOrderStatus(orderId, 'completed');
+    }
+    return isCompleted;
 }

@@ -658,6 +658,7 @@
             name="equipment_id"
           />
           <input type="hidden" id="report-order-id-hidden" name="order_id" />
+          <input type="hidden" id="report-order-item-id-hidden" name="order_item_id" />
 
           <h4>Información del Servicio</h4>
           <div class="form-group">
@@ -1022,6 +1023,16 @@
             <i class="fas fa-pencil-alt"></i> Abrir Panel de Firma
           </button>
 
+          <input
+            type="hidden"
+            id="report-order-id-hidden"
+            name="order_id"
+          />
+          <input
+            type="hidden"
+            id="report-order-item-id-hidden"
+            name="order_item_id"
+          />
           <input
             type="hidden"
             id="report-worker-name"
@@ -1398,6 +1409,10 @@
           <div style="grid-column: 1 / -1">
             <strong>Notas:</strong> <span id="order-notes"></span>
           </div>
+          <div style="grid-column: 1 / -1">
+            <strong>Anexos (Fotos):</strong>
+            <div id="order-images-container" style="display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap;"></div>
+          </div>
         </div>
 
         <h4><i class="fas fa-users"></i> Técnicos Asignados</h4>
@@ -1413,10 +1428,10 @@
           <table id="order-items-table">
             <thead>
               <tr>
-                <th>Cantidad</th>
+                <th>Item</th>
                 <th>Descripción</th>
-                <th class="price-col">Precio Unit.</th>
-                <th class="price-col">Subtotal</th>
+                <th style="min-width: 100px;">Progreso / Cantidad</th>
+                <th>Acción</th>
               </tr>
             </thead>
             <tbody></tbody>

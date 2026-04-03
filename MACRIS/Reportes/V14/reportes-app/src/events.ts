@@ -5,7 +5,7 @@ import { toggleFullscreen, withTimeout } from './utils';
 import * as State from './state';
 import { EntityType, Report, Equipment, Order, Database, Company, Dependency } from './types';
 // FIX: Added fetchEquipmentTypes and fetchRefrigerantTypes to the import list.
-import { deleteEntity as apiDeleteEntity, deleteReport as apiDeleteReport, saveEntity, deleteAllReports as apiDeleteAllReports, toggleEmployeeStatus, saveMaintenanceReport, updateMaintenanceReport, fetchAllEquipment, fetchCities, fetchCompanies, fetchDependencies, fetchUsers, toggleReportPaidStatus, updateOrderItemQuantity, updateOrderStatus, updateAppSetting, fetchAllReports, fetchReportsForWorker, awardPointToTechnician, updateUserPoints, fetchEquipmentTypes, fetchRefrigerantTypes } from './api';
+import { deleteEntity as apiDeleteEntity, deleteReport as apiDeleteReport, saveEntity, deleteAllReports as apiDeleteAllReports, toggleEmployeeStatus, saveMaintenanceReport, updateMaintenanceReport, fetchAllEquipment, fetchCities, fetchCompanies, fetchDependencies, fetchUsers, toggleReportPaidStatus, updateOrderItemQuantity, checkAndCompleteOrderIfFinished, incrementOrderItemCompletedQuantity, updateOrderStatus, updateAppSetting, fetchAllReports, fetchReportsForWorker, awardPointToTechnician, updateUserPoints, fetchEquipmentTypes, fetchRefrigerantTypes } from './api';
 import { addReportToQueue, updateLocalReport, cacheAllData } from './lib/local-db';
 import QRCode from 'qrcode';
 import { runAiReconciliation } from './ai';
@@ -737,7 +737,22 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             }
             
             if (orderIdValue) {
-                State.updateOrderInState(orderIdValue, { status: 'completed' });
+                const orderItemIdValue = D.reportOrderItemIdHidden?.value;
+                if (orderItemIdValue) {
+                    const assignedOrder = State.assignedOrders.find(o => o.id === orderIdValue) || State.allServiceOrders.find(o => o.id === orderIdValue);
+                    if (assignedOrder && assignedOrder.items) {
+                        const itemToUpdate = assignedOrder.items.find(i => i.id === orderItemIdValue);
+                        if (itemToUpdate) itemToUpdate.completed_quantity = (itemToUpdate.completed_quantity || 0) + 1;
+                        
+                        const isOrderComplete = assignedOrder.items.every(i => (i.completed_quantity || 0) >= i.quantity);
+                        if (isOrderComplete) {
+                            State.updateOrderInState(orderIdValue, { status: 'completed' });
+                        }
+                    }
+                } else {
+                    State.updateOrderInState(orderIdValue, { status: 'completed' });
+                }
+
                 if (State.currentUser.role === 'worker') UI.renderAssignedOrdersList();
                 else UI.renderAdminOrdersList();
                 await cacheAllData('orders', State.allServiceOrders);
@@ -801,8 +816,26 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             }
 
             if (orderIdValue) {
-                await updateOrderStatus(orderIdValue, 'completed');
-                State.updateOrderInState(orderIdValue, { status: 'completed' });
+                const orderItemIdValue = D.reportOrderItemIdHidden?.value;
+                if (orderItemIdValue) {
+                    await incrementOrderItemCompletedQuantity(orderItemIdValue);
+                    
+                    const assignedOrder = State.assignedOrders.find(o => o.id === orderIdValue) || State.allServiceOrders.find(o => o.id === orderIdValue);
+                    if (assignedOrder && assignedOrder.items) {
+                        const itemToUpdate = assignedOrder.items.find(i => i.id === orderItemIdValue);
+                        if (itemToUpdate) itemToUpdate.completed_quantity = (itemToUpdate.completed_quantity || 0) + 1;
+                    }
+
+                    const isOrderComplete = await checkAndCompleteOrderIfFinished(orderIdValue);
+                    if (isOrderComplete) {
+                        State.updateOrderInState(orderIdValue, { status: 'completed' });
+                        UI.showAppNotification('La orden ha sido completada en su totalidad.', 'success', 6000);
+                    }
+                } else {
+                    await updateOrderStatus(orderIdValue, 'completed');
+                    State.updateOrderInState(orderIdValue, { status: 'completed' });
+                }
+
                 if (State.currentUser.role === 'worker') UI.renderAssignedOrdersList();
                 else UI.renderAdminOrdersList();
                 await cacheAllData('orders', State.allServiceOrders);
@@ -1311,7 +1344,7 @@ if (!networkListenerActive) {
     // --- Table/List Event Delegation ---
     document.body.addEventListener('click', async (e) => {
         const target = e.target as HTMLElement;
-        const btn = target.closest<HTMLButtonElement>('.action-btn, .link-report-btn');
+        const btn = target.closest<HTMLButtonElement>('.action-btn, .link-report-btn, .report-item-btn');
         const card = target.closest<HTMLDivElement>('.order-card');
         const editPhotoBtn = target.closest<HTMLButtonElement>('button[data-action="edit-photo"]');
 
@@ -1341,6 +1374,34 @@ if (!networkListenerActive) {
         }
 
         if (!btn) return;
+
+        // --- Order Item Reporting ---
+        if (btn.matches('.report-item-btn')) {
+            const orderId = btn.dataset.orderId!;
+            const itemId = btn.dataset.itemId!;
+            const order = State.assignedOrders.find(o => o.id === orderId) || State.allServiceOrders.find(o => o.id === orderId);
+            if (order) {
+                D.orderDetailsModal.style.display = 'none';
+
+                let determinedCategory: 'empresa' | 'residencial' = 'residencial';
+                const clientName = order.clientDetails?.name;
+                if (clientName) {
+                    const matchedCompany = State.companies.find(c => c.name.trim().toLowerCase() === clientName.trim().toLowerCase());
+                    if (matchedCompany) {
+                        determinedCategory = 'empresa';
+                    }
+                }
+
+                await UI.openReportFormModal({ 
+                    category: determinedCategory,
+                    isFromOrder: true,
+                    serviceType: order.order_type || undefined,
+                    order: order,
+                    orderItemId: itemId
+                });
+            }
+            return;
+        }
 
         // --- AI Reconciliation Actions ---
         if (btn.matches('.link-report-btn')) {
