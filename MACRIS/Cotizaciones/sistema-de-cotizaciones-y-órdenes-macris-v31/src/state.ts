@@ -35,7 +35,7 @@ let openQuotes: Quote[] = [];
 let activeQuoteId: string | null = null;
 let currentOrder: Order | null = null; // For the order workspace
 let filteredCatalogItems: Item[] = [];
-let activePdfTemplate: PdfTemplate = 'classic';
+let activePdfTemplate: PdfTemplate = 'modern';
 let defaultVatRate: number = 19;
 
 // Company & PDF Text Settings

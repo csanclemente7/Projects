@@ -2,7 +2,7 @@ import { supabaseQuotes, supabaseOrders } from './supabase';
 import type { 
     Item, Client, Quote, QuoteItem, Setting, Technician, Order, OrderItem, ServiceType,
     ClientInsert, ItemInsert, QuoteInsert, QuoteItemInsert, OrderInsert, OrderItemInsert, TechnicianInsert, OrderTechnicianInsert, SettingInsert, DatabaseQuotes 
-} from './types.ts';
+} from './types';
 
 // --- ID Generation ---
 async function _findNextHighestManualId(
@@ -73,7 +73,17 @@ export async function getServiceTypesFromSupabase(): Promise<ServiceType[]> {
 export async function getQuotesFromSupabase(): Promise<Quote[]> {
     const { data, error } = await supabaseQuotes.from('quotes').select('*, items:quote_items(*)');
     if (error) throw error;
-    return (data || []).map(q => ({ ...q, items: q.items || [] }));
+    return (data || []).map(q => {
+        const allItems = q.items || [];
+        const realItems = allItems.filter((i: any) => !i.description.startsWith('<IMAGE::>'));
+        const imageItems = allItems.filter((i: any) => i.description.startsWith('<IMAGE::>'));
+        
+        return {
+            ...q,
+            items: realItems,
+            image_urls: imageItems.map((i: any) => i.description.replace('<IMAGE::>', ''))
+        };
+    });
 }
 export async function getOrdersFromSupabase(): Promise<Order[]> {
     const { data, error } = await supabaseOrders.from('orders').select('*, items:order_items(*), technicians:order_technicians(technician_id)');
@@ -125,7 +135,7 @@ export async function deleteTechnician(technicianId: string): Promise<void> {
 }
 
 export async function saveQuote(quote: Quote): Promise<Quote> {
-    const { items, created_at, ...quoteData } = quote;
+    const { items, image_urls, created_at, ...quoteData } = quote;
     const { data: savedQuote, error: quoteError } = await supabaseQuotes.from('quotes').upsert([quoteData] as any, { onConflict: 'id' }).select().single();
     if (quoteError) throw quoteError;
     if (!savedQuote) throw new Error('Failed to save quote');
@@ -134,16 +144,38 @@ export async function saveQuote(quote: Quote): Promise<Quote> {
     if (deleteError) throw deleteError;
 
     let savedItems: QuoteItem[] = [];
+    const itemsToInsert: QuoteItemInsert[] = [];
+    
     if (items && items.length > 0) {
-        const itemsToInsert: QuoteItemInsert[] = items.map(i => {
+        items.forEach(i => {
             const { created_at, ...itemInsert } = i;
-            return { ...itemInsert, quoteId: savedQuote.id };
+            itemsToInsert.push({ ...itemInsert, quoteId: savedQuote.id });
         });
+    }
+    
+    if (image_urls && image_urls.length > 0) {
+        image_urls.forEach((url, idx) => {
+            itemsToInsert.push({
+                quoteId: savedQuote.id,
+                description: `<IMAGE::>${url}`,
+                quantity: 0,
+                price: 0,
+                itemId: null,
+                manualId: `IMG-${idx}`
+            });
+        });
+    }
+
+    if (itemsToInsert.length > 0) {
         const { data: newItems, error: itemsError } = await supabaseQuotes.from('quote_items').insert(itemsToInsert as any).select();
         if (itemsError) throw itemsError;
-        savedItems = newItems || [];
+        // Filter out images from the returned items for the frontend state
+        if (newItems) {
+            savedItems = newItems.filter((i: any) => !i.description.startsWith('<IMAGE::>'));
+        }
     }
-    return { ...savedQuote, items: savedItems };
+    
+    return { ...savedQuote, items: savedItems, image_urls: image_urls || [] };
 }
 
 export async function saveOrder(order: Order): Promise<Order> {

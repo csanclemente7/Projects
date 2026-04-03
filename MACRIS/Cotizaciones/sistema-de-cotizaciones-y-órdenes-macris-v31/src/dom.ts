@@ -78,10 +78,7 @@ export const orderStatusSelect = document.getElementById('order-status') as HTML
 export const orderNotesTextarea = document.getElementById('order-notes') as HTMLTextAreaElement;
 export const saveOrderBtn = document.getElementById('save-order-btn') as HTMLButtonElement;
 export const generateOrderPdfBtn = document.getElementById('generate-order-pdf-btn') as HTMLButtonElement;
-export const orderSummarySubtotal = document.getElementById('order-summary-subtotal') as HTMLSpanElement;
-export const orderVatToggleSwitch = document.getElementById('order-vat-toggle-switch') as HTMLInputElement;
-export const orderSummaryTaxAmount = document.getElementById('order-summary-tax-amount') as HTMLSpanElement;
-export const orderSummaryTotal = document.getElementById('order-summary-total') as HTMLSpanElement;
+// Order Summary DOM Elements removed
 
 // Page: Agenda
 export const agendaPage = document.getElementById('page-agenda') as HTMLDivElement;

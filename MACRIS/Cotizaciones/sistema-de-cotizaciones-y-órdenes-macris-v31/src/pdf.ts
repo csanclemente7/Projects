@@ -94,6 +94,7 @@ export async function generateQuotePDFDoc(quote: Quote): Promise<jsPDF> {
     const client = clients.find(c => c.id === quote.clientId);
 
     await dispatchPdfGeneration(doc, quote, client, template);
+    await appendImagesToPdf(doc, quote);
 
     return doc;
 }
@@ -122,9 +123,38 @@ export async function generatePreviewPDF(template: PdfTemplate) {
     const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
 
     await dispatchPdfGeneration(doc, dummyQuote, dummyClient, template);
+    await appendImagesToPdf(doc, dummyQuote);
 
     State.setCurrentPdfDocForDownload(doc);
     previewPdfInModal(doc);
+}
+
+async function appendImagesToPdf(doc: jsPDF, quote: Quote) {
+    if (!quote.image_urls || quote.image_urls.length === 0) return;
+    doc.addPage();
+    doc.setFontSize(16);
+    doc.setTextColor(33, 37, 41);
+    doc.text('Anexos Técnicos / Fotográficos', 40, 50);
+    let startY = 80;
+    const margin = 40;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const availableWidth = pageWidth - margin * 2;
+    
+    for (const url of quote.image_urls) {
+        const imgProps = doc.getImageProperties(url);
+        const imgRatio = imgProps.height / imgProps.width;
+        const renderWidth = Math.min(availableWidth, 400);
+        const renderHeight = renderWidth * imgRatio;
+        
+        if (startY + renderHeight > doc.internal.pageSize.getHeight() - margin) {
+            doc.addPage();
+            startY = 40;
+        }
+        
+        const xPos = margin + (availableWidth - renderWidth) / 2;
+        doc.addImage(url, 'JPEG', xPos, startY, renderWidth, renderHeight);
+        startY += renderHeight + 20;
+    }
 }
 
 async function dispatchPdfGeneration(
@@ -145,7 +175,7 @@ async function dispatchPdfGeneration(
 
     switch (template) {
         case 'classic':
-            renderClassicPDF(doc, quote, client, logoUrl);
+            renderModernPDF(doc, quote, client, logoUrl);
             break;
         case 'modern':
             renderModernPDF(doc, quote, client, logoUrl);
@@ -157,7 +187,8 @@ async function dispatchPdfGeneration(
             renderVividPDF(doc, quote, client, logoUrl);
             break;
         default:
-            renderClassicPDF(doc, quote, client, logoUrl);
+            renderModernPDF(doc, quote, client, logoUrl);
             break;
     }
 }
+

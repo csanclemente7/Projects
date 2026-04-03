@@ -1,4 +1,3 @@
-import { getSetting } from '../src/api';
 import { ensureAdminUser, saveAppUsers } from '../src/user-data';
 import { getItemsFromSupabase, getOrdersFromSupabase, getQuotesFromSupabase, getSetting, setSetting } from '../src/api';
 import { formatCurrency, generateId } from '../src/utils';

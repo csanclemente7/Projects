@@ -76,6 +76,7 @@ export type DatabaseQuotes = {
           clientId: string | null
           taxRate: number
           terms: string
+          image_urls?: string[] | null
         }
         Insert: {
           id?: string
@@ -84,6 +85,7 @@ export type DatabaseQuotes = {
           clientId: string | null
           taxRate: number
           terms: string
+          image_urls?: string[] | null
         }
         Update: {
           id?: string
@@ -92,6 +94,7 @@ export type DatabaseQuotes = {
           clientId?: string | null
           taxRate?: number
           terms?: string
+          image_urls?: string[] | null
         }
       }
       quote_items: {
@@ -141,11 +144,13 @@ export type DatabaseQuotes = {
     }
     Views: {}
     Functions: {
-       clear_all_data: {
+      clear_all_data: {
         Args: Record<string, unknown>
         Returns: void
       }
     }
+    Enums: Record<string, never>
+    CompositeTypes: Record<string, never>
   }
 }
 
@@ -283,6 +288,8 @@ export type DatabaseOrders = {
     }
     Views: {}
     Functions: {}
+    Enums: Record<string, never>
+    CompositeTypes: Record<string, never>
   }
 }
 

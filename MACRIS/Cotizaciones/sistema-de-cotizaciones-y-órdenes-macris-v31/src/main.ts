@@ -1,6 +1,7 @@
 import { getActiveQuote, getOpenQuotes, loadState, loadSessionState } from './state';
 import * as UI from './ui';
 import { setupEventListeners } from './events';
+import { initReportsUI } from './ui-reports';
 
 export async function main() {
     try {
@@ -21,6 +22,9 @@ export async function main() {
         
         // 3. Load all business data directly from Supabase into the state
         await loadState();
+
+        // Inicializar Reportes
+        await initReportsUI();
 
         // 4. Setup all event listeners for interactivity (initializes Flatpickr, etc.)
         setupEventListeners();

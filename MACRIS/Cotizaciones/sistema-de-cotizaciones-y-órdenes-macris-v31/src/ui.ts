@@ -294,7 +294,6 @@ function cleanupOrderWorkspace() {
     D.orderStatusSelect.value = 'pending';
     D.orderNotesTextarea.value = '';
     D.orderItemsTableBody.innerHTML = '';
-    D.orderVatToggleSwitch.checked = false;
     D.orderItemSearchInput.value = '';
     renderTechnicianPills([]);
     updateOrderSummary();
@@ -744,14 +743,23 @@ export function renderSavedQuotesPageList() {
 }
 
 // --- UI Helpers ---
-function createItemRow(item: QuoteItem | OrderItem): HTMLTableRowElement {
+function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' = 'quote'): HTMLTableRowElement {
     const tr = document.createElement('tr');
     tr.dataset.itemId = item.id;
     const formattedPrice = formatCurrency(item.price);
     const formattedTotal = formatCurrency(item.quantity * item.price);
-    tr.innerHTML = `<td class="col-desc" data-label="Descripción"><textarea class="item-desc" rows="2">${item.description}</textarea><div class="item-desc-mobile-wrapper"><div class="item-desc-mobile-view"><span class="mobile-view-text">${item.description}</span><i class="fas fa-pencil-alt edit-indicator"></i></div><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-mobile" title="Eliminar ítem"><i class="fas fa-trash"></i></button></div></td><td class="col-qty" data-label="Cant."><input type="number" class="item-qty" value="${item.quantity}" min="0"><div class="item-value-mobile-view" data-field="quantity"><span class="mobile-view-text">${item.quantity}</span><i class="fas fa-pencil-alt edit-indicator"></i></div></td><td class="col-price" data-label="Vlr. Unitario"><input type="text" class="item-price" value="${formattedPrice}"><div class="item-value-mobile-view" data-field="price"><span class="mobile-view-text">${formattedPrice}</span><i class="fas fa-pencil-alt edit-indicator"></i></div></td><td class="col-total item-total" data-label="Vlr. Total">${formattedTotal}</td><td class="col-actions" data-label="Acción"><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-desktop"><i class="fas fa-trash"></i></button></td>`;
-    const priceInput = tr.querySelector('.item-price') as HTMLInputElement;
-    priceInput.addEventListener('input', () => { priceInput.value = formatCurrency(parseFloat(priceInput.value.replace(/[^0-9]+/g,"")) || 0); });
+    
+    let priceColumns = '';
+    if (context === 'quote') {
+        priceColumns = `<td class="col-price" data-label="Vlr. Unitario"><input type="text" class="item-price" value="${formattedPrice}"><div class="item-value-mobile-view" data-field="price"><span class="mobile-view-text">${formattedPrice}</span><i class="fas fa-pencil-alt edit-indicator"></i></div></td><td class="col-total item-total" data-label="Vlr. Total">${formattedTotal}</td>`;
+    }
+    
+    tr.innerHTML = `<td class="col-desc" data-label="Descripción"><textarea class="item-desc" rows="2">${item.description}</textarea><div class="item-desc-mobile-wrapper"><div class="item-desc-mobile-view"><span class="mobile-view-text">${item.description}</span><i class="fas fa-pencil-alt edit-indicator"></i></div><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-mobile" title="Eliminar ítem"><i class="fas fa-trash"></i></button></div></td><td class="col-qty" data-label="Cant."><input type="number" class="item-qty" value="${item.quantity}" min="0"><div class="item-value-mobile-view" data-field="quantity"><span class="mobile-view-text">${item.quantity}</span><i class="fas fa-pencil-alt edit-indicator"></i></div></td>${priceColumns}<td class="col-actions" data-label="Acción"><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-desktop"><i class="fas fa-trash"></i></button></td>`;
+    
+    if (context === 'quote') {
+        const priceInput = tr.querySelector('.item-price') as HTMLInputElement;
+        priceInput.addEventListener('input', () => { priceInput.value = formatCurrency(parseFloat(priceInput.value.replace(/[^0-9]+/g,"")) || 0); });
+    }
     return tr;
 }
 
@@ -766,9 +774,14 @@ export function updateQuoteSummary() {
 }
 
 export function updateItemRowTotal(row: HTMLTableRowElement) {
-    const qty = parseFloat((row.querySelector('.item-qty') as HTMLInputElement).value) || 0;
-    const price = parseFloat((row.querySelector('.item-price') as HTMLInputElement).value.replace(/[^0-9]+/g,"")) || 0;
-    (row.querySelector('.item-total') as HTMLTableCellElement).textContent = formatCurrency(qty * price);
+    const qtyInput = row.querySelector('.item-qty') as HTMLInputElement;
+    const priceInput = row.querySelector('.item-price') as HTMLInputElement;
+    const totalCell = row.querySelector('.item-total') as HTMLTableCellElement;
+    if (!qtyInput || !priceInput || !totalCell) return;
+    
+    const qty = parseFloat(qtyInput.value) || 0;
+    const price = parseFloat(priceInput.value.replace(/[^0-9]+/g,"")) || 0;
+    totalCell.textContent = formatCurrency(qty * price);
 }
 
 export function showNotification(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'success') {
@@ -1303,7 +1316,7 @@ export function renderOrderWorkspace(order: Order | null) {
 
     renderTechnicianPills(order.technicianIds);
     D.orderItemsTableBody.innerHTML = '';
-    order.items.forEach(item => D.orderItemsTableBody.appendChild(createItemRow(item)));
+    order.items.forEach(item => D.orderItemsTableBody.appendChild(createItemRow(item, 'order')));
 
     updateOrderSummary();
 }
@@ -1437,27 +1450,11 @@ export function handleDeleteOrder(id: string) {
 }
 
 export function updateOrderSummary() {
-    const order = State.getCurrentOrder();
-    if (!order) {
-        // If no current order (e.g., after cleanup), reset the summary fields to zero.
-        D.orderSummarySubtotal.textContent = formatCurrency(0);
-        D.orderSummaryTaxAmount.textContent = formatCurrency(0);
-        D.orderSummaryTotal.textContent = formatCurrency(0);
-        return;
-    }
-    const subtotal = order.items.reduce((s, i) => s + (i.quantity * i.price), 0);
-    const tax = subtotal * (order.taxRate / 100);
-    D.orderSummarySubtotal.textContent = formatCurrency(subtotal);
-    D.orderSummaryTaxAmount.textContent = formatCurrency(tax);
-    // FIX: The `total` variable was not defined. Calculate from subtotal and tax.
-    D.orderSummaryTotal.textContent = formatCurrency(subtotal + tax);
+    // Order summary removed, keeping empty function to satisfy exports.
 }
 
 export function handleOrderVatToggle() {
-    const order = State.getCurrentOrder();
-    if (!order) return;
-    order.taxRate = D.orderVatToggleSwitch.checked ? State.getDefaultVatRate() : 0;
-    updateOrderSummary();
+    // VAT toggle removed from orders
 }
 
 export function handleOrderItemChange(e: Event) {

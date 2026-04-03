@@ -8,7 +8,47 @@ const LOGIN_KEY = 'macris_app_session_active';
 const RECOVERY_CODE_TTL_MS = 10 * 60 * 1000;
 const RECOVERY_CODE_KEY_PREFIX = 'macris_user_recovery_';
 
-function handleLoginSuccess() {
+function playLoginWhooshSound() {
+    try {
+        const AudioContextClass = (window.AudioContext || (window as any).webkitAudioContext) as typeof AudioContext;
+        if (!AudioContextClass) return;
+        const ctx = new AudioContextClass();
+        const bufferSize = ctx.sampleRate * 2;
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        
+        const noiseSource = ctx.createBufferSource();
+        noiseSource.buffer = buffer;
+        
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(200, ctx.currentTime);
+        filter.frequency.exponentialRampToValueAtTime(1500, ctx.currentTime + 0.2);
+        filter.frequency.exponentialRampToValueAtTime(100, ctx.currentTime + 0.8);
+        
+        const gainNode = ctx.createGain();
+        gainNode.gain.setValueAtTime(0, ctx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.2);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.8);
+        
+        noiseSource.connect(filter);
+        filter.connect(gainNode);
+        gainNode.connect(ctx.destination);
+        
+        noiseSource.start();
+        noiseSource.stop(ctx.currentTime + 0.9);
+    } catch (e) {
+        console.warn("Audio context not supported", e);
+    }
+}
+
+function handleLoginSuccess(playSound: boolean = true) {
+    if (playSound) {
+        playLoginWhooshSound();
+    }
     // 1. Persist session
     localStorage.setItem(LOGIN_KEY, 'true');
 
@@ -17,7 +57,14 @@ function handleLoginSuccess() {
     D.appContainer.hidden = false;
     D.mobileNavBar.hidden = false;
 
-    // 3. Initialize the main application
+    // 3. Show loader so user sees feedback while the app data loads.
+    const loader = document.getElementById('loader-overlay');
+    if (loader) {
+        loader.style.display = 'flex';
+        loader.classList.remove('fade-out');
+    }
+
+    // 4. Initialize the main application
     initializeApp().catch(console.error);
 }
 
@@ -289,7 +336,7 @@ export function checkAuth() {
 
     if (isLoggedIn) {
         // Already logged in, start the app immediately
-        handleLoginSuccess();
+        handleLoginSuccess(false);
     } else {
         // Not logged in, show login screen and attach listener
         D.loginOverlay.classList.remove('hidden'); 

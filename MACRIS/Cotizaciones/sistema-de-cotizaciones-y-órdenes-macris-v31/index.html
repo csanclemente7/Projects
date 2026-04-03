@@ -41,23 +41,41 @@
 
 <body>
     <div id="login-overlay">
-        <div class="login-container">
-            <img src="MacrisLogoBlanco.png" alt="Macris Logo" class="login-logo">
-            <h3>Iniciar Sesión</h3>
-            <form id="login-form">
-                <div class="form-group">
-                    <label for="username-input">Usuario</label>
-                    <input type="text" id="username-input" required autocomplete="username" placeholder="admin">
+        <div class="login-split-graphic">
+            <div class="login-brand-content">
+                <img src="MacrisLogoBlanco.png" alt="Macris Logo" class="login-brand-logo">
+                <h1 class="login-brand-title">Gestión Operativa<br>y Cotizaciones</h1>
+                <p class="login-brand-subtitle">Plataforma centralizada para la ingeniería,<br>administración y el control de órdenes.</p>
+                
+                <div class="login-pulse-container">
+                    <div class="pulse-ring pulse-ring-1"></div>
+                    <div class="pulse-ring pulse-ring-2"></div>
+                    <div class="pulse-ring pulse-ring-3"></div>
+                    <div class="pulse-icon">
+                        <i class="fas fa-microchip"></i>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="password-input">Clave de Acceso</label>
-                    <input type="password" id="password-input" required autocomplete="current-password">
-                </div>
-                <p id="login-error-msg" class="login-error"></p>
-                <button type="submit" class="btn btn-primary login-btn">Ingresar</button>
-                <button id="user-recovery-open" class="login-recovery-link" type="button">Olvidé la clave</button>
-                <a id="admin-portal-link" class="btn btn-accent admin-login-link" href="#">Ir a Portal Admin</a>
-            </form>
+            </div>
+        </div>
+
+        <div class="login-split-form">
+            <div class="login-container">
+                <h3>Iniciar Sesión</h3>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="username-input">Usuario</label>
+                        <input type="text" id="username-input" required autocomplete="username" placeholder="admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="password-input">Clave de Acceso</label>
+                        <input type="password" id="password-input" required autocomplete="current-password">
+                    </div>
+                    <p id="login-error-msg" class="login-error"></p>
+                    <button type="submit" class="btn btn-primary login-btn">Ingresar</button>
+                    <button id="user-recovery-open" class="login-recovery-link" type="button">Olvidé la clave</button>
+                    <a id="admin-portal-link" class="btn btn-accent admin-login-link" href="#">Ir a Portal Admin</a>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -321,8 +339,6 @@
                                         <tr>
                                             <th class="col-desc">Descripción</th>
                                             <th class="col-qty">Cant.</th>
-                                            <th class="col-price">Vlr. Unitario</th>
-                                            <th class="col-total">Vlr. Total</th>
                                             <th class="col-actions"></th>
                                         </tr>
                                     </thead>
@@ -345,36 +361,10 @@
 
                         <!-- Order Status & Notes -->
                         <div class="card">
-                            <div class="summary-and-terms-wrapper">
-                                <div class="quote-terms"> <!-- Reusing class -->
-                                    <h3>Notas Internas</h3>
-                                    <div class="form-group">
-                                        <label for="order-notes">Notas (No visibles para el cliente)</label>
-                                        <textarea id="order-notes" rows="6"></textarea>
-                                    </div>
-                                </div>
-                                <div class="quote-summary"> <!-- Reusing class -->
-                                    <h3>Resumen de Costos</h3>
-                                    <div class="summary-row">
-                                        <span>Subtotal</span>
-                                        <span id="order-summary-subtotal">$0</span>
-                                    </div>
-                                    <div class="summary-row">
-                                        <div class="vat-toggle-container">
-                                            <label class="switch-label" for="order-vat-toggle-switch">Incluir
-                                                IVA</label>
-                                            <label class="switch">
-                                                <input type="checkbox" id="order-vat-toggle-switch">
-                                                <span class="slider round"></span>
-                                            </label>
-                                        </div>
-                                        <span id="order-summary-tax-amount">$0</span>
-                                    </div>
-                                    <div class="summary-row total-row">
-                                        <span>Total</span>
-                                        <span id="order-summary-total">$0</span>
-                                    </div>
-                                </div>
+                            <h3>Notas Internas</h3>
+                            <div class="form-group">
+                                <label for="order-notes">Notas (No visibles para el cliente)</label>
+                                <textarea id="order-notes" rows="6"></textarea>
                             </div>
                         </div>
 
