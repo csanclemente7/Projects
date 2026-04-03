@@ -223,6 +223,7 @@ export function renderQuote(quote: Quote | null) {
     }
     workspace.style.display = 'flex';
     D.deleteCurrentQuoteBtn.style.display = State.getQuotes().some(q => q.id === quote.id) ? 'inline-flex' : 'none';
+    if (D.duplicateQuoteBtn) D.duplicateQuoteBtn.style.display = State.getQuotes().some(q => q.id === quote.id) ? 'inline-flex' : 'none';
     D.quoteIdDisplay.textContent = `#${quote.manualId}`;
     (D.quoteDateInput as any)._flatpickr.setDate(quote.date, false);
     D.vatToggleSwitch.checked = quote.taxRate > 0;
@@ -568,9 +569,15 @@ export async function handleDuplicateQuote(quoteId: string) {
             date: new Date().toISOString().split('T')[0],
             items: originalQuote.items.map(item => ({ ...item, id: generateId() }))
         };
-        State.addOpenQuote(duplicatedQuote);
+        const savedQuote = await API.saveQuote(duplicatedQuote);
+        State.setQuotes([...State.getQuotes(), savedQuote]);
+        
+        State.addOpenQuote(savedQuote);
         renderQuoteTabs();
-        switchQuoteTab(duplicatedQuote.id);
+        switchQuoteTab(savedQuote.id);
+        if (document.querySelector('#page-saved-quotes.active')) {
+            renderSavedQuotesPageList();
+        }
         showNotification(`Cotización #${originalQuote.manualId} duplicada exitosamente como #${newQuoteId}`, 'success');
     } catch (e) {
         showNotification('Error al duplicar la cotización.', 'error');
@@ -736,16 +743,98 @@ export function renderSavedQuotesPageList() {
             const total = q.items.reduce((s, i) => s + i.quantity * i.price, 0) * (1 + q.taxRate / 100);
             const author = State.getQuoteAuthor(q.id);
             const authorColor = getAuthorColor(author);
-            return `<tr data-id="${q.id}" title="Haz clic para abrir esta cotización"><td style="cursor:pointer;"><strong>${client}</strong><br><small>#${q.manualId} &bull; ${date}</small><br><small class="quote-author">Por: <span style="color: ${authorColor}; font-weight: 600;">${author}</span> &bull; ${createdTime}</small></td><td>${client}</td><td>${date}</td><td>${formatCurrency(total)}</td><td class="actions" style="white-space: nowrap;"><button class="btn btn-secondary edit-quote-btn" data-id="${q.id}" title="Editar Cotización"><i class="fas fa-edit"></i> Editar cotización</button> <button class="btn btn-primary create-order-btn" data-id="${q.id}" title="Crear Orden"><i class="fas fa-clipboard-check"></i> Crear orden</button><button class="btn btn-icon-only btn-danger delete-btn" data-id="${q.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`;
+            return `<tr data-id="${q.id}" title="Haz clic para abrir esta cotización"><td style="cursor:pointer;"><strong>${client}</strong><br><small>#${q.manualId} &bull; ${date}</small><br><small class="quote-author">Por: <span style="color: ${authorColor}; font-weight: 600;">${author}</span> &bull; ${createdTime}</small></td><td>${client}</td><td>${date}</td><td>${formatCurrency(total)}</td><td class="actions" style="white-space: nowrap;"><button class="btn btn-secondary edit-quote-btn" data-id="${q.id}" title="Editar Cotización"><i class="fas fa-edit"></i> Editar cotización</button> <button class="btn btn-primary create-order-btn" data-id="${q.id}" title="Crear Orden"><i class="fas fa-clipboard-check"></i> Crear orden</button> <button class="btn btn-duplicate copy-quote-btn" data-id="${q.id}" title="Duplicar"><i class="fas fa-copy"></i> Duplicar</button> <button class="btn btn-icon-only btn-danger delete-btn" data-id="${q.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`;
         }).join('');
     }
     D.savedQuotesPageContainer.innerHTML = html + `</tbody></table>`;
+}
+
+// --- Inter-DOM Drag & Drop Variables ---
+let draggedRow: HTMLTableRowElement | null = null;
+let reorderingContext: 'quote' | 'order' | null = null;
+
+function setupDragAndDropEvents(tr: HTMLTableRowElement, context: 'quote' | 'order') {
+    tr.addEventListener('dragstart', (e) => {
+        // Ignorar el arrastre si se seleccionó un área de texto o input
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+            e.preventDefault();
+            return;
+        }
+        draggedRow = tr;
+        reorderingContext = context;
+        setTimeout(() => tr.classList.add('is-dragging'), 0);
+        if (e.dataTransfer) {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', tr.dataset.itemId || '');
+        }
+    });
+
+    tr.addEventListener('dragend', () => {
+        draggedRow = null;
+        reorderingContext = null;
+        tr.classList.remove('is-dragging');
+        
+        // Al terminar de arrastrar debemos sincronizar el nuevo orden contra el State
+        syncItemsOrderFromDOM(context);
+    });
+
+    tr.addEventListener('dragover', (e) => {
+        e.preventDefault(); // Permitir drop
+        if (e.dataTransfer) {
+            e.dataTransfer.dropEffect = 'move';
+        }
+        
+        const tbody = tr.parentElement;
+        if (!tbody || !draggedRow || draggedRow === tr || reorderingContext !== context) return;
+        
+        const bounding = tr.getBoundingClientRect();
+        const offset = e.clientY - bounding.top;
+        if (offset > bounding.height / 2) {
+            tr.after(draggedRow);
+        } else {
+            tr.before(draggedRow);
+        }
+    });
+}
+
+function syncItemsOrderFromDOM(context: 'quote' | 'order') {
+    if (context === 'quote') {
+        const activeQuote = State.getActiveQuote();
+        if (!activeQuote) return;
+        
+        const newOrder = Array.from(document.querySelectorAll('#items-tbody .draggable-row')).map(row => (row as HTMLElement).dataset.itemId);
+        // Reordenar items locales a nivel State basándose en el DOM
+        activeQuote.items.sort((a, b) => {
+            const indexA = newOrder.indexOf(a.id);
+            const indexB = newOrder.indexOf(b.id);
+            if (indexA === -1 || indexB === -1) return 0;
+            return indexA - indexB;
+        });
+        updateQuoteSummary();
+    } else {
+        const activeOrder = State.getCurrentOrder();
+        if (!activeOrder) return;
+        
+        const newOrder = Array.from(document.querySelectorAll('#order-items-tbody .draggable-row')).map(row => (row as HTMLElement).dataset.itemId);
+        activeOrder.items.sort((a, b) => {
+            const indexA = newOrder.indexOf(a.id);
+            const indexB = newOrder.indexOf(b.id);
+            if (indexA === -1 || indexB === -1) return 0;
+            return indexA - indexB;
+        });
+        updateOrderSummary();
+    }
 }
 
 // --- UI Helpers ---
 function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' = 'quote'): HTMLTableRowElement {
     const tr = document.createElement('tr');
     tr.dataset.itemId = item.id;
+    // Se habilita el attribute para Web Drag&Drop
+    tr.draggable = true;
+    tr.classList.add('item-row', 'draggable-row');
+    setupDragAndDropEvents(tr, context);
+
     const formattedPrice = formatCurrency(item.price);
     const formattedTotal = formatCurrency(item.quantity * item.price);
     
@@ -754,7 +843,12 @@ function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' =
         priceColumns = `<td class="col-price" data-label="Vlr. Unitario"><input type="text" class="item-price" value="${formattedPrice}"><div class="item-value-mobile-view" data-field="price"><span class="mobile-view-text">${formattedPrice}</span><i class="fas fa-pencil-alt edit-indicator"></i></div></td><td class="col-total item-total" data-label="Vlr. Total">${formattedTotal}</td>`;
     }
     
-    tr.innerHTML = `<td class="col-desc" data-label="Descripción"><textarea class="item-desc" rows="2">${item.description}</textarea><div class="item-desc-mobile-wrapper"><div class="item-desc-mobile-view"><span class="mobile-view-text">${item.description}</span><i class="fas fa-pencil-alt edit-indicator"></i></div><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-mobile" title="Eliminar ítem"><i class="fas fa-trash"></i></button></div></td><td class="col-qty" data-label="Cant."><input type="number" class="item-qty" value="${item.quantity}" min="0"><div class="item-value-mobile-view" data-field="quantity"><span class="mobile-view-text">${item.quantity}</span><i class="fas fa-pencil-alt edit-indicator"></i></div></td>${priceColumns}<td class="col-actions" data-label="Acción"><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-desktop"><i class="fas fa-trash"></i></button></td>`;
+    tr.innerHTML = `<td class="col-desc" data-label="Descripción">
+        <div class="drag-handle-wrapper"><i class="fas fa-bars drag-handle-icon"></i></div>
+        <textarea class="item-desc" rows="2">${item.description}</textarea>
+        <div class="item-desc-mobile-wrapper"><div class="item-desc-mobile-view"><span class="mobile-view-text">${item.description}</span><i class="fas fa-pencil-alt edit-indicator"></i></div><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-mobile" title="Eliminar ítem"><i class="fas fa-trash"></i></button></div>
+    </td>
+    <td class="col-qty" data-label="Cant."><input type="number" class="item-qty" value="${item.quantity}" min="0"><div class="item-value-mobile-view" data-field="quantity"><span class="mobile-view-text">${item.quantity}</span><i class="fas fa-pencil-alt edit-indicator"></i></div></td>${priceColumns}<td class="col-actions" data-label="Acción"><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-desktop"><i class="fas fa-trash"></i></button></td>`;
     
     if (context === 'quote') {
         const priceInput = tr.querySelector('.item-price') as HTMLInputElement;

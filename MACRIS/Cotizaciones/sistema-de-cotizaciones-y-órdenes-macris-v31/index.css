@@ -3669,3 +3669,16 @@ body.dark-theme .current-user-badge {
     overflow-y: auto;
     background: var(--color-bg-dark); /* Refreshing Vite */
 }
+
+/* Drag and Drop Styles */
+.draggable-row { cursor: grab; }
+.draggable-row:active { cursor: grabbing; }
+.draggable-row.is-dragging { opacity: 0.5; background: #f0f8ff; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
+.col-desc { position: relative; padding-left: 26px !important; }
+.drag-handle-wrapper { position: absolute; left: 4px; top: 10px; bottom: 10px; width: 16px; display: flex; align-items: center; justify-content: center; opacity: 0.8; z-index: 2; }
+.drag-handle-wrapper:hover { opacity: 1; }
+.drag-handle-icon { color: #5a5a5a; font-size: 14px; }
+
+/* Duplicate Button */
+.btn-duplicate { background: white; color: #0ac7d4; border: 1px solid #0ac7d4; transition: all 0.3s ease; }
+.btn-duplicate:hover { background: #0ac7d4; color: white; }
