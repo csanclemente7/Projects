@@ -2256,8 +2256,8 @@ function renderListWeekView() {
 
         html += `
                 <div class="day-add-action" style="padding: 10px; text-align: center; border-top: 1px dashed var(--color-border); background-color: rgba(255, 255, 255, 0.5); display: flex; justify-content: center; align-items: center;">
-                    <button class="btn btn-icon-only btn-secondary add-order-day-btn" data-date="${dateString}" title="Agendar orden este día" style="background-color: white; border-color: rgba(0,0,0,0.05); border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.1); color: var(--color-primary); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;">
-                        <i class="fas fa-plus" style="pointer-events:none;"></i>
+                    <button class="btn btn-secondary add-order-day-btn" data-date="${dateString}" title="Agendar orden este día" style="background-color: white; border: 1px dashed var(--color-primary); border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); color: var(--color-primary); width: 100%; height: 40px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-weight: 600; cursor: pointer;">
+                        <i class="fas fa-plus" style="pointer-events:none; margin-right: 8px;"></i> Agregar orden
                     </button>
                 </div>
         `;
