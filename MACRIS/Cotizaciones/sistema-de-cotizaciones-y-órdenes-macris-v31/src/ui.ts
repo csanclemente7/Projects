@@ -293,6 +293,8 @@ function cleanupOrderWorkspace() {
     D.orderTimeInput.value = '';
     D.orderDurationHoursInput.value = '';
     D.orderDurationMinutesInput.value = '';
+    if (D.orderDifficultySelect) D.orderDifficultySelect.value = '';
+    if (D.orderDurationHint) D.orderDurationHint.innerText = '';
     D.orderTypeSelect.value = '';
     D.orderStatusSelect.value = 'pending';
     D.orderNotesTextarea.value = '';
@@ -1458,6 +1460,11 @@ export function renderOrderWorkspace(order: Order | null) {
     const minutes = Math.round(((order.estimated_duration || 0) - hours) * 60);
     D.orderDurationHoursInput.value = String(hours);
     D.orderDurationMinutesInput.value = String(minutes);
+    
+    if (D.orderDifficultySelect) D.orderDifficultySelect.value = "";
+    if (D.orderDurationHint) {
+        D.orderDurationHint.innerText = order.estimated_duration ? `Duración manual/previa: ${hours} hora${hours !== 1 ? 's' : ''}` : '';
+    }
 
     renderTechnicianPills(order.technicianIds);
     D.orderItemsTableBody.innerHTML = '';
@@ -1628,9 +1635,36 @@ export function handleOrderItemChange(e: Event) {
     updateItemRowTotal(row);
 }
 
+export function handleOrderDifficultyChange() {
+    if (!D.orderDifficultySelect || !D.orderDurationHint) return;
+    const difficulty = D.orderDifficultySelect.value;
+    const isMontaje = D.orderTypeSelect.value === 'Montaje/instalación';
+    
+    let hours = 0;
+    if (difficulty === 'facil') {
+        hours = isMontaje ? 4 : 1;
+    } else if (difficulty === 'medio') {
+        hours = isMontaje ? 6 : 2;
+    } else if (difficulty === 'dificil') {
+        hours = isMontaje ? 9 : 3;
+    }
+
+    if (difficulty) {
+        D.orderDurationHoursInput.value = String(hours);
+        D.orderDurationMinutesInput.value = '0';
+        D.orderDurationHint.innerText = `Duración estimada asignada: ${hours} hora${hours !== 1 ? 's' : ''}`;
+    } else {
+        D.orderDurationHoursInput.value = '0';
+        D.orderDurationMinutesInput.value = '0';
+        D.orderDurationHint.innerText = '';
+    }
+}
+
 export function handleOrderDetailsChange() {
     const order = State.getCurrentOrder();
     if (!order) return;
+    
+    const prevType = order.order_type;
     if (D.orderTypeSelect.value === 'Otro') {
         D.orderTypeCustomInput.style.display = 'block';
         D.orderTypeCustomInput.required = true;
@@ -1640,6 +1674,11 @@ export function handleOrderDetailsChange() {
         D.orderTypeCustomInput.required = false;
         order.order_type = D.orderTypeSelect.value as any;
     }
+    
+    if (prevType !== order.order_type && D.orderDifficultySelect && D.orderDifficultySelect.value) {
+        handleOrderDifficultyChange();
+    }
+
     order.status = D.orderStatusSelect.value as Order['status'];
     order.notes = D.orderNotesTextarea.value;
     order.service_date = (D.orderDateInput as any)._flatpickr.input.value;

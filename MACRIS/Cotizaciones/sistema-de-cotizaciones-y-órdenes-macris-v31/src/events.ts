@@ -331,6 +331,23 @@ function setupOrderWorkspaceEventListeners() {
     D.orderDateInput.addEventListener('input', UI.handleOrderDetailsChange);
     D.orderTimeInput.addEventListener('input', UI.handleOrderDetailsChange);
     D.orderClientCityInput.addEventListener('input', UI.handleOrderDetailsChange);
+    document.querySelectorAll('.preset-time-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const time = (e.currentTarget as HTMLElement).dataset.time;
+            if(time) {
+                D.orderTimeInput.value = time;
+                UI.handleOrderDetailsChange();
+            }
+        });
+    });
+    
+    if (D.orderDifficultySelect) {
+        D.orderDifficultySelect.addEventListener('change', () => {
+            UI.handleOrderDifficultyChange();
+            UI.handleOrderDetailsChange(); // Para guardar automáticamente
+        });
+    }
+
     D.orderDurationHoursInput.addEventListener('input', UI.handleOrderDetailsChange);
     D.orderDurationMinutesInput.addEventListener('input', UI.handleOrderDetailsChange);
 }
