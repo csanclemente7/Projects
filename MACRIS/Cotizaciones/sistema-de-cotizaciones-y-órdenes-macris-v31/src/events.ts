@@ -32,7 +32,7 @@ function setupNavigationEventListeners() {
 }
 
 function setupQuoteEventListeners() {
-    // UI.setupQuoteImageUpload();
+    UI.setupQuoteAnnexUpload();
     D.itemSearchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();

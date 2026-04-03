@@ -140,20 +140,31 @@ async function appendImagesToPdf(doc: jsPDF, quote: Quote) {
     const pageWidth = doc.internal.pageSize.getWidth();
     const availableWidth = pageWidth - margin * 2;
     
-    for (const url of quote.image_urls) {
-        const imgProps = doc.getImageProperties(url);
-        const imgRatio = imgProps.height / imgProps.width;
-        const renderWidth = Math.min(availableWidth, 400);
-        const renderHeight = renderWidth * imgRatio;
-        
-        if (startY + renderHeight > doc.internal.pageSize.getHeight() - margin) {
-            doc.addPage();
-            startY = 40;
+    // Lazy load the getQuoteImageUrl to avoid circular dep, or just reconstruct the URL
+    // since we use a predictable url pattern in Supabase.
+    // Better yet, just use supabaseQuotes from api:
+    const { supabaseQuotes } = await import('./supabase');
+    
+    for (const path of quote.image_urls) {
+        try {
+            const publicUrl = supabaseQuotes.storage.from("quote-images").getPublicUrl(path).data.publicUrl;
+            const dataUrl = await getLogoAsDataUrl(publicUrl);
+            const imgProps = doc.getImageProperties(dataUrl);
+            const imgRatio = imgProps.height / imgProps.width;
+            const renderWidth = Math.min(availableWidth, 400);
+            const renderHeight = renderWidth * imgRatio;
+            
+            if (startY + renderHeight > doc.internal.pageSize.getHeight() - margin) {
+                doc.addPage();
+                startY = 40;
+            }
+            
+            const xPos = margin + (availableWidth - renderWidth) / 2;
+            doc.addImage(dataUrl, 'JPEG', xPos, startY, renderWidth, renderHeight);
+            startY += renderHeight + 20;
+        } catch (err) {
+            console.error("Failed to load image for PDF:", err);
         }
-        
-        const xPos = margin + (availableWidth - renderWidth) / 2;
-        doc.addImage(url, 'JPEG', xPos, startY, renderWidth, renderHeight);
-        startY += renderHeight + 20;
     }
 }
 
