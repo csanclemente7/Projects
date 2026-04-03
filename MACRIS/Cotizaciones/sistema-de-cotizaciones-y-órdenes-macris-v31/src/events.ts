@@ -236,7 +236,7 @@ function setupGlobalActionListeners() {
     D.duplicateQuoteBtn.addEventListener('click', () => {
         const activeId = State.getActiveQuoteId();
         if (activeId) {
-            UI.handleDuplicateQuote(activeId);
+            UI.handleDuplicateQuote(activeId, true, D.duplicateQuoteBtn as HTMLButtonElement);
         }
     });
     D.saveQuoteBtn.addEventListener('click', UI.handleSaveQuote);
@@ -256,7 +256,7 @@ function setupGlobalActionListeners() {
         const deleteBtn = target.closest('.delete-btn');
         const createOrderBtn = target.closest('.create-order-btn');
         const editQuoteBtn = target.closest('.edit-quote-btn');
-        const duplicateListBtn = target.closest('.duplicate-quote-list-btn');
+        const duplicateListBtn = target.closest('.copy-quote-btn');
 
         if (deleteBtn) {
             e.stopPropagation();
@@ -266,7 +266,7 @@ function setupGlobalActionListeners() {
             UI.navigateToOrderWorkspace(null, quoteRow.dataset.id);
         } else if (duplicateListBtn) {
             e.stopPropagation();
-            UI.handleDuplicateQuote(quoteRow.dataset.id);
+            UI.handleDuplicateQuote(quoteRow.dataset.id, false, duplicateListBtn as HTMLButtonElement);
         } else if (editQuoteBtn) {
             e.stopPropagation();
             UI.loadQuote(quoteRow.dataset.id);

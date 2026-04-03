@@ -380,7 +380,7 @@ export function navigateTo(pageId: string) {
 // --- Quote Tab Interactivity ---
 export async function createNewQuote(clickedPlusTab?: HTMLElement) {
     const newQuote: Quote = {
-        id: generateId(), created_at: new Date().toISOString(), manualId: await getNextQuoteManualId(),
+        id: generateId(), created_at: new Date().toISOString(), manualId: 'Borrador',
         date: new Date().toISOString(), clientId: null, taxRate: 0, terms: State.getQuoteTermsNoVat(), items: [],
     };
     State.addOpenQuote(newQuote);
@@ -437,6 +437,9 @@ export async function handleSaveQuote(): Promise<boolean> {
     btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Guardando...`;
 
     try {
+        if (quote.manualId === 'Borrador') {
+            quote.manualId = await getNextQuoteManualId();
+        }
         const savedQuote = await API.saveQuote(quote);
         State.setQuotes([...State.getQuotes().filter(q => q.id !== savedQuote.id), savedQuote]);
         State.updateActiveQuote(savedQuote);
@@ -445,6 +448,7 @@ export async function handleSaveQuote(): Promise<boolean> {
             await State.setQuoteAuthor(savedQuote.id, authorName);
         }
         renderQuote(savedQuote);
+        renderQuoteTabs();
         showNotification(`Cotización #${savedQuote.manualId} guardada.`, 'success');
         return true;
     } catch (e: any) {
@@ -559,9 +563,17 @@ export function handleDeleteQuote(quoteId: string) {
     });
 }
 
-export async function handleDuplicateQuote(quoteId: string) {
+export async function handleDuplicateQuote(quoteId: string, openAfter: boolean = true, triggerBtn?: HTMLButtonElement | null) {
     const originalQuote = State.getQuotes().find(q => q.id === quoteId) || State.getOpenQuotes().find(q => q.id === quoteId);
     if (!originalQuote) return;
+
+    let originalBtnText = '';
+    if (triggerBtn) {
+        originalBtnText = triggerBtn.innerHTML;
+        triggerBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Duplicando...';
+        triggerBtn.disabled = true;
+    }
+
     try {
         const newQuoteId = await API.getNextQuoteId();
         const duplicatedQuote = {
@@ -569,19 +581,55 @@ export async function handleDuplicateQuote(quoteId: string) {
             id: generateId(),
             manualId: newQuoteId,
             date: new Date().toISOString().split('T')[0],
+            created_at: new Date().toISOString(),
             items: originalQuote.items.map(item => ({ ...item, id: generateId() }))
         };
-        const savedQuote = await API.saveQuote(duplicatedQuote);
+        const savedQuote = await API.saveQuote(duplicatedQuote as any);
         State.setQuotes([...State.getQuotes(), savedQuote]);
         
         State.addOpenQuote(savedQuote);
         renderQuoteTabs();
-        switchQuoteTab(savedQuote.id);
-        if (document.querySelector('#page-saved-quotes.active')) {
-            renderSavedQuotesPageList();
+
+        if (openAfter) {
+            switchQuoteTab(savedQuote.id);
+            navigateTo('page-quotes');
+        } else {
+            if (document.querySelector('#page-saved-quotes.active')) {
+                renderSavedQuotesPageList();
+                setTimeout(() => {
+                    const row = document.querySelector(`.saved-quotes-table tr[data-id="${savedQuote.id}"]`);
+                    if (row) {
+                        const r = row as HTMLElement;
+                        r.style.transition = 'all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1)';
+                        r.style.backgroundColor = '#9ae6b4'; // Vibrant light green
+                        r.style.boxShadow = '0 4px 15px rgba(72, 187, 120, 0.4)';
+                        r.style.transform = 'scale(1.01)';
+                        r.style.zIndex = '10';
+                        r.style.position = 'relative';
+                        
+                        setTimeout(() => {
+                            r.style.backgroundColor = '';
+                            r.style.boxShadow = '';
+                            r.style.transform = '';
+                            r.style.zIndex = '';
+                            r.style.position = '';
+                        }, 2500);
+                    }
+                }, 50);
+            }
         }
+        
+        if (triggerBtn) {
+            triggerBtn.innerHTML = originalBtnText;
+            triggerBtn.disabled = false;
+        }
+        
         showNotification(`Cotización #${originalQuote.manualId} duplicada exitosamente como #${newQuoteId}`, 'success');
     } catch (e) {
+        if (triggerBtn) {
+            triggerBtn.innerHTML = originalBtnText;
+            triggerBtn.disabled = false;
+        }
         showNotification('Error al duplicar la cotización.', 'error');
     }
 }
@@ -740,7 +788,9 @@ export function renderSavedQuotesPageList() {
     } else {
         html += quotes.sort((a,b) => parseInt(b.manualId) - parseInt(a.manualId)).map(q => {
             const client = State.getClients().find(c => c.id === q.clientId)?.name || 'N/A';
-            const date = new Date(q.date).toLocaleDateString('es-CO');
+            const [year, month, day] = q.date.split('-');
+            const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+            const date = dateObj.toLocaleDateString('es-CO');
             const createdTime = formatCreatedTime(q.created_at || q.date);
             const total = q.items.reduce((s, i) => s + i.quantity * i.price, 0) * (1 + q.taxRate / 100);
             const author = State.getQuoteAuthor(q.id);
@@ -1330,11 +1380,10 @@ export async function navigateToOrderWorkspace(orderId: string | null, fromQuote
         order = State.getOrders().find(o => o.id === orderId) || null;
         if (order) order = JSON.parse(JSON.stringify(order)); // Deep copy
     } else {
-        const manualId = await getNextOrderManualId();
         order = {
             id: generateId(),
             created_at: new Date().toISOString(),
-            manualId: manualId,
+            manualId: 'Borrador',
             quoteId: null,
             clientId: '',
             status: 'pending',
@@ -1380,7 +1429,7 @@ export function renderOrderWorkspace(order: Order | null) {
         return;
     }
     
-    D.orderWorkspaceTitle.textContent = order.manualId ? `Editar Orden #${order.manualId}` : 'Nueva Orden de Servicio';
+    D.orderWorkspaceTitle.textContent = (order.manualId && order.manualId !== 'Borrador') ? `Editar Orden #${order.manualId}` : 'Nueva Orden de Servicio';
 
     const client = State.getClients().find(c => c.id === order.clientId);
     D.orderClientSearchInput.value = client ? `[${client.manualId}] ${client.name}` : '';
@@ -1488,6 +1537,9 @@ export async function handleSaveOrder(): Promise<boolean> {
         btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Guardando...`;
 
         try {
+            if (order.manualId === 'Borrador') {
+                order.manualId = await getNextOrderManualId();
+            }
             const savedOrder = await API.saveOrder(order);
             State.setOrders([...State.getOrders().filter(o => o.id !== savedOrder.id), savedOrder]);
             State.setCurrentOrder(savedOrder);
@@ -2563,19 +2615,29 @@ export function renderQuoteAnnexPreviews(quote: Quote | null) {
   urls.forEach((url, index) => {
     const el = document.createElement("div");
     el.className = "quote-annex-preview-item";
-    el.innerHTML = `<img src="${getQuoteImageUrl(url)}" alt="Anexo"><button class="remove-photo-btn" data-index="${index}"><i class="fas fa-times"></i></button>`;
+    el.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;"><i class="fas fa-spinner fa-spin"></i></div>`;
     container.appendChild(el);
-  });
-  container.querySelectorAll(".remove-photo-btn").forEach(btn => {
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      const activeQuote = State.getActiveQuote();
-      if (!activeQuote) return;
-      const idx = parseInt((e.currentTarget as HTMLElement).dataset.index || "0");
-      if (!activeQuote.image_urls) activeQuote.image_urls = [];
-      activeQuote.image_urls.splice(idx, 1);
-      State.updateActiveQuote(activeQuote);
-      renderQuoteAnnexPreviews(activeQuote);
+
+    supabaseQuotes.storage.from("quote-images").download(url).then(({ data, error }) => {
+        let objectUrl = "";
+        let imgHtml = "";
+        if (!error && data) {
+            objectUrl = URL.createObjectURL(data);
+            imgHtml = `<img src="${objectUrl}" alt="Anexo">`;
+        } else {
+            console.error(error);
+            imgHtml = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:red;"><i class="fas fa-exclamation-circle"></i></div>`;
+        }
+        
+        el.innerHTML = `${imgHtml}<button class="remove-photo-btn" data-index="${index}"><i class="fas fa-times"></i></button>`;
+        el.querySelector(".remove-photo-btn")?.addEventListener("click", (e) => {
+            e.preventDefault();
+            const activeQ = State.getActiveQuote();
+            if (!activeQ || !activeQ.image_urls) return;
+            activeQ.image_urls.splice(index, 1);
+            State.updateActiveQuote(activeQ);
+            renderQuoteAnnexPreviews(activeQ);
+        });
     });
   });
 }
