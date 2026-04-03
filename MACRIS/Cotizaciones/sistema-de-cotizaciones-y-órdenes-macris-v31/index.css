@@ -3722,3 +3722,17 @@ body.dark-theme .custom-select-container {
 #reports-data-table tbody tr:last-child td {
     border-bottom: none;
 }
+
+
+/* --- Fixed Pagination --- */
+#page-reports .page-content {
+    display: flex;
+    flex-direction: column;
+}
+#page-reports .pagination-controls {
+    margin-top: auto !important;
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
+}
