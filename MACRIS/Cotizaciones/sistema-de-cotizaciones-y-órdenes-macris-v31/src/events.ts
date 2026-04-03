@@ -7,6 +7,7 @@ import * as State from './state';
 import * as UI from './ui';
 import type { PdfTemplate } from './types';
 import { handleLogout } from './auth';
+import { onSwitchToReportsPage } from './ui-reports';
 
 function setupNavigationEventListeners() {
     D.mainNavLinks.forEach(link => {
@@ -19,13 +20,19 @@ function setupNavigationEventListeners() {
                     const radio = document.querySelector(`input[name="theme"][value="${currentTheme}"]`) as HTMLInputElement;
                      if (radio) radio.checked = true;
                 }
+                
                 UI.navigateTo(pageName);
+                
+                if (pageName === 'page-reports') {
+                    onSwitchToReportsPage(); // Ejecuta de forma asíncrona pero sin bloquear la UI
+                }
             }
         });
     });
 }
 
 function setupQuoteEventListeners() {
+    // UI.setupQuoteImageUpload();
     D.itemSearchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -212,8 +219,8 @@ function setupModalEventListeners() {
 
     // Order Source Modal
     D.createOrderManuallyBtn.addEventListener('click', async () => {
-        await UI.navigateToOrderWorkspace(null);
         UI.closeAllModals();
+        await UI.navigateToOrderWorkspace(null);
     });
     D.createOrderFromQuoteBtn.addEventListener('click', () => {
         D.orderSourceQuoteSearchInput.style.display = 'block';
@@ -226,6 +233,12 @@ function setupModalEventListeners() {
 }
 
 function setupGlobalActionListeners() {
+    D.duplicateQuoteBtn.addEventListener('click', () => {
+        const activeId = State.getActiveQuoteId();
+        if (activeId) {
+            UI.handleDuplicateQuote(activeId);
+        }
+    });
     D.saveQuoteBtn.addEventListener('click', UI.handleSaveQuote);
     D.deleteCurrentQuoteBtn.addEventListener('click', () => {
         const activeId = State.getActiveQuoteId();
@@ -243,6 +256,7 @@ function setupGlobalActionListeners() {
         const deleteBtn = target.closest('.delete-btn');
         const createOrderBtn = target.closest('.create-order-btn');
         const editQuoteBtn = target.closest('.edit-quote-btn');
+        const duplicateListBtn = target.closest('.duplicate-quote-list-btn');
 
         if (deleteBtn) {
             e.stopPropagation();
@@ -250,6 +264,9 @@ function setupGlobalActionListeners() {
         } else if (createOrderBtn) {
             e.stopPropagation();
             UI.navigateToOrderWorkspace(null, quoteRow.dataset.id);
+        } else if (duplicateListBtn) {
+            e.stopPropagation();
+            UI.handleDuplicateQuote(quoteRow.dataset.id);
         } else if (editQuoteBtn) {
             e.stopPropagation();
             UI.loadQuote(quoteRow.dataset.id);
@@ -260,17 +277,20 @@ function setupGlobalActionListeners() {
 }
 
 function setupOrderWorkspaceEventListeners() {
+    D.backToOrdersListBtn?.addEventListener('click', () => {
+        const orderWorkspace = document.getElementById('page-order-workspace');
+        if (orderWorkspace?.classList.contains('as-modal')) {
+            orderWorkspace.classList.remove('as-modal', 'active');
+        } else {
+            UI.navigateTo('page-orders');
+        }
+    });
     D.saveOrderBtn.addEventListener('click', UI.handleSaveOrder);
     D.generateOrderPdfBtn.addEventListener('click', UI.handleGenerateOrderPdf);
-    D.backToOrdersListBtn.addEventListener('click', () => UI.navigateTo('page-orders'));
-    
     // Client and Item Modals
     D.orderAddClientBtn.addEventListener('click', () => UI.openEntityModal('client'));
     D.orderEditClientBtn.addEventListener('click', UI.handleEditClientClickOrder);
     D.orderAddNewItemBtn.addEventListener('click', () => UI.openEntityModal('item'));
-
-    // VAT Toggle
-    D.orderVatToggleSwitch.addEventListener('change', UI.handleOrderVatToggle);
 
     // Order Items Table (similar to quote items)
     D.orderItemsTableBody.addEventListener('click', (e) => {

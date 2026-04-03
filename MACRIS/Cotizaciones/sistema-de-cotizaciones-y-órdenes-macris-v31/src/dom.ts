@@ -25,6 +25,7 @@ export const pageContainers = document.querySelectorAll('#main-content-area .pag
 export const deleteCurrentQuoteBtn = document.getElementById('delete-current-quote-btn') as HTMLButtonElement;
 export const saveQuoteBtn = document.getElementById('save-quote-btn') as HTMLButtonElement;
 export const generatePdfBtn = document.getElementById('generate-pdf-btn') as HTMLButtonElement;
+export const duplicateQuoteBtn = document.getElementById('duplicate-quote-btn') as HTMLButtonElement;
 export const quoteTabsBar = document.getElementById('quote-tabs-bar') as HTMLDivElement;
 export const quoteIdDisplay = document.getElementById('quote-id-display') as HTMLSpanElement;
 export const quoteDateInput = document.getElementById('quote-date') as HTMLInputElement;
@@ -206,3 +207,25 @@ export const recoveryUserError = document.getElementById('recovery-user-error') 
 export const notificationArea = document.getElementById('notification-area') as HTMLDivElement;
 
 export const agendaTechDropdown = document.getElementById('agenda-tech-dropdown') as HTMLDivElement;
+
+// Reports Page exports
+export const reportsSearchInput = document.getElementById('reports-search') as HTMLInputElement;
+export const reportsDateFrom = document.getElementById('reports-date-from') as HTMLInputElement;
+export const reportsDateTo = document.getElementById('reports-date-to') as HTMLInputElement;
+export const reportsPageSize = document.getElementById('reports-page-size') as HTMLSelectElement;
+export const reportsFirstPageBtn = document.getElementById('reports-first-page-btn') as HTMLButtonElement;
+export const reportsPrevPageBtn = document.getElementById('reports-prev-page-btn') as HTMLButtonElement;
+export const reportsNextPageBtn = document.getElementById('reports-next-page-btn') as HTMLButtonElement;
+export const reportsLastPageBtn = document.getElementById('reports-last-page-btn') as HTMLButtonElement;
+export const reportsSelectAll = document.getElementById('reports-select-all') as HTMLInputElement;
+export const reportsTbody = document.getElementById('reports-tbody') as HTMLTableSectionElement;
+export const reportsExportExcelBtn = document.getElementById('reports-export-excel-btn') as HTMLButtonElement;
+export const reportsExportZipBtn = document.getElementById('reports-export-zip-btn') as HTMLButtonElement;
+export const reportsExportMergedBtn = document.getElementById('reports-export-merged-btn') as HTMLButtonElement;
+export const reportsExportWhatsappBtn = document.getElementById('reports-export-whatsapp-btn') as HTMLButtonElement;
+export const shareOptionsModal = document.getElementById('share-options-modal') as HTMLDivElement;
+export const shareWhatsappBtn = document.getElementById('share-whatsapp-btn') as HTMLButtonElement;
+export const shareGmailBtn = document.getElementById('share-gmail-btn') as HTMLButtonElement;
+export const shareOutlookBtn = document.getElementById('share-outlook-btn') as HTMLButtonElement;
+export const reportsLoadingIndicator = document.getElementById('reports-loading-indicator') as HTMLDivElement;
+export const reportsPageInfo = document.getElementById('reports-page-info') as HTMLSpanElement;

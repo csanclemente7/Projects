@@ -302,6 +302,15 @@ function cleanupOrderWorkspace() {
 
 export function navigateTo(pageId: string) {
     const currentPageId = document.querySelector('.page.active')?.id;
+    const isAgendaActive = document.getElementById('page-agenda')?.classList.contains('active');
+
+    // --- MODAL HANDLING ---
+    if (pageId === 'page-orders' && document.getElementById('page-order-workspace')?.classList.contains('page-as-modal')) {
+        // If we are in the order modal over the agenda and hit 'Volver'
+        document.getElementById('page-order-workspace')?.classList.remove('page-as-modal', 'active');
+        // Do not proceed with full navigation, stay on Agenda
+        return;
+    }
 
     // --- CLEANUP PHASE ---
     // This phase happens *before* any page is shown or hidden.
@@ -316,13 +325,24 @@ export function navigateTo(pageId: string) {
     // --- VISIBILITY PHASE ---
     // Hide ALL pages first. This is the most important step to prevent mixing UIs.
     D.pageContainers.forEach(container => {
-        container.classList.remove('active');
+        if (pageId === 'page-order-workspace' && isAgendaActive) {
+            // If opening workspace as modal, keep agenda active
+            if (container.id !== 'page-order-workspace' && container.id !== 'page-agenda') {
+                container.classList.remove('active');
+            }
+        } else {
+            container.classList.remove('active');
+            container.classList.remove('page-as-modal');
+        }
     });
     
     // Show the target page.
     const newPage = document.getElementById(pageId);
     if (newPage) {
         newPage.classList.add('active');
+        if (pageId === 'page-order-workspace' && isAgendaActive) {
+            newPage.classList.add('page-as-modal');
+        }
     }
 
     // --- SIDENAV HIGHLIGHTING ---
@@ -535,6 +555,27 @@ export function handleDeleteQuote(quoteId: string) {
             showNotification('Error al eliminar la cotización.', 'error');
         }
     });
+}
+
+export async function handleDuplicateQuote(quoteId: string) {
+    const originalQuote = State.getQuotes().find(q => q.id === quoteId) || State.getOpenQuotes().find(q => q.id === quoteId);
+    if (!originalQuote) return;
+    try {
+        const newQuoteId = await API.getNextQuoteId();
+        const duplicatedQuote = {
+            ...originalQuote,
+            id: generateId(),
+            manualId: newQuoteId,
+            date: new Date().toISOString().split('T')[0],
+            items: originalQuote.items.map(item => ({ ...item, id: generateId() }))
+        };
+        State.addOpenQuote(duplicatedQuote);
+        renderQuoteTabs();
+        switchQuoteTab(duplicatedQuote.id);
+        showNotification(`Cotización #${originalQuote.manualId} duplicada exitosamente como #${newQuoteId}`, 'success');
+    } catch (e) {
+        showNotification('Error al duplicar la cotización.', 'error');
+    }
 }
 
 // --- Search UIs (Generic) ---
@@ -1174,7 +1215,7 @@ export function setupOrderSourceSearch() {
     });
 }
 
-export async function navigateToOrderWorkspace(orderId: string | null, fromQuoteId: string | null = null) {
+export async function navigateToOrderWorkspace(orderId: string | null, fromQuoteId: string | null = null, defaultDate: string = '') {
     let order: Order | null;
     if (orderId) {
         order = State.getOrders().find(o => o.id === orderId) || null;
@@ -1188,7 +1229,7 @@ export async function navigateToOrderWorkspace(orderId: string | null, fromQuote
             quoteId: null,
             clientId: '',
             status: 'pending',
-            service_date: '',
+            service_date: defaultDate,
             service_time: null,
             order_type: '',
             notes: '',
@@ -2068,6 +2109,14 @@ function renderListWeekView() {
             html += '<div class="no-orders-msg">No hay servicios programados.</div>';
         }
 
+        html += `
+                <div class="day-add-action" style="padding: 10px; text-align: center; border-top: 1px dashed var(--color-border); background-color: rgba(255, 255, 255, 0.5); display: flex; justify-content: center; align-items: center;">
+                    <button class="btn btn-icon-only btn-secondary add-order-day-btn" data-date="${dateString}" title="Agendar orden este día" style="background-color: white; border-color: rgba(0,0,0,0.05); border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.1); color: var(--color-primary); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; transition: transform 0.2s;">
+                        <i class="fas fa-plus" style="pointer-events:none;"></i>
+                    </button>
+                </div>
+        `;
+
         html += `</div></div>`;
     });
 
@@ -2079,6 +2128,16 @@ function renderListWeekView() {
         el.addEventListener('click', (e) => {
             const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
             if (orderId) openAgendaEditOrderModal(orderId);
+        });
+    });
+
+    D.agendaContainer.querySelectorAll('.add-order-day-btn').forEach(el => {
+        el.addEventListener('click', async (e) => {
+            const dateStr = (e.currentTarget as HTMLElement).dataset.date;
+            if (dateStr) {
+                closeAllModals();
+                await navigateToOrderWorkspace(null, null, dateStr);
+            }
         });
     });
 
