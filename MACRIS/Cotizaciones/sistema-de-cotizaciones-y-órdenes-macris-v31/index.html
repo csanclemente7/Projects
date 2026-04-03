@@ -110,20 +110,25 @@
                 <a href="#" class="nav-link" data-page="page-settings"><i
                         class="fas fa-cog"></i><span>Ajustes</span></a>
             </nav>
-            <div id="connection-status">
-                <div class="status-indicator"></div>
-                <span class="status-text">En línea</span>
+            <div class="sidebar-bottom">
+                <div id="current-user-badge" class="sidebar-user-info">
+                    <i class="fas fa-user-circle user-avatar-icon"></i>
+                    <div class="user-details">
+                        <span id="current-user-name"></span>
+                        <div id="connection-status" class="sidebar-connection">
+                            <div class="status-indicator"></div>
+                            <span class="status-text">En línea</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button id="current-user-logout" class="sidebar-logout-btn" title="Cerrar sesión">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
             </div>
         </aside>
 
         <main id="main-content-area">
-            <div id="current-user-badge" class="current-user-badge">
-                <i class="fas fa-user-circle"></i>
-                <span id="current-user-name"></span>
-                <button id="current-user-logout" class="current-user-logout" title="Cerrar sesión">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
-            </div>
             <!-- QUOTES PAGE -->
             <div id="page-quotes" class="page active">
                 <header class="app-header">
@@ -578,9 +583,9 @@
                         <p style="color: var(--text-secondary); margin-top: 5px;">Cargando reportes...</p>
                     </div>
 
-                    <div class="table-responsive" style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; background: var(--surface);">
-                        <table class="table" style="margin-bottom: 0;">
-                            <thead style="background-color: var(--background);">
+                    <div class="table-responsive" style="border: 1px solid var(--color-border-light); border-radius: 8px; overflow: hidden; background: var(--surface);">
+                        <table id="reports-data-table" class="table" style="margin-bottom: 0;">
+                            <thead>
                                 <tr>
                                     <th style="width: 40px; text-align: center;"><input type="checkbox" id="reports-select-all"></th>
                                     <th>Fecha</th>
