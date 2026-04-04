@@ -45,6 +45,9 @@ export async function extractDataFromImage(base64Image: string) {
         },
     };
 
+    const equipmentTypesList = State.equipmentTypes.map(t => `"${t.name}"`).join(', ');
+    const refrigerantTypesList = State.refrigerantTypes.map(r => `"${r.name}"`).join(', ');
+
     const textPart = {
         text: `Analiza la imagen de la placa de datos de un aire acondicionado. Tu objetivo es ser extremadamente preciso. Extrae el modelo, la marca, el tipo de equipo, el refrigerante, la capacidad, el amperaje y la presión de operación (si están disponibles).
 Sigue estas REGLAS ESTRICTAMENTE:
@@ -56,14 +59,17 @@ Sigue estas REGLAS ESTRICTAMENTE:
     *   Formatea la respuesta como un string que incluya el número y "BTU". Ejemplo: "3224W" se convierte en "11000 BTU".
 
 2.  **Tipo de Equipo (type)**:
-    *   Elige el valor MÁS PROBABLE de esta lista: ["Mini split", "Cassette", "Central", "Piso techo", "Otro"].
-    *   **Infiere el tipo usando pistas**:
-        *   **Marca**: Equipos "Samsung", "Mirage", "Olimpo" son casi siempre "Mini split".
-        *   **Modelo**: Modelos de Samsung que empiezan con "AR" son "Mini split".
-        *   **Texto**: Si ves la palabra "SPLIT", usa "Mini split".
-    *   **NUNCA uses "Aire Acondicionado" como tipo.** Si no estás seguro, usa "Otro".
+    *   Elige UN VALOR EXACTO Y TEXTUAL de esta lista permitida: [${equipmentTypesList}].
+    *   No inventes ningún tipo de equipo ni cambies una sola letra. Debe ser uno de la lista.
+    *   Infiere el tipo usando pistas: Equipos "Samsung", "Mirage" suelen ser "Mini split". Modelos que empiezan con "AR" son "Mini split". Si ves la palabra "SPLIT", usa "Mini split".
+    *   Si no estás seguro, usa "Otro".
 
-3.  **Presión (pressure)**:
+3.  **Refrigerante (refrigerant)**:
+    *   Extrae el tipo de refrigerante (ej. R410A, R22).
+    *   DEBES elegir UN VALOR EXACTO de esta lista permitida: [${refrigerantTypesList}].
+    *   Si en la placa dice, por ejemplo, "R-410A" pero en tu lista estricta dice "R410a", usa la versión de la lista estricta. Nunca inventes valores fuera de esta lista.
+
+4.  **Presión (pressure)**:
     *   Busca valores de presión de baja (low/succión) y alta (high/descarga). Busca etiquetas como "Pressure (H/L)", "PRESSURE L/H", "HIGH/LOW", "DIS./SUC.".
     *   **LA RESPUESTA FINAL DEBE ESTAR EN PSI.**
     *   Si la presión está en otra unidad, **DEBES CONVERTIRLA A PSI** usando estas conversiones (redondea el resultado a entero):
@@ -72,7 +78,7 @@ Sigue estas REGLAS ESTRICTAMENTE:
         *   \`1 bar = 14.5 PSI\`
     *   **Ejemplo de conversión**: Si encuentras "Low: 0.8 MPa" y "High: 2.5 MPa", calcula \`0.8 * 145 = 116\` y \`2.5 * 145 = 362.5\` (redondea a 363). La respuesta final debe ser "116/363 PSI".
 
-4.  **Formato de Respuesta**: Responde ÚNICAMENTE con un objeto JSON que siga el esquema proporcionado, sin texto adicional, explicaciones o markdown.`,
+5.  **Formato de Respuesta**: Responde ÚNICAMENTE con un objeto JSON que siga el esquema proporcionado, sin texto adicional, explicaciones o markdown.`,
     };
 
     try {

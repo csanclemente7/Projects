@@ -8,4 +8,4 @@
 // handling secrets, and this file should NOT exist.
 // ===================================================================
 
-export const API_KEY = 'AIzaSyCkzXBL21pb2Fyc-LQK-ELaKKWVYgK67BM';
+export const API_KEY = import.meta.env.VITE_GEMINI_API_KEY || 'AIzaSyBAy413C5QsNNASRsQ439LgMIX4tkvSsr8';

@@ -289,6 +289,7 @@ export type Database = {
           order_type: string | null;
           notes: string | null;
           estimated_duration: number | null;
+          image_urls: string[] | null;
         };
         Insert: {
           id?: string;
@@ -302,6 +303,7 @@ export type Database = {
           order_type?: string | null;
           notes?: string | null;
           estimated_duration?: number | null;
+          image_urls?: string[] | null;
         };
         Update: {
           id?: string;
@@ -315,6 +317,7 @@ export type Database = {
           order_type?: string | null;
           notes?: string | null;
           estimated_duration?: number | null;
+          image_urls?: string[] | null;
         };
         Relationships: [];
       };
@@ -328,6 +331,7 @@ export type Database = {
           quantity: number;
           price: number;
           created_at?: string;
+          completed_quantity: number;
         };
         Insert: {
           id?: string;
@@ -338,6 +342,7 @@ export type Database = {
           quantity: number;
           price: number;
           created_at?: string;
+          completed_quantity?: number;
         };
         Update: {
           id?: string;
@@ -348,6 +353,7 @@ export type Database = {
           quantity?: number;
           price?: number;
           created_at?: string;
+          completed_quantity?: number;
         };
         Relationships: [];
       };
@@ -515,6 +521,7 @@ export interface OrderItem {
     quantity: number;
     price: number;
     created_at?: string;
+    completed_quantity?: number;
 }
 
 export interface Order {
@@ -529,6 +536,7 @@ export interface Order {
     order_type: string | null;
     notes: string | null;
     estimated_duration: number | null;
+    image_urls?: string[] | null;
     // Enriched properties
     items?: OrderItem[];
     clientDetails?: Client | null;

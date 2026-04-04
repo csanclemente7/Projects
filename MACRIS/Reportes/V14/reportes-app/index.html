@@ -159,38 +159,44 @@
         <section
           id="worker-main-section"
           class="data-section"
-          style="display: none"
+          style="display: none; background: transparent; border: none; padding: 0"
         >
-          <h2><i class="fas fa-edit"></i> Nuevo Reporte</h2>
-          <p>
-            Seleccione una opción para iniciar un nuevo reporte de
-            mantenimiento.
-          </p>
-          <div class="action-grid">
-            <button id="scan-qr-camera-button" class="action-card action-camera">
-              <i class="fas fa-qrcode"></i>
-              <span>Usar Cámara QR</span>
-            </button>
-            <button id="create-manual-report-button" class="action-card action-manual">
-              <i class="fas fa-file-signature"></i>
-              <span>Crear Reporte Manual</span>
-            </button>
-            <button id="search-by-id-button" class="action-card action-search">
-              <i class="fas fa-search"></i>
-              <span>Buscar Equipo por ID</span>
-            </button>
-          </div>
-          <div class="section-footer-actions">
-            <button id="scan-qr-file-button" class="btn-link">
-              <i class="fas fa-file-image"></i> Escanear QR desde un archivo
-            </button>
-            <input
-              type="file"
-              id="qr-file-input"
-              accept="image/*"
-              style="display: none"
-              aria-hidden="true"
-            />
+          <div class="worker-actions-panel">
+            <div class="actions-header">
+               <h3><i class="far fa-edit"></i> Nuevo reporte</h3>
+               <p>Elige un método para iniciar un reporte de mantenimiento.</p>
+            </div>
+            
+            <div class="actions-body">
+               <button id="create-manual-report-button" class="btn-iniciar-reporte">
+                  <i class="far fa-edit"></i> Iniciar nuevo reporte
+               </button>
+               
+               <div class="actions-grid-2">
+                  <button id="scan-qr-camera-button" class="action-card-square">
+                     <i class="fas fa-qrcode"></i>
+                     <span class="card-title">Escanear QR</span>
+                     <span class="card-desc">Identifica el equipo rapidamente</span>
+                  </button>
+                  <button id="search-by-id-button" class="action-card-square">
+                     <i class="fas fa-search"></i>
+                     <span class="card-title">Buscar equipo</span>
+                     <span class="card-desc">Encuentra un equipo por ID</span>
+                  </button>
+               </div>
+
+               <div class="tip-banner">
+                  <div class="tip-icon-container">
+                     <i class="fas fa-info"></i>
+                  </div>
+                  <span class="tip-text">TIP: El QR aplica unicamente<br>para algunas empresas</span>
+               </div>
+               
+               <button id="scan-qr-file-button" class="btn-link" style="width: 100%; margin-top: 20px; font-size: 0.75rem; color: #64748b; text-decoration: underline;">
+                  ¿No tienes cámara? Escanear QR desde un archivo
+               </button>
+               <input type="file" id="qr-file-input" accept="image/*" style="display: none" aria-hidden="true" />
+            </div>
           </div>
         </section>
 
@@ -785,14 +791,12 @@
           <div id="report-equipment-fields-container">
             <h4>Datos del Equipo</h4>
             <div class="form-group">
-              <label for="ai-scan-plate-button">Autocompletar con IA</label>
               <button
                 type="button"
                 id="ai-scan-plate-button"
-                class="btn btn-secondary btn-full-width"
+                class="btn-glow-dark btn-full-width"
               >
-                <i class="fas fa-brain"></i> Escanear Placa del Equipo con
-                Cámara
+                <i class="fas fa-brain"></i> Escanear Placa del Equipo con Cámara
               </button>
               <p
                 id="ai-scan-offline-warning"
@@ -1014,14 +1018,14 @@
               >La firma aparecerá aquí</span
             >
           </div>
-          <button
-            type="button"
-            id="open-signature-modal-button"
-            class="btn btn-secondary btn-full-width"
-            style="margin-top: 10px"
-          >
-            <i class="fas fa-pencil-alt"></i> Abrir Panel de Firma
-          </button>
+            <button
+              type="button"
+              id="open-signature-modal-button"
+              class="btn btn-secondary btn-full-width"
+              style="margin-top: 10px;"
+            >
+              <i class="fas fa-pencil-alt"></i> Abrir Panel de Firma
+            </button>
 
           <input
             type="hidden"
@@ -1043,7 +1047,7 @@
           <div class="modal-actions">
             <button
               type="button"
-              id="cancel-report-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar
+              id="cancel-report-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Atrás
             </button>
             <button
               type="submit"
@@ -1119,7 +1123,7 @@
             id="cancel-camera-scan-button"
             class="btn btn-danger"
           >
-            Cancelar
+            <i class="fas fa-arrow-left"></i> Atrás
           </button>
         </div>
       </div>
@@ -1140,20 +1144,8 @@
         <canvas id="plate-canvas-hidden" style="display: none"></canvas>
         <p id="plate-scan-feedback">Apunta a la placa del equipo...</p>
         <div class="modal-actions">
-          <button
-            type="button"
-            id="cancel-plate-scan-button"
-            class="btn btn-secondary"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            id="take-picture-button"
-            class="btn btn-primary"
-          >
-            <i class="fas fa-camera"></i> Capturar y Analizar
-          </button>
+          <button type="button" id="cancel-plate-scan-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Atrás</button>
+          <button type="button" id="take-picture-button" class="btn btn-primary"><i class="fas fa-camera"></i> Capturar y Analizar</button>
         </div>
       </div>
     </div>
@@ -1172,7 +1164,7 @@
           <div class="modal-actions">
             <button
               type="button"
-              id="cancel-entity-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar
+              id="cancel-entity-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Atrás
             </button>
             <button
               type="submit"
@@ -1354,7 +1346,7 @@
           <div class="modal-actions">
             <button
               type="button"
-              id="cancel-edit-report-assignment-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar
+              id="cancel-edit-report-assignment-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Atrás
             </button>
             <button
               type="submit"
@@ -1524,7 +1516,7 @@
               id="cancel-change-password-button"
               class="btn btn-secondary"
             >
-              Cancelar
+              <i class="fas fa-arrow-left"></i> Atrás
             </button>
             <button
               type="submit"
@@ -1549,7 +1541,7 @@
         <p id="confirmation-message">¿Está seguro de que desea continuar?</p>
         <div class="modal-actions">
           <button id="cancel-action-button" class="btn btn-secondary">
-            Cancelar
+            <i class="fas fa-arrow-left"></i> Atrás
           </button>
           <button id="confirm-action-button" class="btn btn-danger">
             Confirmar
@@ -1593,7 +1585,7 @@
         </div>
         <div class="modal-actions">
           <button
-            id="cancel-category-selection-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar
+            id="cancel-category-selection-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Atrás
           </button>
         </div>
       </div>
@@ -1625,7 +1617,7 @@
         <div class="modal-actions">
           <button
             type="button"
-            id="cancel-equipment-selection-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar
+            id="cancel-equipment-selection-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Atrás
           </button>
           <button
             type="button"
@@ -1676,7 +1668,7 @@
             id="cancel-photo-capture-button"
             class="btn btn-secondary"
           >
-            Cancelar
+            <i class="fas fa-arrow-left"></i> Atrás
           </button>
           <button
             type="button"
@@ -1736,7 +1728,7 @@
           <div class="modal-actions">
             <button
               type="button"
-              id="cancel-redeem-points-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Cancelar
+              id="cancel-redeem-points-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Atrás
             </button>
             <button
               type="submit"
