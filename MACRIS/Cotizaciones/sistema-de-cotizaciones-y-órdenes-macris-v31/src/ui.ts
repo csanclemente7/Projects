@@ -5,7 +5,7 @@ import { generateQuotePDFDoc, generateOrderPDFDoc, generatePreviewPDF, previewPd
 import type { Quote, QuoteItem, Client, Item, PdfTemplate, Order, Technician, OrderItem, ClientInsert, ItemInsert, TechnicianInsert } from './types';
 import { formatCurrency, generateId, isMobileDevice, formatTime } from './utils';
 import { getSessionUser } from './user-session';
-import { supabaseQuotes } from './supabase';
+import { supabaseQuotes, supabaseOrders } from './supabase';
 
 // --- Modal State ---
 let onConfirmCallback: (() => void) | null = null;
@@ -229,6 +229,7 @@ export function renderQuote(quote: Quote | null) {
     (D.quoteDateInput as any)._flatpickr.setDate(quote.date, false);
     D.vatToggleSwitch.checked = quote.taxRate > 0;
     D.quoteTermsTextarea.value = quote.terms;
+    D.quoteInternalNotesTextarea.value = quote.internal_notes || '';
     const client = State.getClients().find(c => c.id === quote.clientId);
     D.clientSearchInput.value = client ? `[${client.manualId}] ${client.name}` : '';
     renderClientDetails(quote.clientId, 'quote');
@@ -720,7 +721,7 @@ function addItemToQuote(item: Item) {
 function addItemToOrder(item: Item) {
     const order = State.getCurrentOrder();
     if (!order) return;
-    const orderItem: OrderItem = { id: generateId(), created_at: new Date().toISOString(), orderId: order.id, itemId: item.id, manualId: item.manualId, description: item.name, quantity: 1, price: item.price };
+    const orderItem: OrderItem = { id: generateId(), created_at: new Date().toISOString(), orderId: order.id, itemId: item.id, manualId: item.manualId, description: item.name, quantity: 1, price: item.price, completed_quantity: 0 };
     order.items.push(orderItem);
     renderOrderWorkspace(order);
 }
@@ -897,12 +898,28 @@ function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' =
         priceColumns = `<td class="col-price" data-label="Vlr. Unitario"><input type="text" class="item-price" value="${formattedPrice}"><div class="item-value-mobile-view" data-field="price"><span class="mobile-view-text">${formattedPrice}</span><i class="fas fa-pencil-alt edit-indicator"></i></div></td><td class="col-total item-total" data-label="Vlr. Total">${formattedTotal}</td>`;
     }
     
+    let qtyColumn = '';
+    if (context === 'quote') {
+        qtyColumn = `<td class="col-qty" data-label="Cant."><input type="number" class="item-qty" value="${item.quantity}" min="0"><div class="item-value-mobile-view" data-field="quantity"><span class="mobile-view-text">${item.quantity}</span><i class="fas fa-pencil-alt edit-indicator"></i></div></td>`;
+    } else {
+        const completed = (item as any).completed_quantity || 0;
+        const total = item.quantity || 0;
+        let progressColor = "var(--color-text-secondary)";
+        if (completed > 0 && completed < total) progressColor = "#e67e22";
+        else if (completed >= total && total > 0) progressColor = "var(--color-primary)";
+        qtyColumn = `<td class="col-qty" data-label="Cant.">
+            <input type="number" class="item-qty" value="${total}" min="0">
+            <div class="item-value-mobile-view" data-field="quantity"><span class="mobile-view-text">${total}</span><i class="fas fa-pencil-alt edit-indicator"></i></div>
+            <div style="font-size: 0.75rem; color: ${progressColor}; margin-top: 4px; font-weight: 500;">Avance: ${completed} / ${total}</div>
+        </td>`;
+    }
+
     tr.innerHTML = `<td class="col-desc" data-label="Descripción">
         <div class="drag-handle-wrapper"><i class="fas fa-bars drag-handle-icon"></i></div>
         <textarea class="item-desc" rows="2">${item.description}</textarea>
         <div class="item-desc-mobile-wrapper"><div class="item-desc-mobile-view"><span class="mobile-view-text">${item.description}</span><i class="fas fa-pencil-alt edit-indicator"></i></div><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-mobile" title="Eliminar ítem"><i class="fas fa-trash"></i></button></div>
     </td>
-    <td class="col-qty" data-label="Cant."><input type="number" class="item-qty" value="${item.quantity}" min="0"><div class="item-value-mobile-view" data-field="quantity"><span class="mobile-view-text">${item.quantity}</span><i class="fas fa-pencil-alt edit-indicator"></i></div></td>${priceColumns}<td class="col-actions" data-label="Acción"><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-desktop"><i class="fas fa-trash"></i></button></td>`;
+    ${qtyColumn}${priceColumns}<td class="col-actions" data-label="Acción"><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-desktop"><i class="fas fa-trash"></i></button></td>`;
     
     if (context === 'quote') {
         const priceInput = tr.querySelector('.item-price') as HTMLInputElement;
@@ -955,6 +972,7 @@ export function handleVatToggle() {
     quote.taxRate = includesVat ? State.getDefaultVatRate() : 0;
     quote.terms = includesVat ? State.getQuoteTermsWithVat() : State.getQuoteTermsNoVat();
     D.quoteTermsTextarea.value = quote.terms;
+    D.quoteInternalNotesTextarea.value = quote.internal_notes || '';
     updateQuoteSummary();
 }
 
@@ -1411,6 +1429,7 @@ export async function navigateToOrderWorkspace(orderId: string | null, fromQuote
                     manualId: qi.manualId,
                     description: qi.description,
                     quantity: qi.quantity,
+                    completed_quantity: 0,
                     price: qi.price,
                     created_at: new Date().toISOString()
                 }));
@@ -1455,6 +1474,7 @@ export function renderOrderWorkspace(order: Order | null) {
     }
     D.orderStatusSelect.value = order.status;
     D.orderNotesTextarea.value = order.notes || '';
+    renderOrderAnnexPreviews(order);
     
     const hours = Math.floor(order.estimated_duration || 0);
     const minutes = Math.round(((order.estimated_duration || 0) - hours) * 60);
@@ -2280,10 +2300,13 @@ function renderListWeekView() {
                             </div>
                             ` : ''}
                         </div>
-                        <div class="order-item-actions" style="margin-left: auto; padding-left: 15px;">
+                        <div class="order-item-actions agenda-item-actions" style="margin-left: auto; padding-left: 15px; display: flex; gap: 8px;">
                             <!-- White button fix -->
                             <button class="btn edit-order-btn" data-order-id="${order.id}" style="background-color: white; border: 1px solid var(--color-border); color: var(--color-text); padding: 5px 10px; font-size: 0.9rem;">
                                 <i class="fas fa-edit" style="pointer-events:none; color: var(--color-primary);"></i> Editar
+                            </button>
+                            <button class="btn delete-order-btn" data-order-id="${order.id}" style="background-color: white; border: 1px solid var(--color-border); color: var(--color-danger); padding: 5px 10px; font-size: 0.9rem;">
+                                <i class="fas fa-trash" style="pointer-events:none;"></i>
                             </button>
                         </div>
                     </div>
@@ -2312,6 +2335,24 @@ function renderListWeekView() {
         el.addEventListener('click', (e) => {
             const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
             if (orderId) openAgendaEditOrderModal(orderId);
+        });
+    });
+
+    D.agendaContainer.querySelectorAll('.delete-order-btn').forEach(el => {
+        el.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
+            if (orderId && confirm('¿Está seguro de que desea eliminar esta orden?')) {
+                try {
+                    await API.deleteOrder(orderId);
+                    const orders = State.getOrders().filter(o => o.id !== orderId);
+                    State.setOrders(orders);
+                    renderAgendaPage();
+                    showNotification('Orden eliminada exitosamente', 'success');
+                } catch (error: any) {
+                    showNotification(`Error al eliminar: ${error.message}`, 'error');
+                }
+            }
         });
     });
 
@@ -2676,6 +2717,76 @@ export function renderQuoteAnnexPreviews(quote: Quote | null) {
             activeQ.image_urls.splice(index, 1);
             State.updateActiveQuote(activeQ);
             renderQuoteAnnexPreviews(activeQ);
+        });
+    });
+  });
+}
+
+export function setupOrderAnnexUpload() {
+  const uploadInput = document.getElementById("order-annex-upload") as HTMLInputElement;
+  if (!uploadInput) return;
+  uploadInput.addEventListener("change", async (e) => {
+    const files = (e.target as HTMLInputElement).files;
+    if (!files || files.length === 0) return;
+    const activeOrder = State.getActiveOrder();
+    if (!activeOrder) return;
+    if (!activeOrder.image_urls) activeOrder.image_urls = [];
+
+    for (let i = 0; i < files.length; i++) {
+        try {
+            const compressedBlob = await compressImage(files[i]);
+            const fileName = "ORDER_" + Date.now() + "_" + Math.random().toString(36).substring(7) + ".jpg";
+            // Uses order-images bucket (instructions provided to user to create it)
+            const { data, error } = await supabaseOrders.storage.from("order-images").upload(fileName, compressedBlob, { contentType: "image/jpeg" });
+            if (error) {
+                console.error("Error uploading order image:", error);
+                continue;
+            }
+            if (data && data.path) {
+                activeOrder.image_urls.push(data.path);
+            }
+        } catch (err) {
+            console.error("Error compressing image:", err);
+        }
+    }
+    State.updateActiveOrder(activeOrder);
+    renderOrderAnnexPreviews(activeOrder);
+    uploadInput.value = "";
+  });
+}
+
+export function renderOrderAnnexPreviews(order: Order | null) {
+  if (!order) return;
+  const container = document.getElementById("order-annex-preview-container");
+  if (!container) return;
+  container.innerHTML = "";
+  const urls = order.image_urls || [];
+  urls.forEach((url, index) => {
+    const el = document.createElement("div");
+    el.className = "quote-annex-preview-item"; // Re-using styling class
+    el.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;"><i class="fas fa-spinner fa-spin"></i></div>`;
+    container.appendChild(el);
+
+    supabaseOrders.storage.from("order-images").download(url).then(({ data, error }) => {
+        let objectUrl = "";
+        let imgHtml = "";
+        if (!error && data) {
+            objectUrl = URL.createObjectURL(data);
+            imgHtml = `<img src="${objectUrl}" alt="Anexo Orden">`;
+        } else {
+            console.error(error);
+            imgHtml = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:red;"><i class="fas fa-exclamation-circle"></i></div>`;
+        }
+        
+        el.innerHTML = `${imgHtml}<button class="remove-photo-btn" data-index="${index}"><i class="fas fa-times"></i></button>`;
+        el.querySelector(".remove-photo-btn")?.addEventListener("click", (e) => {
+            e.preventDefault();
+            const activeOrder = State.getActiveOrder();
+            if (!activeOrder || !activeOrder.image_urls) return;
+            activeOrder.image_urls.splice(index, 1);
+            State.updateActiveOrder(activeOrder);
+            renderOrderAnnexPreviews(activeOrder);
+            handleOrderDetailsChange(); // Trigger unsaved changes
         });
     });
   });
