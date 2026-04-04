@@ -3245,13 +3245,14 @@ button[data-entity-type="refrigerant"] {
     background: transparent;
     color: var(--color-text-primary);
     border-radius: 8px;
-    padding: 14px 18px;
+    padding: 12px 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    font-size: 0.95rem;
-    font-weight: 500;
+    gap: 10px;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+    font-weight: 600;
     cursor: pointer;
     overflow: hidden;
     border: none;
@@ -3305,4 +3306,44 @@ button[data-entity-type="refrigerant"] {
     to {
         transform: rotate(360deg);
     }
+}
+
+/* Form Section Cards */
+.form-section-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 25px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-section-card .section-card-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    color: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 12px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    cursor: default;
+}
+
+.form-section-card .section-card-title i {
+    color: var(--color-accent-primary);
+    font-size: 1.2rem;
+}
+
+h4.subsection-title {
+    margin-top: 20px;
+    margin-bottom: 15px;
+    color: var(--color-text-secondary);
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-left: 2px solid var(--color-accent-primary);
+    padding-left: 10px;
 }

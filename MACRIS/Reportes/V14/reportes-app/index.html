@@ -146,13 +146,18 @@
         <section
           id="worker-orders-section"
           class="data-section"
-          style="display: none"
+          style="display: none; background: transparent; border: none; padding: 0"
         >
-          <h2>
-            <i class="fas fa-clipboard-list"></i> Órdenes de Servicio Asignadas
-          </h2>
-          <div id="worker-orders-list-container" class="order-card-list">
-            <!-- Order cards will be injected here by JS -->
+          <div class="worker-actions-panel">
+            <div class="actions-header">
+              <h3><i class="fas fa-clipboard-list"></i> Órdenes de Servicio Asignadas</h3>
+              <p>Revisa y gestiona las órdenes que te han sido asignadas.</p>
+            </div>
+            <div class="actions-body">
+              <div id="worker-orders-list-container" class="order-card-list">
+                <!-- Order cards will be injected here by JS -->
+              </div>
+            </div>
           </div>
         </section>
 
@@ -203,17 +208,23 @@
         <section
           id="worker-my-reports-section"
           class="data-section"
-          style="display: none"
+          style="display: none; background: transparent; border: none; padding: 0"
         >
-          <div class="my-reports-header">
-            <h2><i class="fas fa-history"></i> Mis Reportes Enviados</h2>
-            <button
-              id="toggle-my-reports-view-button"
-              class="btn btn-outline-primary btn-compact"
-            >
-              Ver Todos
-            </button>
-          </div>
+          <div class="worker-actions-panel">
+            <div class="actions-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
+              <div>
+                <h3><i class="fas fa-history"></i> Mis Reportes Enviados</h3>
+                <p style="margin-bottom: 0;">Historial de todos los reportes que has generado.</p>
+              </div>
+              <button
+                id="toggle-my-reports-view-button"
+                class="btn btn-outline-primary btn-compact"
+                style="margin-bottom: 10px;"
+              >
+                Ver Todos
+              </button>
+            </div>
+            <div class="actions-body">
 
           <div class="modern-search-bar">
             <i class="fas fa-search search-icon"></i>
@@ -247,6 +258,8 @@
             </table>
           </div>
           <div class="pagination-controls" id="my-reports-pagination"></div>
+            </div> <!-- Cierra actions-body -->
+          </div> <!-- Cierra worker-actions-panel -->
         </section>
 
         <!-- ADMIN SECTIONS -->
@@ -666,7 +679,8 @@
           <input type="hidden" id="report-order-id-hidden" name="order_id" />
           <input type="hidden" id="report-order-item-id-hidden" name="order_item_id" />
 
-          <h4>Información del Servicio</h4>
+          <div class="form-section-card">
+            <h3 class="section-card-title"><i class="fas fa-clipboard-list"></i> Información del Servicio</h3>
           <div class="form-group">
             <label for="report-service-type">Tipo de Servicio:</label>
             <select
@@ -676,7 +690,6 @@
             ></select>
           </div>
 
-          <h4>Datos del Cliente y Ubicación</h4>
 
           <!-- Wrapper for Empresa fields -->
           <div id="report-location-empresa-container" style="display: none">
@@ -788,15 +801,18 @@
             </div>
           </div>
 
+          </div> <!-- Cierra form-section-card de Servicio -->
+
+          <div class="form-section-card">
+            <h3 class="section-card-title"><i class="fas fa-fan"></i> Datos del Equipo y Operación</h3>
           <div id="report-equipment-fields-container">
-            <h4>Datos del Equipo</h4>
             <div class="form-group">
               <button
                 type="button"
                 id="ai-scan-plate-button"
                 class="btn-glow-dark btn-full-width"
               >
-                <i class="fas fa-brain"></i> Escanear Placa del Equipo con Cámara
+                <i class="fas fa-brain"></i> ESCANEAR PLACA CON CÁMARA
               </button>
               <p
                 id="ai-scan-offline-warning"
@@ -871,7 +887,7 @@
           </div>
 
           <div id="report-installation-photos-container" style="display: none">
-            <h4>Fotografías de la Instalación</h4>
+            <h4 class="subsection-title">Fotografías de la Instalación</h4>
             <div class="photo-upload-grid">
               <div class="photo-capture-card">
                 <div class="photo-card-header">
@@ -962,7 +978,7 @@
           </div>
 
           <div id="report-measurements-container">
-            <h4>Mediciones y Observaciones</h4>
+            <h4 class="subsection-title">Mediciones y Observaciones</h4>
             <div class="form-group">
               <label for="report-pressure">Presión (PSI):</label>
               <input type="text" id="report-pressure" name="pressure" />
@@ -982,7 +998,7 @@
           </div>
 
           <div id="report-installation-items-container" style="display: none">
-            <h4><i class="fas fa-tools"></i> Items y Materiales Utilizados</h4>
+            <h4 class="subsection-title"><i class="fas fa-tools"></i> Items y Materiales Utilizados</h4>
             <p class="text-muted">
               Ajuste las cantidades si usó más o menos de lo planeado. Los
               cambios se guardan automáticamente.
@@ -1002,7 +1018,10 @@
             </div>
           </div>
 
-          <h4>Firma del Cliente</h4>
+          </div> <!-- Cierra form-section-card de Equipo -->
+
+          <div class="form-section-card">
+            <h3 class="section-card-title"><i class="fas fa-file-signature"></i> Cierre y Validación</h3>
           <div id="signature-preview-container">
             <img
               id="signature-preview-image"
@@ -1043,6 +1062,7 @@
             name="worker_name"
             required
           />
+          </div> <!-- Cierra form-section-card Firma -->
 
           <div class="modal-actions">
             <button
