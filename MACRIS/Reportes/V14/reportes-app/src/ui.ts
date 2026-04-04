@@ -57,10 +57,10 @@ async function getOrCreateCityByName(cityName: string): Promise<City | null> {
         return null;
     }
     const trimmedCityName = cityName.trim();
-    
+
     // 1. Check if city exists (case-insensitive)
     let existingCity = State.cities.find(c => c.name.toLowerCase() === trimmedCityName.toLowerCase());
-    
+
     if (existingCity) {
         return existingCity;
     }
@@ -72,9 +72,9 @@ async function getOrCreateCityByName(cityName: string): Promise<City | null> {
     try {
         const formData = new FormData();
         formData.append('name', trimmedCityName);
-        
+
         const { data: newCity, error } = await saveEntity('city', '', formData);
-        
+
         if (error) {
             throw error;
         }
@@ -82,7 +82,7 @@ async function getOrCreateCityByName(cityName: string): Promise<City | null> {
         // 3. Refresh state and return new city
         const allCities = await fetchCities();
         State.setCities(allCities);
-        
+
         // Find the newly created city in the refreshed list
         const finalNewCity = allCities.find(c => c.id === newCity.id);
         return finalNewCity || null;
@@ -107,7 +107,7 @@ function isReportFormValidWithoutSignature(): boolean {
     if (!D.maintenanceReportForm.checkValidity()) {
         return false;
     }
-    
+
     // Add custom validation for things not covered by standard input attributes.
     const serviceType = D.reportServiceTypeSelect.value;
     const isInstallation = serviceType === 'Montaje/Instalación';
@@ -162,8 +162,8 @@ export function showView(sectionId: string) {
 }
 
 export const populateDropdown = (
-    selectElement: HTMLSelectElement, 
-    items: { id: string; name: string }[], 
+    selectElement: HTMLSelectElement,
+    items: { id: string; name: string }[],
     selectedId?: string | null,
     placeholder: string = 'Seleccione...',
     addOtherOption: boolean = false
@@ -171,7 +171,7 @@ export const populateDropdown = (
     if (!selectElement) return;
     const currentVal = selectElement.value;
     selectElement.innerHTML = `<option value="">${placeholder}</option>`;
-    items.sort((a,b) => a.name.localeCompare(b.name)).forEach(item => {
+    items.sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
         const option = new Option(item.name, item.id);
         selectElement.appendChild(option);
     });
@@ -200,7 +200,7 @@ export const populateStringDropdown = (selectElement: HTMLSelectElement, items: 
  */
 export function updateLocationDropdownsFromCompany(selectedCompanyId: string) {
     const company = State.companies.find(c => c.id === selectedCompanyId);
-    
+
     if (company) {
         // Set city automatically
         D.reportCitySelectEmpresa.value = company.cityId;
@@ -354,7 +354,7 @@ export function showAppNotification(message: string, type: 'error' | 'success' |
     const messageContainer = document.createElement('div');
     // CRITICAL FIX: Use innerHTML to render formatted messages with <br>, <strong>, etc.
     messageContainer.innerHTML = message;
-    
+
     notificationDiv.appendChild(iconElement);
     notificationDiv.appendChild(messageContainer);
     D.notificationArea.appendChild(notificationDiv);
@@ -377,7 +377,7 @@ export function populateLoginWorkerSelect() {
     if (!D.usernameInput) return;
 
     D.usernameInput.innerHTML = '<option value="">Seleccione su nombre...</option>';
-    
+
     const activeWorkers = State.users
         .filter(u => u.role === 'worker' && u.isActive)
         .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -468,7 +468,7 @@ export function populateBottomNav(role: 'admin' | 'worker') {
                     const activeTab = D.adminManagementSection.querySelector('.tab-link.active');
                     if (activeTab) {
                         const tabId = activeTab.getAttribute('data-tab');
-                        switch(tabId) {
+                        switch (tabId) {
                             case 'cities-tab': renderCitiesTable(); break;
                             case 'companies-tab': renderCompaniesTable(); break;
                             case 'dependencies-tab': renderDependenciesTable(); break;
@@ -478,9 +478,9 @@ export function populateBottomNav(role: 'admin' | 'worker') {
                     } else {
                         const firstTab = D.adminManagementSection.querySelector('.tab-link');
                         if (firstTab) {
-                           firstTab.classList.add('active');
-                           const firstTabContent = D.adminManagementSection.querySelector('.tab-content');
-                           if(firstTabContent) firstTabContent.classList.add('active');
+                            firstTab.classList.add('active');
+                            const firstTabContent = D.adminManagementSection.querySelector('.tab-content');
+                            if (firstTabContent) firstTabContent.classList.add('active');
                         }
                         renderCitiesTable();
                     }
@@ -546,10 +546,10 @@ export function handleTabClick(e: MouseEvent) {
 
     targetLink.classList.add('active');
     const content = document.getElementById(tabId);
-    if(content) content.classList.add('active');
+    if (content) content.classList.add('active');
 
     // Call render function for the selected tab
-    switch(tabId) {
+    switch (tabId) {
         case 'cities-tab': renderCitiesTable(); break;
         case 'companies-tab': renderCompaniesTable(); break;
         case 'dependencies-tab': renderDependenciesTable(); break;
@@ -593,7 +593,7 @@ export async function openReportFormModal(options: { report?: Report; equipment?
     const { report, equipment, category, isFromOrder, serviceType, order, orderItemId } = options;
 
     if (!D.maintenanceReportForm || !State.currentUser) return;
-    
+
     // Reset and setup form
     D.maintenanceReportForm.reset();
     D.reportIdInput.value = report ? report.id : '';
@@ -604,15 +604,15 @@ export async function openReportFormModal(options: { report?: Report; equipment?
     D.saveReportButton.innerHTML = report ? '<i class="fas fa-save"></i> Actualizar Reporte' : '<i class="fas fa-save"></i> Guardar Reporte';
     D.aiScanPlateButton.style.display = report ? 'none' : 'block';
     D.aiScanPlateButton.disabled = !navigator.onLine; // Disable button if offline
-    
+
     if (!report && !equipment && !order) {
         if (FormAutosave.restoreDraft()) {
             showAppNotification('Borrador previo recuperado automáticamente.', 'info');
-            
+
             // Especial para categoría "Empresa": Restaurar la UI de búsquedas anidadas
             if (D.reportCompanySelect && D.reportCompanySelect.value !== '') {
                 setReportCompanySelection(D.reportCompanySelect.value, { skipUpdate: false });
-                
+
                 // setReportCompanySelection asíncronamente refresca dependencias a través de updateLocationDropdownsFromCompany
                 // Llamamos a restoreDraft nuevamente para repoblar la dependencia/equipo seleccionada tras recrearse los `<option>`
                 setTimeout(() => {
@@ -622,13 +622,13 @@ export async function openReportFormModal(options: { report?: Report; equipment?
         }
     }
     if (D.aiScanOfflineWarning) {
-    D.aiScanOfflineWarning.style.display = navigator.onLine ? 'none' : 'block';
-}
+        D.aiScanOfflineWarning.style.display = navigator.onLine ? 'none' : 'block';
+    }
     D.reportServiceTypeSelect.disabled = !!report && !isFromOrder;
 
     // Reset signature pad & photos
     resetPhotoPreviews();
-    
+
     // Explicitly reset signature state and UI for ALL opens, then repopulate if editing.
     State.setCurrentReportSignatureDataUrl(null);
     D.signaturePreviewImage.src = '#';
@@ -663,7 +663,7 @@ export async function openReportFormModal(options: { report?: Report; equipment?
         D.reportAddressInput.removeAttribute('required');
         D.reportCitySelectResidencial.removeAttribute('required');
     }
-    
+
     // Populate form with data
     const snapshot = report?.equipmentSnapshot;
     const targetEquipment = report ? null : equipment; // Only use equipment if creating new report
@@ -676,7 +676,7 @@ export async function openReportFormModal(options: { report?: Report; equipment?
     populateDropdown(D.reportCitySelectEmpresa, State.cities); // It's disabled, but needs options for value setting
     populateDropdown(D.reportCitySelectResidencial, State.cities, undefined, 'Seleccione...', isWorker);
     clearReportCompanySelection();
-    
+
     // Hide city creation button for workers
     const addCityButtonResidencial = D.reportCitySelectResidencial.closest('.input-with-button')?.querySelector('.btn-add-inline[data-entity-type="city"]');
     if (addCityButtonResidencial) {
@@ -719,7 +719,7 @@ export async function openReportFormModal(options: { report?: Report; equipment?
                 hideLoader();
             }
         }
-        
+
         if (selectedCategory === 'empresa') {
             const clientName = order.clientDetails.name;
             const matchedCompany = State.companies.find(c => c.name.trim().toLowerCase() === clientName.trim().toLowerCase());
@@ -777,7 +777,7 @@ export async function openReportFormModal(options: { report?: Report; equipment?
         const refrigerantIdFromSnapshot = State.refrigerantTypes.find(t => t.name === snapshot.refrigerant)?.id;
         if (refrigerantIdFromSnapshot) D.reportEquipmentRefrigerantSelect.value = refrigerantIdFromSnapshot;
     }
-    
+
     if (D.reportServiceTypeSelect) {
         D.reportServiceTypeSelect.innerHTML = '';
         State.serviceTypes.forEach(st => {
@@ -793,14 +793,14 @@ export async function openReportFormModal(options: { report?: Report; equipment?
         // Default to 'Mantenimiento Preventivo' for new reports
         D.reportServiceTypeSelect.value = 'Mantenimiento Preventivo';
     }
-    
+
     toggleReportFormFields(D.reportServiceTypeSelect.value);
 
     D.reportPressureInput.value = report?.pressure || '';
     D.reportAmperageInput.value = report?.amperage || '';
     D.reportObservationsTextarea.value = report?.observations || '';
     D.reportWorkerNameInput.value = State.currentUser.name || State.currentUser.username;
-    
+
     // Set signature if editing
     if (report?.clientSignature && report.clientSignature !== "PENDING_SIGNATURE") {
         State.setCurrentReportSignatureDataUrl(report.clientSignature);
@@ -853,7 +853,7 @@ export function closeReportFormModal() {
 
 export function toggleReportFormFields(serviceType: string) {
     const isInstallation = serviceType === 'Montaje/Instalación';
-    
+
     // Hide/show entire sections that are mutually exclusive
     D.reportEquipmentFieldsContainer.style.display = isInstallation ? 'none' : 'block';
     D.reportInstallationItemsContainer.style.display = isInstallation ? 'block' : 'none';
@@ -867,7 +867,7 @@ export function toggleReportFormFields(serviceType: string) {
     const amperageGroup = D.reportAmperageInput.parentElement;
     if (pressureGroup) pressureGroup.style.display = isInstallation ? 'none' : 'block';
     if (amperageGroup) amperageGroup.style.display = isInstallation ? 'none' : 'block';
-    
+
     // Also, adjust the title of the section for clarity
     const measurementsHeader = D.reportMeasurementsContainer.querySelector('h4');
     if (measurementsHeader) {
@@ -893,7 +893,7 @@ export function initSignaturePad() {
         backgroundColor: 'rgb(255, 255, 255)',
         penColor: 'rgb(0, 0, 0)'
     });
-    
+
     signaturePad.addEventListener("beginStroke", () => {
         State.setIsSignaturePadDirty(true);
     });
@@ -927,7 +927,7 @@ async function saveSignature() {
         } else if (!signaturePad.isEmpty()) {
             State.setCurrentReportSignatureDataUrl(signaturePad.toDataURL('image/png'));
         }
-        
+
         // Update UI for the main report form
         if (D.signaturePreviewImage && D.signaturePlaceholderText) {
             const dataUrl = State.currentReportSignatureDataUrl;
@@ -956,14 +956,14 @@ async function saveSignature() {
     try {
         // Optimistic check: if offline, go directly to local update.
         if (!navigator.onLine) throw new Error('Offline');
-        
+
         // --- TRY ONLINE ---
         await withTimeout(
             updateMaintenanceReport(reportId, dbUpdateData),
             REQUEST_TIMEOUT_MS,
             'actualizar firma'
         );
-        
+
         // --- ONLINE SUCCESS ---
         await updateLocalReport(reportId, updateData);
         const reportInState = State.reports.find(r => r.id === reportId);
@@ -984,13 +984,13 @@ async function saveSignature() {
             try {
                 // --- OFFLINE LOGIC ---
                 await updateLocalReport(reportId, updateData);
-                
+
                 const reportInState = State.reports.find(r => r.id === reportId);
                 if (reportInState) {
                     reportInState.clientSignature = dataUrl;
                     reportInState.isSignaturePending = isSignaturePending;
                 }
-                
+
                 renderMyReportsTable();
                 if (State.currentUser.role === 'admin') renderAdminReportsTable();
                 showAppNotification('Firma actualizada localmente.', 'info');
@@ -1006,7 +1006,7 @@ async function saveSignature() {
             console.error('Non-network error during signature update:', err);
         }
     }
-    
+
     closeSignatureModal();
 }
 
@@ -1088,7 +1088,7 @@ export function openPlateScanModal(targetForm: 'report' | 'equipment') {
     D.plateScanModal.style.display = 'flex';
     resetModalScroll(D.plateScanModal);
     D.plateScanFeedback.textContent = 'Apuntando a la cámara...';
-    
+
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
         .then(stream => {
             plateCameraStream = stream;
@@ -1173,13 +1173,13 @@ export function showAiReconciliationResults(matches: any[]) {
                     <p class="reconciliation-reason"><strong>Razón:</strong> ${match.reason}</p>
                     <div class="reconciliation-details">
                         <div class="detail-column">
-                            <h4><i class="fas fa-route"></i> Orden #${order.manualId || order.id.substring(0,8)}</h4>
+                            <h4><i class="fas fa-route"></i> Orden #${order.manualId || order.id.substring(0, 8)}</h4>
                             <p><strong>Cliente:</strong> ${order.clientDetails?.name}</p>
                             <p><strong>Fecha:</strong> ${formatDate(order.service_date, false)}</p>
                             <p><strong>Técnicos:</strong> ${order.assignedTechnicians?.map(t => t.name).join(', ') || 'N/A'}</p>
                         </div>
                         <div class="detail-column">
-                            <h4><i class="fas fa-file-alt"></i> Reporte #${report.id.substring(0,8)}</h4>
+                            <h4><i class="fas fa-file-alt"></i> Reporte #${report.id.substring(0, 8)}</h4>
                             <p><strong>Cliente:</strong> ${reportClient}</p>
                             <p><strong>Fecha:</strong> ${formatDate(report.timestamp)}</p>
                             <p><strong>Técnico:</strong> ${report.workerName}</p>
@@ -1189,7 +1189,7 @@ export function showAiReconciliationResults(matches: any[]) {
             `;
         }).join('');
     }
-    
+
     D.aiReconciliationModal.style.display = 'flex';
     resetModalScroll(D.aiReconciliationModal);
 }
@@ -1198,7 +1198,7 @@ export function showAiReconciliationResults(matches: any[]) {
 // --- Installation Photo Capture ---
 export async function triggerPhotoCapture(type: 'internal' | 'external', source: 'CAMERA' | 'PHOTOS') {
     const isCapacitor = !!Capacitor.isNativePlatform();
-    
+
     if (isCapacitor) {
         try {
             await Camera.requestPermissions();
@@ -1218,7 +1218,7 @@ export async function triggerPhotoCapture(type: 'internal' | 'external', source:
             console.warn("Capacitor camera/photos failed, falling back to web methods", err);
         }
     }
-    
+
     // Web Fallback
     if (source === 'PHOTOS') {
         const inputId = type === 'internal' ? 'upload-internal-unit-input' : 'upload-external-unit-input';
@@ -1287,182 +1287,182 @@ export function closePhotoCaptureModal() {
 }
 
 export async function handlePhotoCaptured() {
-  const video = D.photoCaptureVideo;
-  if (!video || !photoCaptureStream) {
-    showAppNotification('Cámara no inicializada.', 'error');
-    return;
-  }
+    const video = D.photoCaptureVideo;
+    if (!video || !photoCaptureStream) {
+        showAppNotification('Cámara no inicializada.', 'error');
+        return;
+    }
 
-  // 🔹 Leer tipo antes de cerrar el modal
-  const modalType = D.photoCaptureModal?.getAttribute('data-photo-type') as 'internal' | 'external';
-  const captureType = modalType || State.currentPhotoCaptureType || 'internal';
+    // 🔹 Leer tipo antes de cerrar el modal
+    const modalType = D.photoCaptureModal?.getAttribute('data-photo-type') as 'internal' | 'external';
+    const captureType = modalType || State.currentPhotoCaptureType || 'internal';
 
-  // Asegurarse de que haya datos válidos
-  if (video.videoWidth === 0 || video.videoHeight === 0) {
-    showAppNotification('Esperando a que la cámara esté lista...', 'info');
-    await new Promise(res => setTimeout(res, 500));
-  }
+    // Asegurarse de que haya datos válidos
+    if (video.videoWidth === 0 || video.videoHeight === 0) {
+        showAppNotification('Esperando a que la cámara esté lista...', 'info');
+        await new Promise(res => setTimeout(res, 500));
+    }
 
-  const canvas = D.photoCaptureHiddenCanvas;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    showAppNotification('Error al inicializar el lienzo.', 'error');
-    return;
-  }
+    const canvas = D.photoCaptureHiddenCanvas;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        showAppNotification('Error al inicializar el lienzo.', 'error');
+        return;
+    }
 
-  const width = video.videoWidth;
-  const height = video.videoHeight;
-  if (width === 0 || height === 0) {
-    showAppNotification('No se detectó imagen válida.', 'error');
-    return;
-  }
+    const width = video.videoWidth;
+    const height = video.videoHeight;
+    if (width === 0 || height === 0) {
+        showAppNotification('No se detectó imagen válida.', 'error');
+        return;
+    }
 
-  canvas.width = width;
-  canvas.height = height;
+    canvas.width = width;
+    canvas.height = height;
 
-  try {
-    ctx.drawImage(video, 0, 0, width, height);
-  } catch (err) {
-    console.error('Error al dibujar frame:', err);
-    showAppNotification('No se pudo capturar la imagen.', 'error');
-    return;
-  }
+    try {
+        ctx.drawImage(video, 0, 0, width, height);
+    } catch (err) {
+        console.error('Error al dibujar frame:', err);
+        showAppNotification('No se pudo capturar la imagen.', 'error');
+        return;
+    }
 
-  const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
 
-      // Guardar contexto
-      const context = State.contextForPhotoUpdate;
-      
-      // Cerrar modal
-      closePhotoCaptureModal();
-      
-      await processPhotoDataUrl(dataUrl, captureType, context);
+    // Guardar contexto
+    const context = State.contextForPhotoUpdate;
+
+    // Cerrar modal
+    closePhotoCaptureModal();
+
+    await processPhotoDataUrl(dataUrl, captureType, context);
 }
 
 export async function handlePhotoUploadWeb(file: File) {
-  const modalType = D.photoCaptureModal?.getAttribute('data-photo-type') as 'internal' | 'external';
-  const captureType = modalType || State.currentPhotoCaptureType || 'internal';
-  const context = State.contextForPhotoUpdate;
-  
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const img = new Image();
-    img.onload = async () => {
-      const canvas = D.photoCaptureHiddenCanvas;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        showAppNotification('Error interno.', 'error');
-        return;
-      }
-      
-      // Resize to max width 1280
-      const maxWidth = 1280;
-      let width = img.width;
-      let height = img.height;
-      if (width > maxWidth) {
-        height = Math.round((height * maxWidth) / width);
-        width = maxWidth;
-      }
-      
-      canvas.width = width;
-      canvas.height = height;
-      ctx.drawImage(img, 0, 0, width, height);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
-      
-      closePhotoCaptureModal();
-      await processPhotoDataUrl(dataUrl, captureType, context);
+    const modalType = D.photoCaptureModal?.getAttribute('data-photo-type') as 'internal' | 'external';
+    const captureType = modalType || State.currentPhotoCaptureType || 'internal';
+    const context = State.contextForPhotoUpdate;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = new Image();
+        img.onload = async () => {
+            const canvas = D.photoCaptureHiddenCanvas;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                showAppNotification('Error interno.', 'error');
+                return;
+            }
+
+            // Resize to max width 1280
+            const maxWidth = 1280;
+            let width = img.width;
+            let height = img.height;
+            if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+
+            closePhotoCaptureModal();
+            await processPhotoDataUrl(dataUrl, captureType, context);
+        };
+        img.src = e.target?.result as string;
     };
-    img.src = e.target?.result as string;
-  };
-  reader.readAsDataURL(file);
+    reader.readAsDataURL(file);
 }
 
 async function processPhotoDataUrl(dataUrl: string, captureType: 'internal' | 'external', context: any) {
-  // 🔹 Si estamos editando un reporte existente
-  if (context && context.reportId) {
-    try {
-      const { reportId, photoType } = context;
-      const isOnline = navigator.onLine;
+    // 🔹 Si estamos editando un reporte existente
+    if (context && context.reportId) {
+        try {
+            const { reportId, photoType } = context;
+            const isOnline = navigator.onLine;
 
-      // Datos para Supabase (solo columnas existentes)
-      const updatePayload = photoType === 'internal'
-        ? { photo_internal_unit_url: dataUrl }
-        : { photo_external_unit_url: dataUrl };
+            // Datos para Supabase (solo columnas existentes)
+            const updatePayload = photoType === 'internal'
+                ? { photo_internal_unit_url: dataUrl }
+                : { photo_external_unit_url: dataUrl };
 
-      // Calcular bandera local de fotos pendientes sin enviarla al backend (no hay columna)
-      let arePhotosPendingFlag: boolean | undefined;
-      const reportForFlags = State.reports.find(r => r.id === reportId);
-      if (reportForFlags) {
-        const requiresPhotos = reportForFlags.serviceType === 'Montaje/Instalación';
-        const nextInternal = photoType === 'internal' ? dataUrl : reportForFlags.photo_internal_unit_url;
-        const nextExternal = photoType === 'external' ? dataUrl : reportForFlags.photo_external_unit_url;
-        arePhotosPendingFlag = requiresPhotos
-          ? !(nextInternal && nextExternal && nextInternal !== 'PENDING_PHOTO' && nextExternal !== 'PENDING_PHOTO')
-          : false;
-      }
+            // Calcular bandera local de fotos pendientes sin enviarla al backend (no hay columna)
+            let arePhotosPendingFlag: boolean | undefined;
+            const reportForFlags = State.reports.find(r => r.id === reportId);
+            if (reportForFlags) {
+                const requiresPhotos = reportForFlags.serviceType === 'Montaje/Instalación';
+                const nextInternal = photoType === 'internal' ? dataUrl : reportForFlags.photo_internal_unit_url;
+                const nextExternal = photoType === 'external' ? dataUrl : reportForFlags.photo_external_unit_url;
+                arePhotosPendingFlag = requiresPhotos
+                    ? !(nextInternal && nextExternal && nextInternal !== 'PENDING_PHOTO' && nextExternal !== 'PENDING_PHOTO')
+                    : false;
+            }
 
-      // Actualización online/offline
-      const localUpdate: Partial<Report> = {
-        ...updatePayload,
-        ...(arePhotosPendingFlag !== undefined ? { arePhotosPending: arePhotosPendingFlag } : {}),
-      };
+            // Actualización online/offline
+            const localUpdate: Partial<Report> = {
+                ...updatePayload,
+                ...(arePhotosPendingFlag !== undefined ? { arePhotosPending: arePhotosPendingFlag } : {}),
+            };
 
-      if (isOnline) {
-        await withTimeout(
-          updateMaintenanceReport(reportId, updatePayload),
-          REQUEST_TIMEOUT_MS,
-          'actualizar foto'
-        );
-        await updateLocalReport(reportId, localUpdate); // Mantener cache local coherente para modo offline
-        showAppNotification('Foto actualizada correctamente.', 'success');
-      } else {
-        await updateLocalReport(reportId, localUpdate);
-        showAppNotification('Foto guardada localmente (sin conexión).', 'info');
-      }
+            if (isOnline) {
+                await withTimeout(
+                    updateMaintenanceReport(reportId, updatePayload),
+                    REQUEST_TIMEOUT_MS,
+                    'actualizar foto'
+                );
+                await updateLocalReport(reportId, localUpdate); // Mantener cache local coherente para modo offline
+                showAppNotification('Foto actualizada correctamente.', 'success');
+            } else {
+                await updateLocalReport(reportId, localUpdate);
+                showAppNotification('Foto guardada localmente (sin conexión).', 'info');
+            }
 
-      // Actualizar UI del reporte abierto
-      const report = State.reports.find(r => r.id === reportId);
-      if (report) {
-        if (photoType === 'internal') report.photo_internal_unit_url = dataUrl;
-        else report.photo_external_unit_url = dataUrl;
-        if (arePhotosPendingFlag !== undefined) {
-          report.arePhotosPending = arePhotosPendingFlag;
+            // Actualizar UI del reporte abierto
+            const report = State.reports.find(r => r.id === reportId);
+            if (report) {
+                if (photoType === 'internal') report.photo_internal_unit_url = dataUrl;
+                else report.photo_external_unit_url = dataUrl;
+                if (arePhotosPendingFlag !== undefined) {
+                    report.arePhotosPending = arePhotosPendingFlag;
+                }
+            }
+
+            // Refrescar vista del modal (si sigue abierto)
+            openViewReportDetailsModal(reportId);
+            renderMyReportsTable();
+
+            // Limpiar contexto
+            State.setContextForPhotoUpdate(null);
+        } catch (err) {
+            console.error('Error al actualizar foto del reporte:', err);
+            showAppNotification('Error al guardar la foto en el reporte.', 'error');
         }
-      }
-
-      // Refrescar vista del modal (si sigue abierto)
-      openViewReportDetailsModal(reportId);
-      renderMyReportsTable();
-
-      // Limpiar contexto
-      State.setContextForPhotoUpdate(null);
-    } catch (err) {
-      console.error('Error al actualizar foto del reporte:', err);
-      showAppNotification('Error al guardar la foto en el reporte.', 'error');
+    } else {
+        // 🔹 Si es un reporte nuevo (modo formulario)
+        applyCapturedPhoto(dataUrl, captureType);
     }
-  } else {
-    // 🔹 Si es un reporte nuevo (modo formulario)
-    applyCapturedPhoto(dataUrl, captureType);
-  }
 }
 
 
 
 // Reutilizable: aplica la foto capturada a UI y estado
 function applyCapturedPhoto(dataUrl: string, type: 'internal' | 'external') {
-  if (type === 'internal') {
-    State.setCurrentReportPhotoInternalBase64(dataUrl);
-    D.photoInternalUnitPreview.src = dataUrl;
-    setPhotoPreviewStyles(D.photoInternalUnitPreview);
-    D.photoInternalUnitPlaceholder.style.display = 'none';
-  } else {
-    State.setCurrentReportPhotoExternalBase64(dataUrl);
-    D.photoExternalUnitPreview.src = dataUrl;
-    setPhotoPreviewStyles(D.photoExternalUnitPreview);
-    D.photoExternalUnitPlaceholder.style.display = 'none';
-  }
+    if (type === 'internal') {
+        State.setCurrentReportPhotoInternalBase64(dataUrl);
+        D.photoInternalUnitPreview.src = dataUrl;
+        setPhotoPreviewStyles(D.photoInternalUnitPreview);
+        D.photoInternalUnitPlaceholder.style.display = 'none';
+    } else {
+        State.setCurrentReportPhotoExternalBase64(dataUrl);
+        D.photoExternalUnitPreview.src = dataUrl;
+        setPhotoPreviewStyles(D.photoExternalUnitPreview);
+        D.photoExternalUnitPlaceholder.style.display = 'none';
+    }
 
-  updateSaveReportButtonState();
+    updateSaveReportButtonState();
 }
 
 
@@ -1500,7 +1500,7 @@ export async function openViewReportDetailsModal(reportId: string) {
     }
 
     D.viewReportIdDisplay.textContent = `ID: ${idValue}`;
-    
+
     // Clear previous content
     D.viewReportDetailsContent.innerHTML = '';
 
@@ -1509,7 +1509,7 @@ export async function openViewReportDetailsModal(reportId: string) {
         { label: 'Técnico', value: report.workerName },
         { label: 'Tipo de Servicio', value: report.serviceType },
     ];
-    
+
     if (report.equipmentSnapshot.category === 'residencial') {
         details.push({ label: 'Cliente', value: report.equipmentSnapshot.client_name || 'N/A' });
         details.push({ label: 'Dirección', value: report.equipmentSnapshot.address || 'N/A' });
@@ -1560,11 +1560,11 @@ export async function openViewReportDetailsModal(reportId: string) {
         itemsEl.appendChild(list);
         D.viewReportDetailsContent.appendChild(itemsEl);
     }
-    
+
     // Add signature image if available
     const sigContainer = document.createElement('div');
     if (report.clientSignature && report.clientSignature !== "PENDING_SIGNATURE") {
-         sigContainer.innerHTML = `
+        sigContainer.innerHTML = `
             <strong>Firma del Cliente:</strong>
             <img src="${report.clientSignature}" alt="Firma" id="view-report-signature-image" />
         `;
@@ -1586,8 +1586,8 @@ export async function openViewReportDetailsModal(reportId: string) {
         photoFlex.style.alignItems = 'flex-start';
 
         const createPhotoHTML = (
-            photoUrl: string | null, 
-            label: string, 
+            photoUrl: string | null,
+            label: string,
             photoType: 'internal' | 'external'
         ): string => {
             let contentHTML = '';
@@ -1628,56 +1628,56 @@ export async function openViewReportDetailsModal(reportId: string) {
     }
 
 
-D.downloadReportPdfButton.onclick = async () => {
-    showLoader('Generando PDF...');
-    try {
-        const isNative = Capacitor.isNativePlatform();
-        const pdfOutput = await generateReportPDF(
-            report,
-            State.cities,
-            State.companies,
-            State.dependencies,
-            formatDate,
-            State.allServiceOrders,
-            isNative ? 'open' : 'blob'
-        );
+    D.downloadReportPdfButton.onclick = async () => {
+        showLoader('Generando PDF...');
+        try {
+            const isNative = Capacitor.isNativePlatform();
+            const pdfOutput = await generateReportPDF(
+                report,
+                State.cities,
+                State.companies,
+                State.dependencies,
+                formatDate,
+                State.allServiceOrders,
+                isNative ? 'open' : 'blob'
+            );
 
-        if (isNative && typeof pdfOutput === 'string') {
-            try {
-                await FileOpener.open(pdfOutput, 'application/pdf');
-                showAppNotification('Reporte abierto en el visor del sistema.', 'success');
-            } catch (openError) {
-                console.error('Error al abrir el PDF con FileOpener', openError);
-                showAppNotification('No se pudo abrir el PDF con el visor del sistema.', 'error');
+            if (isNative && typeof pdfOutput === 'string') {
+                try {
+                    await FileOpener.open(pdfOutput, 'application/pdf');
+                    showAppNotification('Reporte abierto en el visor del sistema.', 'success');
+                } catch (openError) {
+                    console.error('Error al abrir el PDF con FileOpener', openError);
+                    showAppNotification('No se pudo abrir el PDF con el visor del sistema.', 'error');
+                }
+            } else if (!isNative && pdfOutput instanceof Blob) {
+                const url = URL.createObjectURL(pdfOutput);
+                const a = document.createElement('a');
+                a.href = url;
+
+                const clientName = report.equipmentSnapshot.category === 'residencial'
+                    ? report.equipmentSnapshot.client_name
+                    : report.equipmentSnapshot.companyName;
+                const filenameId = report.orderId ? report.orderId : report.id.substring(0, 8);
+
+                a.download = `Reporte_${clientName?.replace(/\s/g, '_') || 'General'}_${filenameId}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+
+                showAppNotification('Descarga de PDF iniciada correctamente.', 'success');
+            } else {
+                throw new Error('La generación del PDF no devolvió un formato válido.');
             }
-        } else if (!isNative && pdfOutput instanceof Blob) {
-            const url = URL.createObjectURL(pdfOutput);
-            const a = document.createElement('a');
-            a.href = url;
-            
-            const clientName = report.equipmentSnapshot.category === 'residencial' 
-                ? report.equipmentSnapshot.client_name 
-                : report.equipmentSnapshot.companyName;
-            const filenameId = report.orderId ? report.orderId : report.id.substring(0, 8);
-            
-            a.download = `Reporte_${clientName?.replace(/\s/g, '_') || 'General'}_${filenameId}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            setTimeout(() => URL.revokeObjectURL(url), 100);
-            
-            showAppNotification('Descarga de PDF iniciada correctamente.', 'success');
-        } else {
-            throw new Error('La generación del PDF no devolvió un formato válido.');
+        } catch (e: any) {
+            console.error("Fallo en la generación o visualización del PDF", e);
+            showAppNotification('Error al generar o mostrar el PDF.', 'error');
+        } finally {
+            hideLoader();
         }
-    } catch (e: any) {
-        console.error("Fallo en la generación o visualización del PDF", e);
-        showAppNotification('Error al generar o mostrar el PDF.', 'error');
-    } finally {
-        hideLoader();
-    }
 
-};
+    };
 
 
 
@@ -1723,14 +1723,14 @@ D.downloadReportPdfButton.onclick = async () => {
 
 export function toggleAssignmentFields() {
     const isEmpresa = D.editCategoryEmpresaRadio.checked;
-    
+
     D.editAssignmentEmpresaFields.style.display = isEmpresa ? 'block' : 'none';
     D.editAssignmentResidencialFields.style.display = isEmpresa ? 'none' : 'block';
-    
+
     // Toggle required attributes for validation
     D.editReportCompanySelect.required = isEmpresa;
     D.editReportDependencySelect.required = isEmpresa;
-    
+
     D.editReportClientNameInput.required = !isEmpresa;
     D.editReportClientAddressInput.required = !isEmpresa;
     D.editReportClientCitySelect.required = !isEmpresa;
@@ -1794,26 +1794,26 @@ export function openEditReportAssignmentModal(reportId: string) {
 
     D.editReportAssignmentForm.reset();
     D.editReportAssignmentReportId.value = reportId;
-    
+
     populateDropdown(D.editReportCompanySelect, State.companies, report.companyId);
     D.editReportClientNameInput.value = report.equipmentSnapshot.client_name || '';
     D.editReportClientAddressInput.value = report.equipmentSnapshot.address || '';
     populateDropdown(D.editReportClientCitySelect, State.cities, report.cityId);
-    
+
     const currentCategory = report.equipmentSnapshot.category || 'empresa';
     if (currentCategory === 'residencial') {
         D.editCategoryResidencialRadio.checked = true;
     } else {
         D.editCategoryEmpresaRadio.checked = true;
     }
-    
+
     toggleAssignmentFields();
-    
+
     const originalDependencyExists = Array.from(D.editReportDependencySelect.options).some(opt => opt.value === report.dependencyId);
     if (report.dependencyId && originalDependencyExists) {
         D.editReportDependencySelect.value = report.dependencyId;
     }
-    
+
     D.editReportAssignmentModal.style.display = 'flex';
     resetModalScroll(D.editReportAssignmentModal);
 }
@@ -1846,7 +1846,7 @@ function renderPagination<T>(
 
     const wrapper = document.createElement('div');
     wrapper.className = 'pagination-controls';
-    
+
     // Page navigation buttons
     const nav = document.createElement('div');
     nav.className = 'page-navigation';
@@ -1874,7 +1874,7 @@ function renderPagination<T>(
 
     nav.appendChild(createButton('<i class="fas fa-angle-right"></i>', paginationState.currentPage + 1, paginationState.currentPage === totalPages, true));
     nav.appendChild(createButton('<i class="fas fa-angle-double-right"></i>', totalPages, paginationState.currentPage === totalPages, true));
-    
+
     // Items per page selector
     const itemsPerPageSelector = document.createElement('div');
     itemsPerPageSelector.className = 'items-per-page-selector';
@@ -1885,7 +1885,7 @@ function renderPagination<T>(
     });
     selectHTML += '</select>';
     itemsPerPageSelector.innerHTML = selectHTML;
-    
+
     itemsPerPageSelector.querySelector('select')?.addEventListener('change', (e) => {
         paginationState.itemsPerPage = Number((e.target as HTMLSelectElement).value);
         paginationState.currentPage = 1; // Reset to first page
@@ -1939,7 +1939,7 @@ export async function renderMyReportsTable() {
 
 
     const searchTerm = State.tableSearchTerms.myReports.toLowerCase();
-    
+
     // 1. Filter reports for the current user
     let userReports = State.reports.filter(r => r.workerId === State.currentUser?.id);
 
@@ -1950,11 +1950,11 @@ export async function renderMyReportsTable() {
         cutoff.setHours(0, 0, 0, 0);
         userReports = userReports.filter(report => new Date(report.timestamp) >= cutoff);
     }
-    
+
     // 3. Filter by search term
     const filteredReports = userReports.filter(report => {
-        const clientName = report.equipmentSnapshot.category === 'residencial' 
-            ? report.equipmentSnapshot.client_name 
+        const clientName = report.equipmentSnapshot.category === 'residencial'
+            ? report.equipmentSnapshot.client_name
             : report.equipmentSnapshot.companyName;
 
         const searchString = [
@@ -1983,7 +1983,7 @@ export async function renderMyReportsTable() {
     const paginatedReports = getPaginatedData('myReports', filteredReports);
 
     D.myReportsTableBody.innerHTML = paginatedReports.map(report => {
-        const clientName = report.equipmentSnapshot.category === 'residencial' 
+        const clientName = report.equipmentSnapshot.category === 'residencial'
             ? (report.equipmentSnapshot.client_name || 'N/A')
             : (report.equipmentSnapshot.companyName || 'N/A');
         const equipmentName = `${report.equipmentSnapshot.brand || ''} ${report.equipmentSnapshot.model || ''}`.trim() || 'N/A - Instalación';
@@ -2048,7 +2048,7 @@ export function populateAdminFilterDropdowns() {
     populateDropdown(D.filterReportCompany, State.companies, undefined, 'Todas');
     // FIX: Map worker users to ensure the object passed to populateDropdown has a non-optional `name` property, falling back to username.
     populateDropdown(D.filterReportTechnician, State.users.filter(u => u.role === 'worker').map(u => ({ id: u.id, name: u.name || u.username })), undefined, 'Todos');
-    
+
     const serviceTypes = [...new Set(State.reports.map(r => r.serviceType))];
     populateStringDropdown(D.filterReportServiceType, serviceTypes);
 }
@@ -2056,8 +2056,8 @@ export function populateAdminFilterDropdowns() {
 export function populateAdminOrderFilterDropdowns() {
     // FIX: Map worker users to ensure the object passed to populateDropdown has a non-optional `name` property, falling back to username.
     populateDropdown(D.filterOrderTechnician, State.users.filter(u => u.role === 'worker').map(u => ({ id: u.id, name: u.name || u.username })), undefined, 'Todos');
-     const serviceOrderTypes = [...new Set(State.allServiceOrders.map(o => o.order_type).filter(Boolean) as string[])];
-     populateStringDropdown(D.filterOrderType, serviceOrderTypes);
+    const serviceOrderTypes = [...new Set(State.allServiceOrders.map(o => o.order_type).filter(Boolean) as string[])];
+    populateStringDropdown(D.filterOrderType, serviceOrderTypes);
 }
 
 
@@ -2087,7 +2087,7 @@ function getFilteredAdminReports(): Report[] {
         if (serviceType && report.serviceType !== serviceType) return false;
         if (technicianId && report.workerId !== technicianId) return false;
         if (category && report.equipmentSnapshot.category !== category) return false;
-        
+
         // Updated paidStatus logic to handle "PENDING_SIGNATURE" as well
         const isPaid = report.is_paid;
         if (paidStatus === 'true' && !isPaid) return false;
@@ -2095,10 +2095,10 @@ function getFilteredAdminReports(): Report[] {
 
 
         // Search term filter
-        const clientName = report.equipmentSnapshot.category === 'residencial' 
-            ? report.equipmentSnapshot.client_name 
+        const clientName = report.equipmentSnapshot.category === 'residencial'
+            ? report.equipmentSnapshot.client_name
             : report.equipmentSnapshot.companyName;
-        
+
         const city = State.cities.find(c => c.id === report.cityId)?.name;
 
         const searchString = normalizeSearchText([
@@ -2131,13 +2131,13 @@ export function renderAdminReportsTable() {
     const filteredReports = getFilteredAdminReports();
     const paginatedReports = getPaginatedData('adminReports', filteredReports);
     D.adminReportsTableBody.innerHTML = paginatedReports.map(report => {
-        const clientNameFull = report.equipmentSnapshot.category === 'residencial' 
+        const clientNameFull = report.equipmentSnapshot.category === 'residencial'
             ? (report.equipmentSnapshot.client_name || 'N/A')
             : (report.equipmentSnapshot.companyName || 'N/A');
         const clientNameTruncated = clientNameFull.length > 30 ? clientNameFull.substring(0, 30) + '...' : clientNameFull;
-        
+
         const city = State.cities.find(c => c.id === report.cityId)?.name || 'N/A';
-        
+
         const dependencyNameFull = report.equipmentSnapshot.dependencyName || 'N/A';
         const dependencyNameTruncated = dependencyNameFull.length > 30 ? dependencyNameFull.substring(0, 30) + '...' : dependencyNameFull;
 
@@ -2166,7 +2166,7 @@ export function renderAdminReportsTable() {
         `;
     }).join('');
 
-    if(paginatedReports.length === 0) {
+    if (paginatedReports.length === 0) {
         D.adminReportsTableBody.innerHTML = '<tr><td colspan="9">No se encontraron reportes con los filtros actuales.</td></tr>';
     }
 
@@ -2184,18 +2184,18 @@ export async function handleDownloadReportsZip() {
         }
 
         const zip = new JSZip();
-        
+
         showLoader(`Generando ${reportsToDownload.length} PDFs...`);
 
         // Generate PDFs in parallel
-        const pdfPromises = reportsToDownload.map(report => 
+        const pdfPromises = reportsToDownload.map(report =>
             generateReportPDF(report, State.cities, State.companies, State.dependencies, formatDate, State.allServiceOrders, 'blob')
                 .then(blob => {
                     if (blob instanceof Blob) {
-                        const clientName = report.equipmentSnapshot.category === 'residencial' 
+                        const clientName = report.equipmentSnapshot.category === 'residencial'
                             ? report.equipmentSnapshot.client_name
                             : report.equipmentSnapshot.companyName;
-                        
+
                         let idValue = report.id;
                         if (report.orderId) {
                             const linkedOrder = State.allServiceOrders.find(o => o.id === report.orderId);
@@ -2209,13 +2209,13 @@ export async function handleDownloadReportsZip() {
                     }
                 })
         );
-        
+
         await Promise.all(pdfPromises);
-        
+
         showLoader('Comprimiendo archivos...');
-        
+
         const zipBlob = await zip.generateAsync({ type: 'blob' });
-        
+
         const link = document.createElement('a');
         link.href = URL.createObjectURL(zipBlob);
         const date = new Date().toISOString().slice(0, 10);
@@ -2251,22 +2251,22 @@ export async function handleDownloadReportsMergedPdf() {
         // Sequence rather than parallel to keep PDF page order correct and pass the same doc ref
         for (let i = 0; i < reportsToDownload.length; i++) {
             const report = reportsToDownload[i];
-            
+
             showLoader(`Uniendo reporte ${i + 1} de ${reportsToDownload.length}...`);
-            
+
             // For the very first iteration, existingDoc will evaluate falsy so it internally instantiates the jsPDF doc
             mergedDoc = await generateReportPDF(
-                report, 
-                State.cities, 
-                State.companies, 
-                State.dependencies, 
-                formatDate, 
-                State.allServiceOrders, 
-                'doc', 
+                report,
+                State.cities,
+                State.companies,
+                State.dependencies,
+                formatDate,
+                State.allServiceOrders,
+                'doc',
                 mergedDoc
             );
         }
-        
+
         if (!mergedDoc) throw new Error('No se pudo inicializar el documento PDF.');
 
         showLoader('Finalizando documento...');
@@ -2298,10 +2298,10 @@ export function renderAdminScheduleTable() {
     const paginatedItems = getPaginatedData('adminSchedule', scheduleItems);
 
     D.adminScheduleTableBody.innerHTML = paginatedItems.map(item => {
-        const location = item.equipment.category === 'residencial' 
+        const location = item.equipment.category === 'residencial'
             ? (item.equipment.client_name || 'N/A')
             : (`${State.companies.find(c => c.id === item.equipment.companyId)?.name || ''} / ${State.dependencies.find(d => d.id === item.equipment.dependencyId)?.name || ''}`);
-            
+
         return `
             <tr>
                 <td data-label="Equipo (ID/Modelo)">${item.equipment.manualId || 'S/ID'} - ${item.equipment.model}</td>
@@ -2327,31 +2327,31 @@ export function renderAdminScheduleTable() {
 export function renderAdminEquipmentTable() {
     if (!D.adminEquipmentTableBody) return;
     const searchTerm = State.tableSearchTerms.adminEquipment.toLowerCase();
-    
+
     const filteredEquipment = State.equipmentList.filter(eq => {
-        const clientOrCompany = eq.category === 'residencial' 
+        const clientOrCompany = eq.category === 'residencial'
             ? (eq.client_name || '')
             : (State.companies.find(c => c.id === eq.companyId)?.name || '');
         const dependency = eq.dependencyId ? State.dependencies.find(d => d.id === eq.dependencyId)?.name || '' : '';
         const city = eq.cityId ? State.cities.find(c => c.id === eq.cityId)?.name || '' : '';
-            
+
         const searchString = [
             eq.manualId, eq.brand, eq.model, eq.typeName, clientOrCompany, dependency, city
         ].join(' ').toLowerCase();
-        
+
         return searchString.includes(searchTerm);
     });
 
     const paginatedEquipment = getPaginatedData('adminEquipment', filteredEquipment);
 
     D.adminEquipmentTableBody.innerHTML = paginatedEquipment.map(eq => {
-         const location = eq.category === 'residencial' 
+        const location = eq.category === 'residencial'
             ? (State.cities.find(c => c.id === eq.cityId)?.name || 'N/A')
             : (State.companies.find(c => c.id === eq.companyId)?.name || 'N/A');
         const dependencyOrClient = eq.category === 'residencial'
             ? (eq.client_name || 'N/A')
             : (State.dependencies.find(d => d.id === eq.dependencyId)?.name || 'N/A');
-        
+
         return `
             <tr>
                 <td data-label="ID Manual">${eq.manualId || 'N/A'}</td>
@@ -2458,7 +2458,7 @@ export function openRedeemPointsModal(userId: string, userName: string, currentP
     D.redeemPointsEmployeeName.textContent = userName;
     D.redeemPointsCurrentPoints.textContent = currentPoints;
     D.redeemPointsError.textContent = '';
-    
+
     D.redeemPointsModal.style.display = 'flex';
     resetModalScroll(D.redeemPointsModal);
 }
@@ -2511,7 +2511,7 @@ function createOrderCardHTML(order: Order): string {
     return `
         <div class="order-card" data-order-id="${order.id}">
             <div class="order-card-header">
-                <span class="order-id">#${order.manualId || order.id.substring(0,8)}</span>
+                <span class="order-id">#${order.manualId || order.id.substring(0, 8)}</span>
                 <span class="order-status ${statusInfo.class}">${statusInfo.text}</span>
             </div>
             <div class="order-card-body">
@@ -2548,7 +2548,7 @@ export function renderAssignedOrdersList() {
     if (!D.workerOrdersListContainer) return;
     const orders = State.assignedOrders
         .filter(o => o.status !== 'completed' && o.status !== 'cancelada')
-        .sort((a,b) => new Date(a.service_date!).getTime() - new Date(b.service_date!).getTime());
+        .sort((a, b) => new Date(a.service_date!).getTime() - new Date(b.service_date!).getTime());
 
     if (orders.length === 0) {
         D.workerOrdersListContainer.innerHTML = '<p class="text-muted" style="text-align: center;">No tiene órdenes de servicio asignadas.</p>';
@@ -2571,7 +2571,7 @@ export function renderAdminOrdersList() {
 
     const filteredOrders = State.allServiceOrders.filter(order => {
         // Date filtering
-        if(order.service_date) {
+        if (order.service_date) {
             const orderDate = order.service_date.substring(0, 10);
             if (startDate && orderDate < startDate) return false;
             if (endDate && orderDate > endDate) return false;
@@ -2592,7 +2592,7 @@ export function renderAdminOrdersList() {
         ].join(' ').toLowerCase();
 
         return searchString.includes(searchTerm);
-    }).sort((a,b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime());
+    }).sort((a, b) => new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime());
 
     const paginatedOrders = getPaginatedData('adminOrders', filteredOrders);
 
@@ -2610,7 +2610,7 @@ export function renderAdminOrdersList() {
 
 export function openCategorySelectionModal(nextAction: 'manual' | 'search') {
     State.setManualReportCreationState({ category: null, nextAction });
-    if(D.categorySelectionModal) {
+    if (D.categorySelectionModal) {
         D.categorySelectionModal.style.display = 'flex';
         resetModalScroll(D.categorySelectionModal);
     }
@@ -2622,7 +2622,7 @@ export function closeCategorySelectionModal() {
 }
 
 export function openEquipmentSelectionModal() {
-    if(D.equipmentSelectionModal) {
+    if (D.equipmentSelectionModal) {
         D.equipmentSelectionSearchInput.value = '';
         renderEquipmentSelectionResults();
         D.equipmentSelectionModal.style.display = 'flex';
@@ -2637,30 +2637,30 @@ export function closeEquipmentSelectionModal() {
 export function renderEquipmentSelectionResults() {
     const searchTerm = D.equipmentSelectionSearchInput.value.toLowerCase();
     const category = State.manualReportCreationState.category;
-    
+
     if (!D.equipmentSelectionSearchResults) return;
-    
+
     const results = State.equipmentList.filter(eq => {
-        if(eq.category !== category) return false;
+        if (eq.category !== category) return false;
         if (!searchTerm) return true; // Show all if search is empty
 
-        const clientOrCompany = eq.category === 'residencial' 
+        const clientOrCompany = eq.category === 'residencial'
             ? (eq.client_name || '')
             : (State.companies.find(c => c.id === eq.companyId)?.name || '');
         const dependency = eq.dependencyId ? State.dependencies.find(d => d.id === eq.dependencyId)?.name || '' : '';
-            
+
         const searchString = [
             eq.manualId, eq.brand, eq.model, clientOrCompany, dependency, eq.address
         ].join(' ').toLowerCase();
-        
+
         return searchString.includes(searchTerm);
     });
 
-    if(results.length === 0 && searchTerm) {
+    if (results.length === 0 && searchTerm) {
         D.equipmentSelectionSearchResults.innerHTML = '<div class="search-result-item" style="text-align: center; font-style: italic;">No se encontraron equipos.</div>';
     } else {
         D.equipmentSelectionSearchResults.innerHTML = results.slice(0, 50).map(eq => { // Limit to 50 results for performance
-             const location = eq.category === 'residencial' 
+            const location = eq.category === 'residencial'
                 ? (eq.address || 'Sin dirección')
                 : (`${State.companies.find(c => c.id === eq.companyId)?.name || ''} - ${State.dependencies.find(d => d.id === eq.dependencyId)?.name || ''}`);
             return `
@@ -2675,7 +2675,7 @@ export function renderEquipmentSelectionResults() {
             item.addEventListener('click', () => {
                 const equipmentId = (item as HTMLElement).dataset.equipmentId;
                 const selectedEquipment = State.equipmentList.find(eq => eq.id === equipmentId);
-                if(selectedEquipment) {
+                if (selectedEquipment) {
                     handleEquipmentSelection(selectedEquipment);
                 }
             });
@@ -2702,7 +2702,7 @@ export function openOrderDetailsModal(orderId: string) {
     const order = State.allServiceOrders.find(o => o.id === orderId) || State.assignedOrders.find(o => o.id === orderId);
     if (!order || !D.orderDetailsModal) return;
 
-    D.orderManualIdHeader.textContent = `${order.manualId || order.id.substring(0,8)}`;
+    D.orderManualIdHeader.textContent = `${order.manualId || order.id.substring(0, 8)}`;
     D.orderClientName.textContent = order.clientDetails?.name || 'N/A';
     D.orderClientAddress.textContent = order.clientDetails?.address || 'N/A';
     D.orderClientCity.textContent = order.clientDetails?.city || 'N/A';
@@ -2718,16 +2718,16 @@ export function openOrderDetailsModal(orderId: string) {
             order.image_urls.forEach(url => {
                 const imgWrap = document.createElement('div');
                 imgWrap.style.cssText = 'position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); cursor: pointer;';
-                
+
                 const img = document.createElement('img');
                 img.src = url;
                 img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
-                
+
                 imgWrap.addEventListener('click', () => {
                     const win = window.open();
                     win?.document.write(`<html><body style="margin:0;display:flex;justify-content:center;align-items:center;background:#000;"><img src="${url}" style="max-width:100%;max-height:100%;"></body></html>`);
                 });
-                
+
                 imgWrap.appendChild(img);
                 D.orderImagesContainer.appendChild(imgWrap);
             });
@@ -2742,7 +2742,7 @@ export function openOrderDetailsModal(orderId: string) {
                 const isComplete = completed >= item.quantity;
                 const isWorker = State.currentUser?.role === 'worker';
                 const canReport = (isWorker || (order.assignedTechnicians?.some(t => t.id === State.currentUser?.id))) && !isComplete && order.status !== 'cancelada';
-                
+
                 let actionHtml = '';
                 if (canReport) {
                     actionHtml = `<button type="button" class="btn btn-sm btn-action report-item-btn" data-order-id="${order.id}" data-item-id="${item.id}" style="background-color: var(--primary-color); color: white;"><i class="fas fa-plus"></i> Reportar (+1)</button>`;
@@ -2765,10 +2765,10 @@ export function openOrderDetailsModal(orderId: string) {
             D.orderItemsTableBody.innerHTML = '<tr><td colspan="4">No hay items en esta orden.</td></tr>';
         }
     }
-    
+
     if (D.orderAssignedTechniciansList) {
         if (order.assignedTechnicians && order.assignedTechnicians.length > 0) {
-             D.orderAssignedTechniciansList.innerHTML = order.assignedTechnicians.map(t => `<div class="tech-name"><i class="fas fa-user-cog"></i> ${t.name}</div>`).join('');
+            D.orderAssignedTechniciansList.innerHTML = order.assignedTechnicians.map(t => `<div class="tech-name"><i class="fas fa-user-cog"></i> ${t.name}</div>`).join('');
         } else {
             D.orderAssignedTechniciansList.innerHTML = '<span class="text-muted">No hay técnicos asignados.</span>';
         }
@@ -2803,10 +2803,10 @@ export function openEntityFormModal(type: EntityType, id?: string, context?: any
         </div>
     `;
 
-    const getSelect = (label: string, name: string, options: {id: string, name: string}[], selectedValue: any = '', required = true, addEmpty=true, extra: string = '') => {
+    const getSelect = (label: string, name: string, options: { id: string, name: string }[], selectedValue: any = '', required = true, addEmpty = true, extra: string = '') => {
         let optionsHTML = addEmpty ? '<option value="">Seleccione...</option>' : '';
         // FIX: Corrected typo in localeCompare for sorting.
-        options.sort((a,b) => a.name.localeCompare(b.name)).forEach(opt => {
+        options.sort((a, b) => a.name.localeCompare(b.name)).forEach(opt => {
             optionsHTML += `<option value="${opt.id}" ${opt.id === selectedValue ? 'selected' : ''}>${opt.name}</option>`;
         });
         return `
@@ -2817,9 +2817,9 @@ export function openEntityFormModal(type: EntityType, id?: string, context?: any
         `;
     };
 
-    const getSelectWithAdd = (label: string, name: string, options: {id: string, name: string}[], selectedValue: any = '', required = true, addEntityType: EntityType, extra: string = '') => {
+    const getSelectWithAdd = (label: string, name: string, options: { id: string, name: string }[], selectedValue: any = '', required = true, addEntityType: EntityType, extra: string = '') => {
         let optionsHTML = '<option value="">Seleccione...</option>';
-        options.sort((a,b) => a.name.localeCompare(b.name)).forEach(opt => {
+        options.sort((a, b) => a.name.localeCompare(b.name)).forEach(opt => {
             optionsHTML += `<option value="${opt.id}" ${opt.id === selectedValue ? 'selected' : ''}>${opt.name}</option>`;
         });
         return `
@@ -2854,17 +2854,17 @@ export function openEntityFormModal(type: EntityType, id?: string, context?: any
             const isOnline = navigator.onLine;
 
             if (isWorker && !isOnline) {
-                 // Offline worker: Can only select existing city, no "other" or "add new"
-                 fieldsHTML = getField('Nombre de la Empresa', 'name', 'text', company?.name)
-                           + getSelect('Ciudad', 'city_id', State.cities, company?.cityId, true, true);
+                // Offline worker: Can only select existing city, no "other" or "add new"
+                fieldsHTML = getField('Nombre de la Empresa', 'name', 'text', company?.name)
+                    + getSelect('Ciudad', 'city_id', State.cities, company?.cityId, true, true);
             } else if (isWorker && isOnline) {
                 // Online worker: Can select or choose "other"
                 let cityOptionsHTML = '<option value="">Seleccione...</option>';
-                State.cities.sort((a,b) => a.name.localeCompare(b.name)).forEach(opt => {
+                State.cities.sort((a, b) => a.name.localeCompare(b.name)).forEach(opt => {
                     cityOptionsHTML += `<option value="${opt.id}" ${opt.id === company?.cityId ? 'selected' : ''}>${opt.name}</option>`;
                 });
                 cityOptionsHTML += `<option value="otra">Otra</option>`;
-                
+
                 fieldsHTML = getField('Nombre de la Empresa', 'name', 'text', company?.name) + `
                     <div class="form-group">
                         <label for="city_id">Ciudad</label>
@@ -2872,7 +2872,7 @@ export function openEntityFormModal(type: EntityType, id?: string, context?: any
                     </div>`;
             } else { // Admin (always has add button)
                 fieldsHTML = getField('Nombre de la Empresa', 'name', 'text', company?.name)
-                           + getSelectWithAdd('Ciudad', 'city_id', State.cities, company?.cityId, true, 'city');
+                    + getSelectWithAdd('Ciudad', 'city_id', State.cities, company?.cityId, true, 'city');
             }
             break;
         case 'dependency':
@@ -2881,7 +2881,7 @@ export function openEntityFormModal(type: EntityType, id?: string, context?: any
             if (context?.source === 'reportForm' && selectedCompany) {
                 const companyName = State.companies.find(c => c.id === selectedCompany)?.name || '';
                 fieldsHTML = getField('Nombre de la Dependencia', 'name', 'text', dependency?.name)
-                           + `
+                    + `
                     <div class="form-group">
                         <label for="company_id_display">Empresa Destino</label>
                         <input type="text" id="company_id_display" value="${companyName}" readonly class="readonly-field">
@@ -2890,14 +2890,14 @@ export function openEntityFormModal(type: EntityType, id?: string, context?: any
                 `;
             } else {
                 fieldsHTML = getField('Nombre de la Dependencia', 'name', 'text', dependency?.name)
-                           + getSelectWithAdd('Empresa', 'company_id', State.companies, selectedCompany, true, 'company');
+                    + getSelectWithAdd('Empresa', 'company_id', State.companies, selectedCompany, true, 'company');
             }
             break;
         case 'employee':
             const employee = State.users.find(u => u.id === id);
             fieldsHTML = getField('Nombre Completo', 'name', 'text', employee?.name)
-                       + getField('Cédula', 'cedula', 'text', employee?.cedula, !id) // Cédula required for new, not for edit
-                       + getField('Contraseña (si desea cambiar)', 'password', 'password', '', false);
+                + getField('Cédula', 'cedula', 'text', employee?.cedula, !id) // Cédula required for new, not for edit
+                + getField('Contraseña (si desea cambiar)', 'password', 'password', '', false);
             break;
         case 'equipmentType':
         case 'refrigerant':
@@ -2921,14 +2921,14 @@ export function openEntityFormModal(type: EntityType, id?: string, context?: any
                         </label>
                     </div>
                 </div>`;
-            
+
             const empresaFields = `
                 <div id="empresa-fields-container" style="display: ${currentCategory === 'empresa' ? 'block' : 'none'}">
                     ${getSelectWithAdd('Empresa', 'company_id', State.companies, equipment?.companyId, true, 'company', 'id="equipment-company"')}
                     ${getSelectWithAdd('Dependencia', 'dependency_id', State.dependencies, equipment?.dependencyId, true, 'dependency', 'id="equipment-dependency"')}
                 </div>
             `;
-            
+
             const residencialFields = `
                  <div id="residencial-fields-container" style="display: ${currentCategory === 'residencial' ? 'block' : 'none'}">
                      ${getField('Nombre del Cliente', 'client_name', 'text', equipment?.client_name, true)}
@@ -2936,19 +2936,19 @@ export function openEntityFormModal(type: EntityType, id?: string, context?: any
                      ${getSelectWithAdd('Ciudad', 'city_id_residencial', State.cities, equipment?.cityId, true, 'city', 'id="city_id_residencial"')}
                  </div>
             `;
-            
-             fieldsHTML = getField('ID Manual (Opcional)', 'manual_id', 'text', equipment?.manualId, false, 'placeholder="Ej: A-101"')
-                       + getField('Marca', 'brand', 'text', equipment?.brand)
-                       + getField('Modelo', 'model', 'text', equipment?.model)
-                       + getSelectWithAdd('Tipo de Equipo', 'equipment_type_id', State.equipmentTypes, equipment?.equipment_type_id, true, 'equipmentType')
-                       + getSelectWithAdd('Tipo de Refrigerante', 'refrigerant_type_id', State.refrigerantTypes, equipment?.refrigerant_type_id, false, 'refrigerant')
-                       + getField('Capacidad (Opcional)', 'capacity', 'text', equipment?.capacity, false, 'placeholder="Ej: 12000 BTU"')
-                       + getField('Periodicidad (Meses)', 'periodicityMonths', 'number', equipment?.periodicityMonths || 6, true, 'min="1"')
-                       + getField('Fecha Último Mantenimiento (Opcional)', 'lastMaintenanceDate', 'date', equipment?.lastMaintenanceDate, false)
-                       + categorySelector
-                       + empresaFields
-                       + residencialFields;
-            
+
+            fieldsHTML = getField('ID Manual (Opcional)', 'manual_id', 'text', equipment?.manualId, false, 'placeholder="Ej: A-101"')
+                + getField('Marca', 'brand', 'text', equipment?.brand)
+                + getField('Modelo', 'model', 'text', equipment?.model)
+                + getSelectWithAdd('Tipo de Equipo', 'equipment_type_id', State.equipmentTypes, equipment?.equipment_type_id, true, 'equipmentType')
+                + getSelectWithAdd('Tipo de Refrigerante', 'refrigerant_type_id', State.refrigerantTypes, equipment?.refrigerant_type_id, false, 'refrigerant')
+                + getField('Capacidad (Opcional)', 'capacity', 'text', equipment?.capacity, false, 'placeholder="Ej: 12000 BTU"')
+                + getField('Periodicidad (Meses)', 'periodicityMonths', 'number', equipment?.periodicityMonths || 6, true, 'min="1"')
+                + getField('Fecha Último Mantenimiento (Opcional)', 'lastMaintenanceDate', 'date', equipment?.lastMaintenanceDate, false)
+                + categorySelector
+                + empresaFields
+                + residencialFields;
+
             setTimeout(() => {
                 const applyCategoryState = (isEmpresa: boolean) => {
                     // FIX: Cast querySelector result to HTMLElement to access style property.
@@ -2968,13 +2968,13 @@ export function openEntityFormModal(type: EntityType, id?: string, context?: any
 
                 const companySelect = D.entityFormFieldsContainer.querySelector('#equipment-company') as HTMLSelectElement;
                 const dependencySelect = D.entityFormFieldsContainer.querySelector('#equipment-dependency') as HTMLSelectElement;
-                if(companySelect && dependencySelect) {
+                if (companySelect && dependencySelect) {
                     const updateDependencies = () => {
                         const companyId = companySelect.value;
                         const filtered = State.dependencies.filter(d => d.companyId === companyId);
                         dependencySelect.innerHTML = '<option value="">Seleccione...</option>';
-                        filtered.sort((a,b) => a.name.localeCompare(b.name)).forEach(d => {
-                             dependencySelect.innerHTML += `<option value="${d.id}">${d.name}</option>`;
+                        filtered.sort((a, b) => a.name.localeCompare(b.name)).forEach(d => {
+                            dependencySelect.innerHTML += `<option value="${d.id}">${d.name}</option>`;
                         });
                         dependencySelect.disabled = !companyId;
                     };
