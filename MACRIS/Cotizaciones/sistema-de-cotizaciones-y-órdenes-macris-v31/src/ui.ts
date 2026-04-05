@@ -80,8 +80,8 @@ export async function applyTheme(theme: 'light' | 'dark', showNotif: boolean = t
     document.body.classList.toggle('dark-theme', theme === 'dark');
     try {
         await API.setSetting('theme', theme);
-        if(showNotif) showNotification(`Tema cambiado a ${theme === 'light' ? 'Claro' : 'Oscuro'}.`);
-    } catch(e: any) {
+        if (showNotif) showNotification(`Tema cambiado a ${theme === 'light' ? 'Claro' : 'Oscuro'}.`);
+    } catch (e: any) {
         if (showNotif) showNotification("Error al guardar el tema.", "error");
     }
 }
@@ -102,7 +102,7 @@ export async function applyFontSize(size: number, showNotif: boolean = true) {
     try {
         await API.setSetting('font_size', String(size));
         if (showNotif) showNotification(`Tamaño de fuente ajustado a ${size}px.`);
-    } catch(e: any) {
+    } catch (e: any) {
         if (showNotif) showNotification("Error al guardar el tamaño de fuente.", "error");
     }
 }
@@ -168,7 +168,7 @@ export async function loadCompanyAndQuoteTexts() {
         API.getSetting('company_phone'),
         API.getSetting('company_email'),
     ]);
-    
+
     // Set state without saving back to DB
     State.setInternalQuoteTermsNoVat(termsNoVat ?? State.getQuoteTermsNoVat());
     State.setInternalQuoteTermsWithVat(termsWithVat ?? State.getQuoteTermsWithVat());
@@ -179,7 +179,7 @@ export async function loadCompanyAndQuoteTexts() {
     State.setInternalCompanyWebsite(companyWebsite ?? State.getCompanyWebsite());
     State.setInternalCompanyPhone(companyPhone ?? State.getCompanyPhone());
     State.setInternalCompanyEmail(companyEmail ?? State.getCompanyEmail());
-    
+
     // Populate settings textareas
     if (D.termsNoVatSetting) D.termsNoVatSetting.value = State.getQuoteTermsNoVat();
     if (D.termsWithVatSetting) D.termsWithVatSetting.value = State.getQuoteTermsWithVat();
@@ -319,7 +319,7 @@ export function navigateTo(pageId: string) {
     if (currentPageId === 'page-quotes' && pageId !== 'page-quotes') {
         cleanupQuoteWorkspace();
     }
-    
+
     // --- VISIBILITY PHASE ---
     // Hide ALL pages first. This is the most important step to prevent mixing UIs.
     D.pageContainers.forEach(container => {
@@ -333,7 +333,7 @@ export function navigateTo(pageId: string) {
             container.classList.remove('page-as-modal');
         }
     });
-    
+
     // Show the target page.
     const newPage = document.getElementById(pageId);
     if (newPage) {
@@ -354,7 +354,7 @@ export function navigateTo(pageId: string) {
     // After the new page is visible, refresh its content if necessary.
     if (['page-orders', 'page-saved-quotes', 'page-clients', 'page-items', 'page-technicians'].includes(pageId)) {
         renderAllLists();
-    } else if(pageId === 'page-agenda') {
+    } else if (pageId === 'page-agenda') {
         renderAgendaPage();
         // Auto-scroll to today's date in week view when the page is first loaded
         setTimeout(() => {
@@ -368,7 +368,7 @@ export function navigateTo(pageId: string) {
     else if (pageId === 'page-quotes') {
         // Re-rendering the quote ensures that if we came from another page, the quote workspace
         // is correctly displayed with the active quote's data, creating a clean view.
-        renderQuote(State.getActiveQuote()); 
+        renderQuote(State.getActiveQuote());
     }
 }
 
@@ -399,9 +399,9 @@ export async function closeQuoteTab(quoteId: string) {
     const closingTabIndex = openQuotes.findIndex(q => q.id === quoteId);
     State.removeOpenQuote(quoteId);
     const remainingQuotes = State.getOpenQuotes();
-    
+
     D.quoteTabsBar.querySelector(`.quote-tab[data-id="${quoteId}"]`)?.remove();
-    
+
     if (remainingQuotes.length === 0) {
         await createNewQuote();
     } else if (activeId === quoteId) {
@@ -582,7 +582,7 @@ export async function handleDuplicateQuote(quoteId: string, openAfter: boolean =
         };
         const savedQuote = await API.saveQuote(duplicatedQuote as any);
         State.setQuotes([...State.getQuotes(), savedQuote]);
-        
+
         State.addOpenQuote(savedQuote);
         renderQuoteTabs();
 
@@ -602,7 +602,7 @@ export async function handleDuplicateQuote(quoteId: string, openAfter: boolean =
                         r.style.transform = 'scale(1.01)';
                         r.style.zIndex = '10';
                         r.style.position = 'relative';
-                        
+
                         setTimeout(() => {
                             r.style.backgroundColor = '';
                             r.style.boxShadow = '';
@@ -614,12 +614,12 @@ export async function handleDuplicateQuote(quoteId: string, openAfter: boolean =
                 }, 50);
             }
         }
-        
+
         if (triggerBtn) {
             triggerBtn.innerHTML = originalBtnText;
             triggerBtn.disabled = false;
         }
-        
+
         showNotification(`Cotización #${originalQuote.manualId} duplicada exitosamente como #${newQuoteId}`, 'success');
     } catch (e) {
         if (triggerBtn) {
@@ -631,7 +631,7 @@ export async function handleDuplicateQuote(quoteId: string, openAfter: boolean =
 }
 
 // --- Search UIs (Generic) ---
-export function setupItemSearch(input: HTMLInputElement, results: HTMLDivElement, context: 'quote'|'order') {
+export function setupItemSearch(input: HTMLInputElement, results: HTMLDivElement, context: 'quote' | 'order') {
     input.addEventListener('input', () => {
         const term = input.value.toLowerCase();
         results.style.display = 'none';
@@ -659,7 +659,7 @@ export function setupItemSearch(input: HTMLInputElement, results: HTMLDivElement
     });
 }
 
-export function setupClientSearch(input: HTMLInputElement, results: HTMLDivElement, context: 'quote'|'order') {
+export function setupClientSearch(input: HTMLInputElement, results: HTMLDivElement, context: 'quote' | 'order') {
     input.addEventListener('input', () => {
         const term = input.value.toLowerCase();
         results.style.display = 'none';
@@ -716,10 +716,11 @@ function addItemToOrder(item: Item) {
     if (!order) return;
     const orderItem: OrderItem = { id: generateId(), created_at: new Date().toISOString(), orderId: order.id, itemId: item.id, manualId: item.manualId, description: item.name, quantity: 1, price: item.price, completed_quantity: 0 };
     order.items.push(orderItem);
+    order.order_type = inferOrderTypesFromItems(order.items, order.order_type || '');
     renderOrderWorkspace(order);
 }
 
-export function renderClientDetails(clientId: string | null, context: 'quote'|'order') {
+export function renderClientDetails(clientId: string | null, context: 'quote' | 'order') {
     const container = context === 'quote' ? D.clientDetailsContainer : D.orderClientDetails;
     if (!clientId) {
         container.innerHTML = '<p>Ningún cliente seleccionado</p>';
@@ -727,7 +728,7 @@ export function renderClientDetails(clientId: string | null, context: 'quote'|'o
     }
     const client = State.getClients().find(c => c.id === clientId);
     if (client) {
-        container.innerHTML = `<p><i class="fas fa-user-tie"></i> <strong>Contacto:</strong> ${client.contactPerson||'N/A'}</p><p><i class="fas fa-map-marker-alt"></i> <strong>Dirección:</strong> ${client.address||'N/A'}</p><p><i class="fas fa-phone"></i> <strong>Teléfono:</strong> ${client.phone||'N/A'}</p><p><i class="fas fa-envelope"></i> <strong>Email:</strong> ${client.email||'N/A'}</p>`;
+        container.innerHTML = `<p><i class="fas fa-user-tie"></i> <strong>Contacto:</strong> ${client.contactPerson || 'N/A'}</p><p><i class="fas fa-map-marker-alt"></i> <strong>Dirección:</strong> ${client.address || 'N/A'}</p><p><i class="fas fa-phone"></i> <strong>Teléfono:</strong> ${client.phone || 'N/A'}</p><p><i class="fas fa-envelope"></i> <strong>Email:</strong> ${client.email || 'N/A'}</p>`;
     } else {
         container.innerHTML = '<p>Cliente no encontrado.</p>';
     }
@@ -740,7 +741,7 @@ export function renderClientsList() {
     const clients = State.getClients().filter(c => c.name?.toLowerCase().includes(term) || c.contactPerson?.toLowerCase().includes(term) || c.manualId?.toLowerCase().includes(term));
     let html = `<table class="management-table"><thead><tr><th>Nombre</th><th>Contacto</th><th>Teléfono</th><th>Email</th><th class="actions">Acciones</th></tr></thead><tbody>`;
     if (clients.length > 0) {
-        html += clients.sort((a,b) => (parseInt(b.manualId) || 0) - (parseInt(a.manualId) || 0)).map(c => `<tr><td><strong>${c.name}</strong><br><small>ID: ${c.manualId}</small></td><td>${c.contactPerson||'-'}</td><td>${c.phone||'-'}</td><td>${c.email||'-'}</td><td class="actions"><button class="btn btn-icon-only btn-secondary edit-btn" data-id="${c.id}" title="Editar"><i class="fas fa-edit"></i></button><button class="btn btn-icon-only btn-danger delete-btn" data-id="${c.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        html += clients.sort((a, b) => (parseInt(b.manualId) || 0) - (parseInt(a.manualId) || 0)).map(c => `<tr><td><strong>${c.name}</strong><br><small>ID: ${c.manualId}</small></td><td>${c.contactPerson || '-'}</td><td>${c.phone || '-'}</td><td>${c.email || '-'}</td><td class="actions"><button class="btn btn-icon-only btn-secondary edit-btn" data-id="${c.id}" title="Editar"><i class="fas fa-edit"></i></button><button class="btn btn-icon-only btn-danger delete-btn" data-id="${c.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     } else {
         html += `<tr><td colspan="5" style="text-align: center; padding: 20px;">No hay clientes.</td></tr>`;
     }
@@ -782,7 +783,7 @@ export function renderSavedQuotesPageList() {
     if (quotes.length === 0) {
         html += `<tr><td colspan="5" style="text-align:center;padding:20px;">No se encontraron cotizaciones.</td></tr>`;
     } else {
-        html += quotes.sort((a,b) => parseInt(b.manualId) - parseInt(a.manualId)).map(q => {
+        html += quotes.sort((a, b) => parseInt(b.manualId) - parseInt(a.manualId)).map(q => {
             const client = State.getClients().find(c => c.id === q.clientId)?.name || 'N/A';
             const [year, month, day] = q.date.split('-');
             const dateObj = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
@@ -821,7 +822,7 @@ function setupDragAndDropEvents(tr: HTMLTableRowElement, context: 'quote' | 'ord
         draggedRow = null;
         reorderingContext = null;
         tr.classList.remove('is-dragging');
-        
+
         // Al terminar de arrastrar debemos sincronizar el nuevo orden contra el State
         syncItemsOrderFromDOM(context === 'order-service' ? 'order' : context);
     });
@@ -831,10 +832,10 @@ function setupDragAndDropEvents(tr: HTMLTableRowElement, context: 'quote' | 'ord
         if (e.dataTransfer) {
             e.dataTransfer.dropEffect = 'move';
         }
-        
+
         const tbody = tr.parentElement;
         if (!tbody || !draggedRow || draggedRow === tr || reorderingContext !== context) return;
-        
+
         const bounding = tr.getBoundingClientRect();
         const offset = e.clientY - bounding.top;
         if (offset > bounding.height / 2) {
@@ -849,7 +850,7 @@ function syncItemsOrderFromDOM(context: 'quote' | 'order') {
     if (context === 'quote') {
         const activeQuote = State.getActiveQuote();
         if (!activeQuote) return;
-        
+
         const newOrder = Array.from(document.querySelectorAll('#items-tbody .draggable-row')).map(row => (row as HTMLElement).dataset.itemId);
         // Reordenar items locales a nivel State basándose en el DOM
         activeQuote.items.sort((a, b) => {
@@ -862,7 +863,7 @@ function syncItemsOrderFromDOM(context: 'quote' | 'order') {
     } else {
         const activeOrder = State.getCurrentOrder();
         if (!activeOrder) return;
-        
+
         const newOrder = Array.from(document.querySelectorAll('#order-items-tbody .draggable-row')).map(row => (row as HTMLElement).dataset.itemId);
         activeOrder.items.sort((a, b) => {
             const indexA = newOrder.indexOf(a.id);
@@ -885,12 +886,12 @@ function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' |
 
     const formattedPrice = formatCurrency(item.price);
     const formattedTotal = formatCurrency(item.quantity * item.price);
-    
+
     let priceColumns = '';
     if (context === 'quote') {
         priceColumns = `<td class="col-price" data-label="Vlr. Unitario"><input type="text" class="item-price" value="${formattedPrice}"><div class="item-value-mobile-view" data-field="price"><span class="mobile-view-text">${formattedPrice}</span><i class="fas fa-pencil-alt edit-indicator"></i></div></td><td class="col-total item-total" data-label="Vlr. Total">${formattedTotal}</td>`;
     }
-    
+
     let qtyColumn = '';
     if (context === 'quote') {
         qtyColumn = `<td class="col-qty" data-label="Cant."><input type="number" class="item-qty" value="${item.quantity}" min="0"><div class="item-value-mobile-view" data-field="quantity"><span class="mobile-view-text">${item.quantity}</span><i class="fas fa-pencil-alt edit-indicator"></i></div></td>`;
@@ -917,10 +918,10 @@ function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' |
         <div class="item-desc-mobile-wrapper"><div class="item-desc-mobile-view"><span class="mobile-view-text">${item.description}</span><i class="fas fa-pencil-alt edit-indicator"></i></div><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-mobile" title="Eliminar ítem"><i class="fas fa-trash"></i></button></div>
     </td>
     ${qtyColumn}${priceColumns}<td class="col-actions" data-label="Acción"><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-desktop"><i class="fas fa-trash"></i></button></td>`;
-    
+
     if (context === 'quote') {
         const priceInput = tr.querySelector('.item-price') as HTMLInputElement;
-        priceInput.addEventListener('input', () => { priceInput.value = formatCurrency(parseFloat(priceInput.value.replace(/[^0-9]+/g,"")) || 0); });
+        priceInput.addEventListener('input', () => { priceInput.value = formatCurrency(parseFloat(priceInput.value.replace(/[^0-9]+/g, "")) || 0); });
     }
     return tr;
 }
@@ -940,9 +941,9 @@ export function updateItemRowTotal(row: HTMLTableRowElement) {
     const priceInput = row.querySelector('.item-price') as HTMLInputElement;
     const totalCell = row.querySelector('.item-total') as HTMLTableCellElement;
     if (!qtyInput || !priceInput || !totalCell) return;
-    
+
     const qty = parseFloat(qtyInput.value) || 0;
-    const price = parseFloat(priceInput.value.replace(/[^0-9]+/g,"")) || 0;
+    const price = parseFloat(priceInput.value.replace(/[^0-9]+/g, "")) || 0;
     totalCell.textContent = formatCurrency(qty * price);
 }
 
@@ -1010,14 +1011,14 @@ export function handleResetApplication() {
             await API.clearAllData();
             showNotification('Aplicación reiniciada. Recargando...', 'success');
             setTimeout(() => window.location.reload(), 2000);
-        } catch(e: any) {
+        } catch (e: any) {
             showNotification("Error al reiniciar la aplicación.", "error");
         }
     });
 }
 
 // --- Modal Logic ---
-export function openDescriptionEditModal(itemId: string, context: 'quote'|'order') {
+export function openDescriptionEditModal(itemId: string, context: 'quote' | 'order') {
     currentEditingItemId = itemId;
     currentEditingContext = context;
     const item = (context === 'quote' ? State.getActiveQuote()?.items : State.getCurrentOrder()?.items)?.find(i => i.id === itemId);
@@ -1038,7 +1039,7 @@ export function handleDescriptionFormSubmit(e: Event) {
     }
     closeAllModals();
 }
-export function openValueEditModal(itemId: string, field: 'quantity'|'price', context: 'quote'|'order') {
+export function openValueEditModal(itemId: string, field: 'quantity' | 'price', context: 'quote' | 'order') {
     currentEditingItemId = itemId;
     currentEditingContext = context;
     const item = (context === 'quote' ? State.getActiveQuote()?.items : State.getCurrentOrder()?.items)?.find(i => i.id === itemId);
@@ -1072,21 +1073,21 @@ export async function openEntityModal(type: 'client' | 'item' | 'technician', id
     D.modalForm.dataset.type = type;
     D.modalForm.dataset.id = id || '';
     let fieldsHtml = '', title = '';
-    
+
     if (type === 'client') {
         const client = id ? State.getClients().find(c => c.id === id) : null;
         title = client ? 'Editar Cliente' : 'Nuevo Cliente';
         const manualId = client ? client.manualId : await getNextClientManualIdForUI();
-        fieldsHtml = `<div class="form-group"><label>ID</label><input name="manualId" value="${manualId}" readonly></div><div class="form-group"><label>Nombre</label><input name="name" value="${client?.name||''}" required></div><div class="form-group"><label>Encargado</label><input name="contactPerson" value="${client?.contactPerson||''}"></div><div class="form-group"><label>Dirección</label><input name="address" value="${client?.address||''}"></div><div class="form-group"><label>Ciudad</label><input name="city" value="${client?.city||''}"></div><div class="form-group"><label>Teléfono</label><input name="phone" value="${client?.phone||''}"></div><div class="form-group"><label>Email</label><input name="email" type="email" value="${client?.email||''}"></div>`;
+        fieldsHtml = `<div class="form-group"><label>ID</label><input name="manualId" value="${manualId}" readonly></div><div class="form-group"><label>Nombre</label><input name="name" value="${client?.name || ''}" required></div><div class="form-group"><label>Encargado</label><input name="contactPerson" value="${client?.contactPerson || ''}"></div><div class="form-group"><label>Dirección</label><input name="address" value="${client?.address || ''}"></div><div class="form-group"><label>Ciudad</label><input name="city" value="${client?.city || ''}"></div><div class="form-group"><label>Teléfono</label><input name="phone" value="${client?.phone || ''}"></div><div class="form-group"><label>Email</label><input name="email" type="email" value="${client?.email || ''}"></div>`;
     } else if (type === 'item') {
         const item = id ? State.getItems().find(i => i.id === id) : null;
         title = item ? 'Editar Insumo' : 'Nuevo Insumo';
         const manualId = item ? item.manualId : await getNextItemManualIdForUI();
-        fieldsHtml = `<div class="form-group"><label>Código</label><input name="manualId" value="${manualId}" readonly></div><div class="form-group"><label>Nombre</label><input name="name" value="${item?.name||''}" required></div><div class="form-group"><label>Precio</label><input name="price" type="number" step="any" value="${item?.price||0}" required></div>`;
+        fieldsHtml = `<div class="form-group"><label>Código</label><input name="manualId" value="${manualId}" readonly></div><div class="form-group"><label>Nombre</label><input name="name" value="${item?.name || ''}" required></div><div class="form-group"><label>Precio</label><input name="price" type="number" step="any" value="${item?.price || 0}" required></div>`;
     } else { // technician
         const tech = id ? State.getTechnicians().find(t => t.id === id) : null;
         title = tech ? 'Editar Técnico' : 'Nuevo Técnico';
-        fieldsHtml = `<div class="form-group"><label>Nombre</label><input name="name" value="${tech?.name||''}" required></div><div class="form-group"><label>Cédula</label><input type="text" name="cedula" value="${tech?.cedula||''}" required></div><div class="form-group"><label class="switch-label" style="display:inline-block; margin-right: 10px;">Activo</label><label class="switch"><input type="checkbox" name="is_active" ${tech?.is_active ?? true ? 'checked' : ''}><span class="slider round"></span></label></div>`;
+        fieldsHtml = `<div class="form-group"><label>Nombre</label><input name="name" value="${tech?.name || ''}" required></div><div class="form-group"><label>Cédula</label><input type="text" name="cedula" value="${tech?.cedula || ''}" required></div><div class="form-group"><label class="switch-label" style="display:inline-block; margin-right: 10px;">Activo</label><label class="switch"><input type="checkbox" name="is_active" ${tech?.is_active ?? true ? 'checked' : ''}><span class="slider round"></span></label></div>`;
     }
     D.modalTitle.textContent = title;
     D.modalFieldsContainer.innerHTML = fieldsHtml;
@@ -1096,10 +1097,10 @@ export async function openEntityModal(type: 'client' | 'item' | 'technician', id
 export async function handleModalFormSubmit(e: Event) {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
-    const type = form.dataset.type as 'client'|'item'|'technician';
+    const type = form.dataset.type as 'client' | 'item' | 'technician';
     const id = form.dataset.id;
     const data = new FormData(form);
-    
+
     const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
     const originalText = btn.innerHTML;
     btn.disabled = true;
@@ -1126,7 +1127,7 @@ export async function handleModalFormSubmit(e: Event) {
                     }
                 }
             }
-            
+
             // Always re-render the active workspace to show updated details
             if (D.orderWorkspacePage.classList.contains('active')) {
                 renderOrderWorkspace(State.getCurrentOrder());
@@ -1228,7 +1229,7 @@ export function handleDeleteClient(id: string) {
             State.setClients(State.getClients().filter(c => c.id !== id));
             renderClientsList();
             showNotification('Cliente eliminado.', 'success');
-        } catch(e: any) { showNotification('Error al eliminar el cliente.', 'error'); }
+        } catch (e: any) { showNotification('Error al eliminar el cliente.', 'error'); }
     });
 }
 export function handleDeleteItem(id: string) {
@@ -1238,7 +1239,7 @@ export function handleDeleteItem(id: string) {
             State.setItems(State.getItems().filter(i => i.id !== id));
             renderCatalogItemsList();
             showNotification('Insumo eliminado.', 'success');
-        } catch(e: any) { showNotification('Error al eliminar el insumo.', 'error'); }
+        } catch (e: any) { showNotification('Error al eliminar el insumo.', 'error'); }
     });
 }
 
@@ -1254,7 +1255,7 @@ export function updateConnectionStatus(isOnline: boolean) {
     const statusEl = document.getElementById('connection-status');
     const textEl = statusEl?.querySelector('.status-text');
     if (!statusEl || !textEl) return;
-    
+
     statusEl.classList.remove('offline');
     if (isOnline) {
         textEl.textContent = 'En línea';
@@ -1262,7 +1263,7 @@ export function updateConnectionStatus(isOnline: boolean) {
         statusEl.classList.add('offline');
         textEl.textContent = 'Sin conexión';
     }
-    
+
     // Disable/Enable buttons based on online status
     const buttons = document.querySelectorAll<HTMLButtonElement>('#save-quote-btn, #save-order-btn, #delete-current-quote-btn, #generate-pdf-btn, #generate-order-pdf-btn, #backup-btn, #reset-app-btn, .edit-btn, .delete-btn');
     buttons.forEach(btn => { if (btn) btn.disabled = !isOnline; });
@@ -1272,7 +1273,7 @@ export function updateConnectionStatus(isOnline: boolean) {
 export function renderOrdersList() {
     const allOrders = State.getOrders();
     const term = D.orderListSearchInput.value.toLowerCase();
-    
+
     const pendingStatuses: Order['status'][] = ['pending', 'scheduled', 'in_progress'];
     const completedStatuses: Order['status'][] = ['completed', 'cancelled'];
 
@@ -1284,7 +1285,7 @@ export function renderOrdersList() {
     if (ordersPage) {
         const pendingTab = ordersPage.querySelector('.tab-link[data-tab="pending"]');
         if (pendingTab) pendingTab.innerHTML = `Pendientes <span class="tab-count-badge">${pendingOrders.length}</span>`;
-        
+
         const completedTab = ordersPage.querySelector('.tab-link[data-tab="completed"]');
         if (completedTab) completedTab.innerHTML = `Completadas <span class="tab-count-badge">${completedOrders.length}</span>`;
     }
@@ -1300,19 +1301,19 @@ export function renderOrdersList() {
     });
 
     const statusText = { pending: 'Pendiente', scheduled: 'Programada', in_progress: 'En Progreso', completed: 'Completada', cancelled: 'Cancelada' };
-    
+
     let html = `<table class="management-table orders-table"><thead><tr><th class="desktop-cell">ID</th><th class="desktop-cell">Cliente</th><th class="desktop-cell">Fecha de Servicio</th><th class="desktop-cell">Hora</th><th class="desktop-cell">Duración</th><th class="desktop-cell">Técnicos</th><th class="desktop-cell">Estado</th><th class="desktop-cell actions">Acciones</th><th class="order-card-cell"></th></tr></thead><tbody>`;
     if (filteredOrders.length === 0) {
         html += `<tr><td colspan="9" style="text-align:center;padding:20px;">No se encontraron órdenes.</td></tr>`;
     } else {
-        html += filteredOrders.sort((a,b) => parseInt(b.manualId) - parseInt(a.manualId)).map(order => {
+        html += filteredOrders.sort((a, b) => parseInt(b.manualId) - parseInt(a.manualId)).map(order => {
             const client = State.getClients().find(c => c.id === order.clientId);
             const technicians = State.getTechnicians().filter(t => order.technicianIds.includes(t.id));
             const serviceDate = new Date(order.service_date.replace(/-/g, '/')).toLocaleDateString('es-CO');
             const duration = order.estimated_duration ? `${order.estimated_duration.toFixed(1)}h` : '-';
             const author = State.getOrderAuthor(order.id);
             const createdAt = formatCreatedDateTime(order.created_at);
-            
+
             return `
                 <tr>
                     <td class="desktop-cell">${order.manualId}</td>
@@ -1370,11 +1371,11 @@ export function setupOrderSourceSearch() {
         results.innerHTML = '';
         if (term.length < 1) return;
         const quotes = State.getQuotes().filter(q => {
-             const client = State.getClients().find(c => c.id === q.clientId);
-             return q.manualId.toLowerCase().includes(term) || client?.name.toLowerCase().includes(term);
+            const client = State.getClients().find(c => c.id === q.clientId);
+            return q.manualId.toLowerCase().includes(term) || client?.name.toLowerCase().includes(term);
         }).slice(0, 5);
         if (quotes.length > 0) {
-            results.innerHTML = quotes.map(q => `<div class="search-result-item" data-id="${q.id}"><span class="item-code">[#${q.manualId}]</span> ${State.getClients().find(c=>c.id===q.clientId)?.name}</div>`).join('');
+            results.innerHTML = quotes.map(q => `<div class="search-result-item" data-id="${q.id}"><span class="item-code">[#${q.manualId}]</span> ${State.getClients().find(c => c.id === q.clientId)?.name}</div>`).join('');
         } else {
             results.innerHTML = `<div class="search-result-item-empty">No se encontraron cotizaciones.</div>`;
         }
@@ -1430,10 +1431,11 @@ export async function navigateToOrderWorkspace(orderId: string | null, fromQuote
                     price: qi.price,
                     created_at: new Date().toISOString()
                 }));
+                order.order_type = inferOrderTypesFromItems(order.items, '');
             }
         }
     }
-    
+
     State.setCurrentOrder(order);
     renderOrderWorkspace(order);
     navigateTo('page-order-workspace');
@@ -1449,7 +1451,7 @@ export function renderOrderWorkspace(order: Order | null) {
         cleanupOrderWorkspace();
         return;
     }
-    
+
     D.orderWorkspaceTitle.textContent = (order.manualId && order.manualId !== 'Borrador') ? `Editar Orden #${order.manualId}` : 'Nueva Orden de Servicio';
 
     const client = State.getClients().find(c => c.id === order.clientId);
@@ -1466,11 +1468,11 @@ export function renderOrderWorkspace(order: Order | null) {
     D.orderTimeInput.value = order.service_time || '';
 
     currentSelectedOrderTypes = order.order_type ? order.order_type.split(' • ').map(s => s.trim()).filter(s => s) : [];
-    
+
     // Check for custom types
     const knownTypes = State.getServiceTypes().map(t => t.name);
     const customValues = currentSelectedOrderTypes.filter(t => !knownTypes.includes(t) && t !== 'Otro');
-    
+
     if (customValues.length > 0 || currentSelectedOrderTypes.includes('Otro')) {
         currentSelectedOrderTypes = currentSelectedOrderTypes.filter(t => knownTypes.includes(t));
         if (!currentSelectedOrderTypes.includes('Otro')) currentSelectedOrderTypes.push('Otro');
@@ -1484,12 +1486,12 @@ export function renderOrderWorkspace(order: Order | null) {
     D.orderStatusSelect.value = order.status;
     D.orderNotesTextarea.value = order.notes || '';
     renderOrderAnnexPreviews(order);
-    
+
     const hours = Math.floor(order.estimated_duration || 0);
     const minutes = Math.round(((order.estimated_duration || 0) - hours) * 60);
     D.orderDurationHoursInput.value = String(hours);
     D.orderDurationMinutesInput.value = String(minutes);
-    
+
     if (D.orderDifficultySelect) D.orderDifficultySelect.value = "";
     if (D.orderDurationHint) {
         D.orderDurationHint.innerText = order.estimated_duration ? `Duración manual/previa: ${hours} hora${hours !== 1 ? 's' : ''}` : '';
@@ -1498,7 +1500,7 @@ export function renderOrderWorkspace(order: Order | null) {
     renderTechnicianPills(order.technicianIds);
     D.orderServicesTableBody.innerHTML = '';
     D.orderMaterialsTableBody.innerHTML = '';
-    
+
 
 
     const currentTypes = order.order_type ? order.order_type.split(' • ').map(s => s.trim()) : [];
@@ -1510,6 +1512,43 @@ export function renderOrderWorkspace(order: Order | null) {
         }
     });
     updateOrderSummary();
+}
+
+export function inferOrderTypesFromItems(items: Array<{description: string}>, currentTypesStr: string): string {
+    const predefinedTypes = State.getServiceTypes().map(t => t.name);
+    let inferredTypes = new Set(currentTypesStr ? currentTypesStr.split(' • ').map(s => s.trim()).filter(s => s) : []);
+
+    items.forEach(item => {
+        const desc = (item.description || '').toLowerCase();
+        
+        if (desc.includes('instal') || desc.includes('montaje')) {
+            const match = predefinedTypes.find(t => t.toLowerCase().includes('montaje') || t.toLowerCase().includes('instal'));
+            if (match) inferredTypes.add(match);
+            else inferredTypes.add('Montaje/Instalación');
+        }
+        else if (desc.includes('mantenimiento preventivo') || desc.includes('preventivo')) {
+            const match = predefinedTypes.find(t => t.toLowerCase().includes('preventivo'));
+            if (match) inferredTypes.add(match);
+            else inferredTypes.add('Mantenimiento Preventivo');
+        }
+        else if (desc.includes('desmonte')) {
+            const match = predefinedTypes.find(t => t.toLowerCase().includes('desmonte'));
+            if (match) inferredTypes.add(match);
+            else inferredTypes.add('Desmonte');
+        }
+        else if (desc.includes('revis') || desc.includes('diagn') || desc.includes('revisión') || desc.includes('diagnóstico')) {
+            const match = predefinedTypes.find(t => t.toLowerCase().includes('revis') || t.toLowerCase().includes('diagn'));
+            if (match) inferredTypes.add(match);
+            else inferredTypes.add('Revisión/Diagnóstico');
+        }
+        else if (desc.includes('reparaci') || desc.includes('correctivo')) {
+            const match = predefinedTypes.find(t => t.toLowerCase().includes('correctivo') || t.toLowerCase().includes('reparaci'));
+            if (match) inferredTypes.add(match);
+            else inferredTypes.add('Mantenimiento Correctivo');
+        }
+    });
+
+    return Array.from(inferredTypes).join(' • ');
 }
 
 export function handleRemoveItemFromOrder(itemId: string) {
@@ -1527,7 +1566,7 @@ export function syncOrderServicesFromTypes(syncOtro: boolean = true) {
     if (syncOtro && currentSelectedOrderTypes.includes('Otro') && D.orderTypeCustomInput.value.trim()) {
         finalOrderTypeArr = finalOrderTypeArr.concat(D.orderTypeCustomInput.value.trim().split(' • ').map(s => s.trim()).filter(s => s));
     }
-    
+
     const predefinedTypes = State.getServiceTypes().map(t => t.name);
 
     // Filter out items that are predefined types but no longer selected
@@ -1546,7 +1585,7 @@ export function syncOrderServicesFromTypes(syncOtro: boolean = true) {
         if (existingItem) return; // Ya existe
 
         const isMontaje = serviceName === 'Montaje/instalación';
-        
+
         let relatedPrice = 0;
         let qtyToUse = 1;
 
@@ -1580,10 +1619,10 @@ export function syncOrderServicesFromTypes(syncOtro: boolean = true) {
             completed_quantity: 0,
             manualId: 'AUTO_SYNC'
         };
-        
+
         order.items.push(newItem);
     });
-    
+
     // Redraw ONLY the services table
     D.orderServicesTableBody.innerHTML = '';
     D.orderMaterialsTableBody.innerHTML = '';
@@ -1605,7 +1644,7 @@ export async function handleSaveOrder(): Promise<boolean> {
     }
 
     const isNewOrder = !State.getOrders().some(o => o.id === order.id);
-    
+
     if (!order.service_date || order.service_date.trim() === '') {
         showNotification("Por favor, seleccione la fecha del servicio.", "error");
         D.orderDateInput.focus();
@@ -1639,7 +1678,7 @@ export async function handleSaveOrder(): Promise<boolean> {
         D.technicianSelector.focus();
         return false;
     }
-    
+
     // Logic to update client's city if it's not set
     const client = State.getClients().find(c => c.id === order.clientId);
     if (client && !client.city && cityFromInput) {
@@ -1691,7 +1730,7 @@ export async function handleSaveOrder(): Promise<boolean> {
             btn.innerHTML = originalText;
         }
     };
-    
+
     const isOnlyNoAsignado = order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID;
 
     if (isOnlyNoAsignado) {
@@ -1723,7 +1762,7 @@ export function handleDeleteOrder(id: string) {
             renderOrdersList();
             renderAgendaPage();
             showNotification(`Orden #${order.manualId} eliminada.`, 'success');
-        } catch(e: any) {
+        } catch (e: any) {
             showNotification('Error al eliminar la orden.', 'error');
         }
     });
@@ -1747,15 +1786,23 @@ export function handleOrderItemChange(e: Event) {
     if (!order) return;
     const orderItem = order.items.find(i => i.id === orderItemId);
     if (!orderItem) return;
-    
+
     if (target.matches('.item-qty')) {
         orderItem.quantity = parseFloat(target.value) || 0;
     } else if (target.matches('.item-price')) {
-        orderItem.price = parseFloat(target.value.replace(/[^0-9]+/g,"")) || 0;
+        orderItem.price = parseFloat(target.value.replace(/[^0-9]+/g, "")) || 0;
     } else if (target.matches('.item-desc')) {
         orderItem.description = target.value;
+        const newTypes = inferOrderTypesFromItems(order.items, order.order_type || '');
+        if (newTypes !== order.order_type) {
+            order.order_type = newTypes as any;
+            currentSelectedOrderTypes.length = 0;
+            if (newTypes) currentSelectedOrderTypes.push(...newTypes.split(' • ').map(s => s.trim()).filter(s => s));
+            renderOrderTypePills();
+            handleOrderDetailsChange();
+        }
     }
-    
+
     updateOrderSummary();
     updateItemRowTotal(row);
 }
@@ -1764,7 +1811,7 @@ export function handleOrderDifficultyChange() {
     if (!D.orderDifficultySelect || !D.orderDurationHint) return;
     const difficulty = D.orderDifficultySelect.value;
     const isMontaje = currentSelectedOrderTypes.includes('Montaje/instalación');
-    
+
     let hours = 0;
     if (difficulty === 'facil') {
         hours = isMontaje ? 4 : 1;
@@ -1788,7 +1835,7 @@ export function handleOrderDifficultyChange() {
 export function handleOrderDetailsChange() {
     const order = State.getCurrentOrder();
     if (!order) return;
-    
+
     let finalOrderTypeArr = currentSelectedOrderTypes.filter(t => t !== 'Otro');
     if (currentSelectedOrderTypes.includes('Otro') && D.orderTypeCustomInput.value.trim()) {
         finalOrderTypeArr = finalOrderTypeArr.concat(D.orderTypeCustomInput.value.trim().split(' • ').map(s => s.trim()).filter(s => s));
@@ -1804,7 +1851,7 @@ export function handleOrderDetailsChange() {
     order.estimated_duration = hours + (minutes / 60);
     validateTechnicianAssignments();
     if (D.technicianSelector.classList.contains('open')) renderTechnicianDropdown();
-    
+
     // Auto-sync services as the user edits order details (like typing "Otro")
     syncOrderServicesFromTypes(true);
 }
@@ -1817,7 +1864,7 @@ export function renderTechniciansList() {
     D.technicianCountBadge.textContent = visibleTechnicians.length.toString();
     const term = D.technicianListSearchInput.value.toLowerCase();
     const filteredTechs = visibleTechnicians.filter(t => t.name?.toLowerCase().includes(term) || t.cedula?.toLowerCase().includes(term));
-    
+
     let html = `<table class="management-table"><thead><tr><th>Nombre</th><th>Cédula</th><th>Activo</th><th class="actions">Acciones</th></tr></thead><tbody>`;
     if (filteredTechs.length > 0) {
         html += filteredTechs.map(t => `
@@ -1846,7 +1893,7 @@ export function handleDeleteTechnician(id: string) {
             State.setTechnicians(State.getTechnicians().filter(t => t.id !== id));
             renderTechniciansList();
             showNotification('Técnico eliminado.', 'success');
-        } catch(e: any) { showNotification('Error al eliminar el técnico.', 'error'); }
+        } catch (e: any) { showNotification('Error al eliminar el técnico.', 'error'); }
     });
 }
 
@@ -1883,7 +1930,7 @@ export function setupCustomTechnicianSelector() {
                 order.technicianIds.push(techId);
             }
         }
-        
+
         renderTechnicianPills(order.technicianIds);
         renderTechnicianDropdown(); // Re-render to update selected state
     });
@@ -1920,15 +1967,15 @@ export function setupCustomOrderTypeSelector() {
         } else {
             currentSelectedOrderTypes.push(typeName);
         }
-        
+
         if (currentSelectedOrderTypes.includes('Otro')) {
             D.orderTypeCustomInput.style.display = 'block';
         } else {
             D.orderTypeCustomInput.style.display = 'none';
         }
-        
+
         renderOrderTypePills();
-        renderOrderTypeDropdown(); 
+        renderOrderTypeDropdown();
         handleOrderDetailsChange(); // <-- Added synchronization
         syncOrderServicesFromTypes(false);
     });
@@ -1952,7 +1999,7 @@ export function renderOrderTypePills() {
         D.orderTypeSelectorPlaceholder.style.display = 'inline';
         return;
     }
-    
+
     D.orderTypeSelectorPlaceholder.style.display = 'none';
     currentSelectedOrderTypes.forEach(typeName => {
         const pill = document.createElement('div');
@@ -1962,13 +2009,13 @@ export function renderOrderTypePills() {
             e.stopPropagation();
             const index = currentSelectedOrderTypes.indexOf(typeName);
             if (index > -1) currentSelectedOrderTypes.splice(index, 1);
-            
+
             if (currentSelectedOrderTypes.includes('Otro')) {
                 D.orderTypeCustomInput.style.display = 'block';
             } else {
                 D.orderTypeCustomInput.style.display = 'none';
             }
-            
+
             renderOrderTypePills();
             renderOrderTypeDropdown();
             handleOrderDetailsChange();
@@ -1982,7 +2029,7 @@ function renderOrderTypeDropdown() {
     const serviceTypes = State.getServiceTypes().sort((a, b) => a.name.localeCompare(b.name));
     const allOptions = [...serviceTypes.map(t => t.name), 'Otro'];
     const options = [...new Set(allOptions)];
-    
+
     D.orderTypeDropdown.innerHTML = options.map(opt => {
         const isSelected = currentSelectedOrderTypes.includes(opt);
         return `
@@ -2002,7 +2049,7 @@ function renderTechnicianPills(ids: string[]) {
         D.technicianSelectorPlaceholder.style.display = 'inline';
         return;
     }
-    
+
     D.technicianSelectorPlaceholder.style.display = 'none';
     ids.forEach(id => {
         const tech = State.getTechnicians().find(t => t.id === id);
@@ -2010,7 +2057,7 @@ function renderTechnicianPills(ids: string[]) {
             const pill = document.createElement('div');
             pill.className = 'pill';
             const { conflict, message } = checkTechnicianConflict(id);
-            if(conflict) pill.classList.add('conflict');
+            if (conflict) pill.classList.add('conflict');
             pill.innerHTML = `<span>${tech.name}</span><button class="pill-remove-btn" data-id="${id}" title="Quitar">&times;</button>`;
             pill.querySelector('.pill-remove-btn')?.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -2029,13 +2076,13 @@ function renderTechnicianPills(ids: string[]) {
 function renderTechnicianDropdown() {
     const order = State.getCurrentOrder();
     if (!order) return;
-    
+
     const visibleTechnicians = State.getTechnicians().filter(t => t.is_active && t.role !== 'admin');
-    
+
     D.technicianDropdown.innerHTML = visibleTechnicians.map(tech => {
         const isSelected = order.technicianIds.includes(tech.id);
         const { conflict, message } = checkTechnicianConflict(tech.id);
-        
+
         return `
             <div class="technician-dropdown-item ${isSelected ? 'selected' : ''} ${conflict ? 'conflict' : ''}" data-id="${tech.id}">
                 <span>${tech.name}</span>
@@ -2055,11 +2102,11 @@ function checkTechnicianConflict(technicianId: string, orderToCheck?: Order): { 
     if (!currentOrder || !currentOrder.service_date || !currentOrder.service_time || !currentOrder.estimated_duration) {
         return { conflict: false, message: '' };
     }
-    
+
     const allOrders = State.getOrders();
     const currentStart = new Date(`${currentOrder.service_date}T${currentOrder.service_time}`);
     const currentEnd = new Date(currentStart.getTime() + (currentOrder.estimated_duration * 60 * 60 * 1000));
-    
+
     for (const order of allOrders) {
         if (order.id === currentOrder.id || !order.technicianIds.includes(technicianId) || !order.service_date || !order.service_time || !order.estimated_duration) {
             continue;
@@ -2072,7 +2119,7 @@ function checkTechnicianConflict(technicianId: string, orderToCheck?: Order): { 
             return { conflict: true, message: `Ocupado #${order.manualId}` };
         }
     }
-    
+
     return { conflict: false, message: '' };
 }
 
@@ -2084,7 +2131,7 @@ function getServiceTypeStyle(type: string | undefined): string {
     if (!type) return '';
     const lowerType = type.toLowerCase();
     let color = 'var(--color-text-secondary)';
-    
+
     if (lowerType.includes('preventivo')) {
         color = '#007bff'; // blue
     } else if (lowerType.includes('montaje') || lowerType.includes('instalación') || lowerType.includes('instalacion')) {
@@ -2098,7 +2145,7 @@ function getServiceTypeStyle(type: string | undefined): string {
     } else {
         color = 'var(--color-accent-primary)'; // default teal-ish
     }
-    
+
     return `color: ${color}; font-weight: 500; font-style: normal; display: inline-block; padding: 2px 6px; border-radius: 4px; background-color: rgba(0,0,0,0.03); border: 1px solid ${color}40; line-height: 1.2;`;
 }
 
@@ -2146,7 +2193,7 @@ export function handleAgendaNavNext() {
 
 export function handleAgendaViewChange(view: 'month' | 'week' | 'day') {
     State.setAgendaView(view);
-    if(D.agendaViewSwitcher) {
+    if (D.agendaViewSwitcher) {
         D.agendaViewSwitcher.querySelectorAll('button').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.view === view);
         });
@@ -2186,7 +2233,7 @@ function updateAgendaTitle() {
         const startOfWeek = getMonday(date);
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
-        
+
         const startMonth = monthNames[startOfWeek.getMonth()];
         const endMonth = monthNames[endOfWeek.getMonth()];
 
@@ -2208,7 +2255,7 @@ function renderMonthView() {
     const year = date.getFullYear();
     const month = date.getMonth();
     const today = new Date();
-    today.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
 
     const firstDayOfMonth = new Date(year, month, 1);
     const lastDayOfMonth = new Date(year, month + 1, 0);
@@ -2221,14 +2268,14 @@ function renderMonthView() {
 
     const weekdays = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
     let html = weekdays.map(day => `<div class="calendar-header-cell">${day}</div>`).join('');
-    
+
     for (let i = 0; i < 42; i++) { // Render 6 weeks to have a consistent grid
         const isOtherMonth = currentDay.getMonth() !== month;
         const isToday = currentDay.getTime() === today.getTime();
         const dateString = `${currentDay.getFullYear()}-${String(currentDay.getMonth() + 1).padStart(2, '0')}-${String(currentDay.getDate()).padStart(2, '0')}`;
-        
+
         const dailyOrders = orders.filter(o => o.service_date && o.service_date.startsWith(dateString));
-        
+
         let busyClass = '';
         if (dailyOrders.length >= 7) {
             busyClass = 'busy-day-high';
@@ -2241,17 +2288,17 @@ function renderMonthView() {
         html += `<div class="day-orders">`;
         dailyOrders.forEach(order => {
             const client = State.getClients().find(c => c.id === order.clientId);
-            let serviceNames = order.order_type ? order.order_type.split(' • ').map((s: string) => s.trim().substring(0,15)).filter((s: string) => s) : ['Servicio'];
+            let serviceNames = order.order_type ? order.order_type.split(' • ').map((s: string) => s.trim().substring(0, 15)).filter((s: string) => s) : ['Servicio'];
             if (order.items && order.items.length > 0) {
                 const sItems = order.items.filter((i: any) => isServiceItem(i.description));
                 if (sItems.length > 0) {
-                    serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description.substring(0,15))].filter(Boolean))];
+                    serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description.substring(0, 15))].filter(Boolean))];
                 }
             }
             const serviceTypeHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px; display: inline-flex;">${serviceNames.map((name: string) => `<span style="${getServiceTypeStyle(name)}">${name}</span>`).join('')}</div>`;
             const needsTech = order.technicianIds.length === 0 || (order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID);
             const techWarningIcon = needsTech ? `<i class="fas fa-user-slash" style="color: var(--color-warning); margin-right: 3px;" title="Sin técnico asignado"></i>` : '';
-            
+
             const addressParts = [client?.address, client?.city].filter(Boolean);
             const addressString = addressParts.length > 0 ? addressParts.join(' - ') : 'Sin dirección';
             const pillTitle = `#${order.manualId} - ${client?.name}\n${addressString}\nTipo: ${serviceNames.join(' • ')}`;
@@ -2264,7 +2311,7 @@ function renderMonthView() {
         currentDay.setDate(currentDay.getDate() + 1);
         if (i > 27 && currentDay.getMonth() !== month && currentDay.getDay() === 0) break; // Stop after 5 or 6 weeks if next week is entirely in next month
     }
-    
+
     D.agendaContainer.innerHTML = html;
 
     D.agendaContainer.querySelectorAll('.agenda-order-pill').forEach(el => {
@@ -2279,27 +2326,27 @@ function renderMonthView() {
 
 function renderTimelineView(days: Date[]) {
     const today = new Date();
-    today.setHours(0,0,0,0);
+    today.setHours(0, 0, 0, 0);
     const startHour = 7;
     const endHour = 20;
     const orders = State.getOrders();
 
     let headerHtml = `<div class="time-gutter header-gutter"></div>`;
     let bodyHtml = `<div class="time-gutter">`;
-    for(let h = startHour; h <= endHour; h++) {
+    for (let h = startHour; h <= endHour; h++) {
         bodyHtml += `<div class="time-gutter-slot">${h}:00</div>`;
     }
     bodyHtml += `</div>`;
 
     const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-    
+
     let dayColumnsHtml = '';
     days.forEach(day => {
         const isToday = day.getTime() === today.getTime();
         const dateString = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, '0')}-${String(day.getDate()).padStart(2, '0')}`;
-        
+
         const dailyOrders = orders.filter(o => o.service_date && o.service_date.startsWith(dateString));
-        
+
         const timedOrders = dailyOrders.filter(o => o.service_time);
         const allDayOrders = dailyOrders.filter(o => !o.service_time);
 
@@ -2307,18 +2354,18 @@ function renderTimelineView(days: Date[]) {
         let allDayHtml = '';
         allDayOrders.forEach(order => {
             const client = State.getClients().find(c => c.id === order.clientId);
-            let serviceNames = order.order_type ? order.order_type.split(' • ').map((s: string) => s.trim().substring(0,15)).filter((s: string) => s) : ['Servicio'];
+            let serviceNames = order.order_type ? order.order_type.split(' • ').map((s: string) => s.trim().substring(0, 15)).filter((s: string) => s) : ['Servicio'];
             if (order.items && order.items.length > 0) {
                 const sItems = order.items.filter((i: any) => isServiceItem(i.description));
                 if (sItems.length > 0) {
-                    serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description.substring(0,15))].filter(Boolean))];
+                    serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description.substring(0, 15))].filter(Boolean))];
                 }
             }
             const serviceTypeHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px; display: inline-flex;">${serviceNames.map((name: string) => `<span style="${getServiceTypeStyle(name)}">${name.substring(0, 15)}</span>`).join('')}</div>`;
-            
+
             const needsTech = order.technicianIds.length === 0 || (order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID);
             const techWarningIcon = needsTech ? `<i class="fas fa-user-slash" style="color: var(--color-warning); margin-right: 3px;" title="Sin técnico asignado"></i>` : '';
-            
+
             const addressParts = [client?.address, client?.city].filter(Boolean);
             const addressString = addressParts.length > 0 ? addressParts.join(' - ') : 'Sin dirección';
             const pillTitle = `#${order.manualId} - ${client?.name}\n${addressString}\nTipo: ${serviceNames.join(' • ')}`;
@@ -2334,7 +2381,7 @@ function renderTimelineView(days: Date[]) {
                 <span class="day-date">${day.getDate()}</span>
             </div>
         </div>`;
-        
+
         // --- Event Layout Algorithm ---
         const timedOrdersForLayout = timedOrders.map(o => {
             const [h, m] = o.service_time!.split(':').map(Number);
@@ -2365,8 +2412,8 @@ function renderTimelineView(days: Date[]) {
             }
         }
         const totalCols = Math.max(1, columns.length);
-        
-        const MIN_EVENT_WIDTH_PX = 140; 
+
+        const MIN_EVENT_WIDTH_PX = 140;
         const dayColumnMinWidth = Math.max(120, totalCols * MIN_EVENT_WIDTH_PX);
         // --- End Algorithm ---
 
@@ -2374,7 +2421,7 @@ function renderTimelineView(days: Date[]) {
         timedOrdersForLayout.forEach(order => {
             const [hour, minute] = order.service_time!.split(':').map(Number);
             const top = ((hour - startHour) + (minute / 60)) * 50; // 50px per hour
-            const height = (order.estimated_duration || 1) * 50; 
+            const height = (order.estimated_duration || 1) * 50;
 
             const { col } = (order as any).layout;
             const width = 100 / totalCols;
@@ -2383,24 +2430,24 @@ function renderTimelineView(days: Date[]) {
             const client = State.getClients().find(c => c.id === order.clientId);
             const techs = State.getTechnicians().filter(t => order.technicianIds.includes(t.id));
             const formattedTime = formatTime(order.service_time);
-            
+
             const needsTech = order.technicianIds.length === 0 || (order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID);
             const techWarningIcon = needsTech ? `<i class="fas fa-user-slash" style="color: var(--color-warning);" title="Sin técnico asignado"></i> ` : '';
-            
+
             const addressParts = [client?.address, client?.city].filter(Boolean);
             const addressString = addressParts.join(' - ');
             const addressHtml = addressString ? `<span class="event-address">${addressString}</span>` : '';
 
 
-            let serviceNames = order.order_type ? order.order_type.split(' • ').map((s: string) => s.trim().substring(0,15)).filter((s: string) => s) : ['Servicio'];
+            let serviceNames = order.order_type ? order.order_type.split(' • ').map((s: string) => s.trim().substring(0, 15)).filter((s: string) => s) : ['Servicio'];
             if (order.items && order.items.length > 0) {
                 const sItems = order.items.filter((i: any) => isServiceItem(i.description));
                 if (sItems.length > 0) {
-                    serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description.substring(0,15))].filter(Boolean))];
+                    serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description.substring(0, 15))].filter(Boolean))];
                 }
             }
             const serviceTypeHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px;">${serviceNames.map((name: string) => `<span style="${getServiceTypeStyle(name)}">${name}</span>`).join('')}</div>`;
-            
+
             timedOrdersHtml += `<div class="order-event status-${order.status}" style="top: ${top}px; height: ${height}px; left: ${left}%; width: calc(${width}% - 2px);" data-order-id="${order.id}">
                 <strong class="event-title">${techWarningIcon}${client?.name || 'Cliente'}</strong>
                 ${addressHtml}
@@ -2413,7 +2460,7 @@ function renderTimelineView(days: Date[]) {
     });
 
     let hourLinesHtml = '';
-    for(let h = startHour; h <= endHour; h++) {
+    for (let h = startHour; h <= endHour; h++) {
         hourLinesHtml += `<div class="hour-line"></div>`;
     }
 
@@ -2463,7 +2510,7 @@ function renderListWeekView() {
 
         const isToday = day.getTime() === today.getTime();
         const numOrders = dailyOrders.length;
-        
+
         // --- Day Saturation Logic ---
         let saturationClass = '';
         let saturationLabel = '';
@@ -2489,7 +2536,7 @@ function renderListWeekView() {
                 const formattedTime = formatTime(order.service_time);
                 const needsTech = order.technicianIds.length === 0 || (order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID);
                 const techWarningIcon = needsTech ? ` <i class="fas fa-user-slash" style="color: var(--color-warning);" title="Sin técnico asignado"></i>` : '';
-                
+
                 const addressParts = [client?.address, client?.city].filter(Boolean);
                 const addressString = addressParts.join(' - ');
                 const addressHtml = addressString ? `<div class="order-address-mobile"><i class="fas fa-map-marker-alt"></i> ${addressString}</div>` : '';
@@ -2626,7 +2673,7 @@ function renderWeekView() {
 
 function renderDayView() {
     const date = State.getAgendaDate();
-    date.setHours(0,0,0,0);
+    date.setHours(0, 0, 0, 0);
     renderTimelineView([date]);
 }
 
@@ -2729,7 +2776,7 @@ export function openAgendaTechDropdown(orderId: string, triggerEl: HTMLElement, 
             e.stopPropagation();
             const techId = (e.currentTarget as HTMLElement).dataset.techId;
             if (!techId) return;
-            
+
             // Toggle technician
             let newIds = [...order.technicianIds];
             if (newIds.includes(techId)) {
@@ -2744,9 +2791,9 @@ export function openAgendaTechDropdown(orderId: string, triggerEl: HTMLElement, 
             }
             if (newIds.length === 0) newIds = [NO_ASIGNADO_TECHNICIAN_ID];
             order.technicianIds = newIds;
-            
+
             const shouldClose = techId === NO_ASIGNADO_TECHNICIAN_ID || newIds.filter(id => id !== NO_ASIGNADO_TECHNICIAN_ID).length >= 2;
-            
+
             if (shouldClose) {
                 dropdown.style.display = 'none';
                 const activeDoc = document as any;
@@ -2759,12 +2806,12 @@ export function openAgendaTechDropdown(orderId: string, triggerEl: HTMLElement, 
                 // Re-render UI locally for instant feedback
                 openAgendaTechDropdown(orderId, triggerEl, true);
             }
-            
+
             // Use processing indicator
             const freshTriggerEl = (document.querySelector('.agenda-tech-trigger[data-order-id="' + orderId + '"]') as HTMLElement) || triggerEl;
             const originalHtml = freshTriggerEl.innerHTML;
             freshTriggerEl.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 5px; color: var(--color-primary);"></i> Procesando...';
-            
+
             try {
                 // Auto-save logic
                 const savedOrder = await API.saveOrder(order);
@@ -2772,7 +2819,7 @@ export function openAgendaTechDropdown(orderId: string, triggerEl: HTMLElement, 
                 const idx = orders.findIndex(o => o.id === savedOrder.id);
                 if (idx !== -1) orders[idx] = savedOrder;
                 State.setOrders(orders);
-                
+
                 // Re-render the list week view after state update
                 renderListWeekView();
             } catch (e) {
@@ -2787,26 +2834,26 @@ export function openAgendaTechDropdown(orderId: string, triggerEl: HTMLElement, 
     dropdown.style.display = 'block';
     dropdown.style.top = `${rect.bottom + window.scrollY + 5}px`;
     dropdown.style.left = `${Math.max(10, rect.left + window.scrollX)}px`;
-    
+
     // Auto-close logic
     const activeDoc = document as any;
     const closeDropdown = (e: Event) => {
         if (e.type === 'scroll' && dropdown.contains(e.target as Node)) return;
         if (e.type === 'click' && (dropdown.contains(e.target as Node) || triggerEl.contains(e.target as Node))) return;
-        
+
         dropdown.style.display = 'none';
         document.removeEventListener('click', closeDropdown);
         window.removeEventListener('scroll', closeDropdown, true);
         activeDoc._agendaClickHandler = null;
     };
-    
+
     // Remove past listeners and add new one
     if (activeDoc._agendaClickHandler) {
         document.removeEventListener('click', activeDoc._agendaClickHandler);
         window.removeEventListener('scroll', activeDoc._agendaClickHandler, true);
     }
     activeDoc._agendaClickHandler = closeDropdown;
-    
+
     setTimeout(() => {
         document.addEventListener('click', closeDropdown);
         window.addEventListener('scroll', closeDropdown, true);
@@ -2820,7 +2867,7 @@ export function openAgendaEditOrderModal(orderId: string) {
 
     const modal = document.getElementById('agenda-edit-order-modal') as HTMLElement;
     if (!modal) return;
-    
+
     // Fill client data
     const client = State.getClients().find(c => c.id === order.clientId);
     if (client) {
@@ -2841,7 +2888,7 @@ export function openAgendaEditOrderModal(orderId: string) {
     // Populate service type options from DB
     const serviceTypeSelect = document.getElementById('agenda-edit-type') as HTMLSelectElement;
     serviceTypeSelect.innerHTML = State.getServiceTypes().map(t => `<option value="${t.name}">${t.name}</option>`).join('');
-    
+
     // Find matching option (fuzzy/exact match)
     const options = Array.from(serviceTypeSelect.options);
     const targetType = (order.order_type || '').trim().toLowerCase();
@@ -2860,7 +2907,7 @@ export function openAgendaEditOrderModal(orderId: string) {
 
     newForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         // Update client info if it was changed
         let clientUpdated = false;
         if (client) {
@@ -2868,7 +2915,7 @@ export function openAgendaEditOrderModal(orderId: string) {
             const newClientPhone = (document.getElementById('agenda-edit-client-phone') as HTMLInputElement).value;
             const newClientCity = (document.getElementById('agenda-edit-client-city') as HTMLInputElement).value;
             const newClientAddress = (document.getElementById('agenda-edit-client-address') as HTMLInputElement).value;
-            
+
             if (client.name !== newClientName || client.phone !== newClientPhone || client.city !== newClientCity || client.address !== newClientAddress) {
                 const updatedClient = {
                     ...client,
@@ -2884,7 +2931,7 @@ export function openAgendaEditOrderModal(orderId: string) {
                     if (cIdx !== -1) clients[cIdx] = savedClient;
                     State.setClients(clients);
                     clientUpdated = true;
-                } catch(err) {
+                } catch (err) {
                     console.error("Error saving client update", err);
                 }
             }
@@ -2897,7 +2944,7 @@ export function openAgendaEditOrderModal(orderId: string) {
         const newDuration = durationStr ? parseFloat(durationStr) : null;
         const newType = (document.getElementById('agenda-edit-type') as HTMLSelectElement).value;
         const newNotes = (document.getElementById('agenda-edit-notes') as HTMLTextAreaElement).value;
-        
+
         const updatedOrder = {
             ...order,
             service_date: newDate,
@@ -2913,9 +2960,9 @@ export function openAgendaEditOrderModal(orderId: string) {
         const idx = orders.findIndex(o => o.id === savedOrder.id);
         if (idx !== -1) orders[idx] = savedOrder;
         State.setOrders(orders);
-        
+
         modal.style.display = 'none';
-        
+
         renderAgendaPage();
         const msg = clientUpdated ? `Orden #${order.manualId} y Cliente actualizados` : `Orden #${order.manualId} actualizada correctamente`;
         showNotification(msg, 'success');
@@ -2930,145 +2977,145 @@ export function openAgendaEditOrderModal(orderId: string) {
 }
 
 export function setupQuoteAnnexUpload() {
-  const uploadInput = document.getElementById("quote-annex-upload") as HTMLInputElement;
-  if (!uploadInput) return;
-  uploadInput.addEventListener("change", async (e) => {
-    const files = (e.target as HTMLInputElement).files;
-    if (!files || files.length === 0) return;
-    const activeQuote = State.getActiveQuote();
-    if (!activeQuote) return;
-    if (!activeQuote.image_urls) activeQuote.image_urls = [];
+    const uploadInput = document.getElementById("quote-annex-upload") as HTMLInputElement;
+    if (!uploadInput) return;
+    uploadInput.addEventListener("change", async (e) => {
+        const files = (e.target as HTMLInputElement).files;
+        if (!files || files.length === 0) return;
+        const activeQuote = State.getActiveQuote();
+        if (!activeQuote) return;
+        if (!activeQuote.image_urls) activeQuote.image_urls = [];
 
-    for (let i = 0; i < files.length; i++) {
-        try {
-            const compressedBlob = await compressImage(files[i]);
-            const fileName = "IMG_" + Date.now() + "_" + Math.random().toString(36).substring(7) + ".jpg";
-            const { data, error } = await supabaseQuotes.storage.from("quote-images").upload(fileName, compressedBlob, { contentType: "image/jpeg" });
-            if (error) {
-                console.error("Error uploading image:", error);
-                continue;
+        for (let i = 0; i < files.length; i++) {
+            try {
+                const compressedBlob = await compressImage(files[i]);
+                const fileName = "IMG_" + Date.now() + "_" + Math.random().toString(36).substring(7) + ".jpg";
+                const { data, error } = await supabaseQuotes.storage.from("quote-images").upload(fileName, compressedBlob, { contentType: "image/jpeg" });
+                if (error) {
+                    console.error("Error uploading image:", error);
+                    continue;
+                }
+                if (data && data.path) {
+                    activeQuote.image_urls.push(data.path);
+                }
+            } catch (err) {
+                console.error("Error compressing image:", err);
             }
-            if (data && data.path) {
-                activeQuote.image_urls.push(data.path);
-            }
-        } catch (err) {
-            console.error("Error compressing image:", err);
         }
-    }
-    State.updateActiveQuote(activeQuote);
-    renderQuoteAnnexPreviews(activeQuote);
-    uploadInput.value = "";
-  });
+        State.updateActiveQuote(activeQuote);
+        renderQuoteAnnexPreviews(activeQuote);
+        uploadInput.value = "";
+    });
 }
 
 export function getQuoteImageUrl(urlPath: string) {
-  return supabaseQuotes.storage.from("quote-images").getPublicUrl(urlPath).data.publicUrl;
+    return supabaseQuotes.storage.from("quote-images").getPublicUrl(urlPath).data.publicUrl;
 }
 
 export function renderQuoteAnnexPreviews(quote: Quote | null) {
-  if (!quote) return;
-  const container = document.getElementById("quote-annex-preview-container");
-  if (!container) return;
-  container.innerHTML = "";
-  const urls = quote.image_urls || [];
-  urls.forEach((url, index) => {
-    const el = document.createElement("div");
-    el.className = "quote-annex-preview-item";
-    el.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;"><i class="fas fa-spinner fa-spin"></i></div>`;
-    container.appendChild(el);
+    if (!quote) return;
+    const container = document.getElementById("quote-annex-preview-container");
+    if (!container) return;
+    container.innerHTML = "";
+    const urls = quote.image_urls || [];
+    urls.forEach((url, index) => {
+        const el = document.createElement("div");
+        el.className = "quote-annex-preview-item";
+        el.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;"><i class="fas fa-spinner fa-spin"></i></div>`;
+        container.appendChild(el);
 
-    supabaseQuotes.storage.from("quote-images").download(url).then(({ data, error }) => {
-        let objectUrl = "";
-        let imgHtml = "";
-        if (!error && data) {
-            objectUrl = URL.createObjectURL(data);
-            imgHtml = `<img src="${objectUrl}" alt="Anexo">`;
-        } else {
-            console.error(error);
-            imgHtml = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:red;"><i class="fas fa-exclamation-circle"></i></div>`;
-        }
-        
-        el.innerHTML = `${imgHtml}<button class="remove-photo-btn" data-index="${index}"><i class="fas fa-times"></i></button>`;
-        el.querySelector(".remove-photo-btn")?.addEventListener("click", (e) => {
-            e.preventDefault();
-            const activeQ = State.getActiveQuote();
-            if (!activeQ || !activeQ.image_urls) return;
-            activeQ.image_urls.splice(index, 1);
-            State.updateActiveQuote(activeQ);
-            renderQuoteAnnexPreviews(activeQ);
+        supabaseQuotes.storage.from("quote-images").download(url).then(({ data, error }) => {
+            let objectUrl = "";
+            let imgHtml = "";
+            if (!error && data) {
+                objectUrl = URL.createObjectURL(data);
+                imgHtml = `<img src="${objectUrl}" alt="Anexo">`;
+            } else {
+                console.error(error);
+                imgHtml = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:red;"><i class="fas fa-exclamation-circle"></i></div>`;
+            }
+
+            el.innerHTML = `${imgHtml}<button class="remove-photo-btn" data-index="${index}"><i class="fas fa-times"></i></button>`;
+            el.querySelector(".remove-photo-btn")?.addEventListener("click", (e) => {
+                e.preventDefault();
+                const activeQ = State.getActiveQuote();
+                if (!activeQ || !activeQ.image_urls) return;
+                activeQ.image_urls.splice(index, 1);
+                State.updateActiveQuote(activeQ);
+                renderQuoteAnnexPreviews(activeQ);
+            });
         });
     });
-  });
 }
 
 export function setupOrderAnnexUpload() {
-  const uploadInput = document.getElementById("order-annex-upload") as HTMLInputElement;
-  if (!uploadInput) return;
-  uploadInput.addEventListener("change", async (e) => {
-    const files = (e.target as HTMLInputElement).files;
-    if (!files || files.length === 0) return;
-    const activeOrder = State.getCurrentOrder();
-    if (!activeOrder) return;
-    if (!activeOrder.image_urls) activeOrder.image_urls = [];
+    const uploadInput = document.getElementById("order-annex-upload") as HTMLInputElement;
+    if (!uploadInput) return;
+    uploadInput.addEventListener("change", async (e) => {
+        const files = (e.target as HTMLInputElement).files;
+        if (!files || files.length === 0) return;
+        const activeOrder = State.getCurrentOrder();
+        if (!activeOrder) return;
+        if (!activeOrder.image_urls) activeOrder.image_urls = [];
 
-    for (let i = 0; i < files.length; i++) {
-        try {
-            const compressedBlob = await compressImage(files[i]);
-            const fileName = "ORDER_" + Date.now() + "_" + Math.random().toString(36).substring(7) + ".jpg";
-            // Uses order-images bucket (instructions provided to user to create it)
-            const { data, error } = await supabaseOrders.storage.from("order-images").upload(fileName, compressedBlob, { contentType: "image/jpeg" });
-            if (error) {
-                console.error("Error uploading order image:", error);
-                continue;
+        for (let i = 0; i < files.length; i++) {
+            try {
+                const compressedBlob = await compressImage(files[i]);
+                const fileName = "ORDER_" + Date.now() + "_" + Math.random().toString(36).substring(7) + ".jpg";
+                // Uses order-images bucket (instructions provided to user to create it)
+                const { data, error } = await supabaseOrders.storage.from("order-images").upload(fileName, compressedBlob, { contentType: "image/jpeg" });
+                if (error) {
+                    console.error("Error uploading order image:", error);
+                    continue;
+                }
+                if (data && data.path) {
+                    activeOrder.image_urls.push(data.path);
+                }
+            } catch (err) {
+                console.error("Error compressing image:", err);
             }
-            if (data && data.path) {
-                activeOrder.image_urls.push(data.path);
-            }
-        } catch (err) {
-            console.error("Error compressing image:", err);
         }
-    }
-    State.setCurrentOrder(activeOrder);
-    renderOrderAnnexPreviews(activeOrder);
-    uploadInput.value = "";
-  });
+        State.setCurrentOrder(activeOrder);
+        renderOrderAnnexPreviews(activeOrder);
+        uploadInput.value = "";
+    });
 }
 
 export function renderOrderAnnexPreviews(order: Order | null) {
-  if (!order) return;
-  const container = document.getElementById("order-annex-preview-container");
-  if (!container) return;
-  container.innerHTML = "";
-  const urls = order.image_urls || [];
-  urls.forEach((url, index) => {
-    const el = document.createElement("div");
-    el.className = "quote-annex-preview-item"; // Re-using styling class
-    el.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;"><i class="fas fa-spinner fa-spin"></i></div>`;
-    container.appendChild(el);
+    if (!order) return;
+    const container = document.getElementById("order-annex-preview-container");
+    if (!container) return;
+    container.innerHTML = "";
+    const urls = order.image_urls || [];
+    urls.forEach((url, index) => {
+        const el = document.createElement("div");
+        el.className = "quote-annex-preview-item"; // Re-using styling class
+        el.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;"><i class="fas fa-spinner fa-spin"></i></div>`;
+        container.appendChild(el);
 
-    supabaseOrders.storage.from("order-images").download(url).then(({ data, error }) => {
-        let objectUrl = "";
-        let imgHtml = "";
-        if (!error && data) {
-            objectUrl = URL.createObjectURL(data);
-            imgHtml = `<img src="${objectUrl}" alt="Anexo Orden">`;
-        } else {
-            console.error(error);
-            imgHtml = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:red;"><i class="fas fa-exclamation-circle"></i></div>`;
-        }
-        
-        el.innerHTML = `${imgHtml}<button class="remove-photo-btn" data-index="${index}"><i class="fas fa-times"></i></button>`;
-        el.querySelector(".remove-photo-btn")?.addEventListener("click", (e) => {
-            e.preventDefault();
-            const activeOrder = State.getCurrentOrder();
-            if (!activeOrder || !activeOrder.image_urls) return;
-            activeOrder.image_urls.splice(index, 1);
-            State.setCurrentOrder(activeOrder);
-            renderOrderAnnexPreviews(activeOrder);
-            handleOrderDetailsChange(); // Trigger unsaved changes
+        supabaseOrders.storage.from("order-images").download(url).then(({ data, error }) => {
+            let objectUrl = "";
+            let imgHtml = "";
+            if (!error && data) {
+                objectUrl = URL.createObjectURL(data);
+                imgHtml = `<img src="${objectUrl}" alt="Anexo Orden">`;
+            } else {
+                console.error(error);
+                imgHtml = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:red;"><i class="fas fa-exclamation-circle"></i></div>`;
+            }
+
+            el.innerHTML = `${imgHtml}<button class="remove-photo-btn" data-index="${index}"><i class="fas fa-times"></i></button>`;
+            el.querySelector(".remove-photo-btn")?.addEventListener("click", (e) => {
+                e.preventDefault();
+                const activeOrder = State.getCurrentOrder();
+                if (!activeOrder || !activeOrder.image_urls) return;
+                activeOrder.image_urls.splice(index, 1);
+                State.setCurrentOrder(activeOrder);
+                renderOrderAnnexPreviews(activeOrder);
+                handleOrderDetailsChange(); // Trigger unsaved changes
+            });
         });
     });
-  });
 }
 
 export function compressImage(file: File): Promise<Blob> {
