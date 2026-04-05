@@ -646,7 +646,7 @@ body.dark-theme .status-badge.cancelled {
 }
 
 #quote-items-table,
-#order-items-table {
+#order-items-table, #order-services-table, #order-materials-table {
     width: 100%;
     border-collapse: collapse;
     border: 1px solid var(--color-border-medium);
@@ -656,8 +656,8 @@ body.dark-theme .status-badge.cancelled {
 
 #quote-items-table th,
 #quote-items-table td,
-#order-items-table th,
-#order-items-table td {
+#order-items-table, #order-services-table, #order-materials-table th,
+#order-items-table, #order-services-table, #order-materials-table td {
     padding: 10px;
     text-align: left;
     border-bottom: 1px solid var(--color-border-light);
@@ -666,13 +666,13 @@ body.dark-theme .status-badge.cancelled {
 
 #quote-items-table th:last-child,
 #quote-items-table td:last-child,
-#order-items-table th:last-child,
-#order-items-table td:last-child {
+#order-items-table, #order-services-table, #order-materials-table th:last-child,
+#order-items-table, #order-services-table, #order-materials-table td:last-child {
     border-right: none;
 }
 
 #quote-items-table th,
-#order-items-table th {
+#order-items-table, #order-services-table, #order-materials-table th {
     font-size: 0.8rem;
     text-transform: uppercase;
     color: var(--color-text-secondary);
@@ -691,33 +691,33 @@ body.dark-theme .status-badge.cancelled {
 }
 
 #quote-items-table .col-desc,
-#order-items-table .col-desc {
+#order-items-table, #order-services-table, #order-materials-table .col-desc {
     width: 45%;
 }
 
 #quote-items-table .col-qty,
-#order-items-table .col-qty {
+#order-items-table, #order-services-table, #order-materials-table .col-qty {
     width: 10%;
 }
 
 #quote-items-table .col-price,
-#order-items-table .col-price {
+#order-items-table, #order-services-table, #order-materials-table .col-price {
     width: 20%;
 }
 
 #quote-items-table .col-total,
-#order-items-table .col-total {
+#order-items-table, #order-services-table, #order-materials-table .col-total {
     width: 20%;
 }
 
 #quote-items-table .col-actions,
-#order-items-table .col-actions {
+#order-items-table, #order-services-table, #order-materials-table .col-actions {
     width: 5%;
     text-align: right;
 }
 
 #quote-items-table tbody tr:last-child td,
-#order-items-table tbody tr:last-child td {
+#order-items-table, #order-services-table, #order-materials-table tbody tr:last-child td {
     border-bottom: none;
 }
 
@@ -2833,19 +2833,19 @@ body.dark-theme .custom-select-container {
 
     /* --- MOBILE QUOTE ITEM CARD --- */
     #quote-items-table,
-    #order-items-table {
+    #order-items-table, #order-services-table, #order-materials-table {
         border: none;
         box-shadow: none;
     }
 
     #quote-items-table thead,
-    #order-items-table thead {
+    #order-items-table, #order-services-table, #order-materials-table thead {
         display: none;
     }
 
     /* Card container */
     #quote-items-table tr,
-    #order-items-table tr {
+    #order-items-table, #order-services-table, #order-materials-table tr {
         display: flex;
         flex-direction: column;
         position: relative;
@@ -2858,7 +2858,7 @@ body.dark-theme .custom-select-container {
     }
 
     #quote-items-table td,
-    #order-items-table td {
+    #order-items-table, #order-services-table, #order-materials-table td {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -2875,7 +2875,7 @@ body.dark-theme .custom-select-container {
     }
 
     #quote-items-table td::before,
-    #order-items-table td::before {
+    #order-items-table, #order-services-table, #order-materials-table td::before {
         content: attr(data-label);
         font-weight: 500;
         color: var(--color-text-secondary);
@@ -2888,7 +2888,7 @@ body.dark-theme .custom-select-container {
 
     /* Description cell is the title */
     #quote-items-table td.col-desc,
-    #order-items-table td.col-desc {
+    #order-items-table, #order-services-table, #order-materials-table td.col-desc {
         display: block;
         padding: 0;
         padding-bottom: 10px;
@@ -2897,13 +2897,13 @@ body.dark-theme .custom-select-container {
     }
 
     #quote-items-table td.col-desc::before,
-    #order-items-table td.col-desc::before {
+    #order-items-table, #order-services-table, #order-materials-table td.col-desc::before {
         display: none;
         /* No "Descripción:" label */
     }
 
     #quote-items-table td.col-desc .item-desc,
-    #order-items-table td.col-desc .item-desc {
+    #order-items-table, #order-services-table, #order-materials-table td.col-desc .item-desc {
         display: none;
         /* Hide desktop textarea */
     }
@@ -2916,7 +2916,7 @@ body.dark-theme .custom-select-container {
     }
 
     #quote-items-table td.col-desc .item-desc-mobile-view,
-    #order-items-table td.col-desc .item-desc-mobile-view {
+    #order-items-table, #order-services-table, #order-materials-table td.col-desc .item-desc-mobile-view {
         display: flex;
         font-size: 1.1rem;
         font-weight: 600;
@@ -2930,15 +2930,15 @@ body.dark-theme .custom-select-container {
     }
 
     #quote-items-table td.col-desc .item-desc-mobile-view:hover,
-    #order-items-table td.col-desc .item-desc-mobile-view:hover {
+    #order-items-table, #order-services-table, #order-materials-table td.col-desc .item-desc-mobile-view:hover {
         background-color: transparent;
     }
 
     /* Hide desktop inputs for qty/price on mobile cards */
     #quote-items-table td.col-qty .item-qty,
-    #order-items-table td.col-qty .item-qty,
+    #order-items-table, #order-services-table, #order-materials-table td.col-qty .item-qty,
     #quote-items-table td.col-price .item-price,
-    #order-items-table td.col-price .item-price {
+    #order-items-table, #order-services-table, #order-materials-table td.col-price .item-price {
         display: none;
     }
 
@@ -2988,14 +2988,14 @@ body.dark-theme .custom-select-container {
     }
 
     #quote-items-table td.col-qty,
-    #order-items-table td.col-qty,
+    #order-items-table, #order-services-table, #order-materials-table td.col-qty,
     #quote-items-table td.col-price,
-    #order-items-table td.col-price {
+    #order-items-table, #order-services-table, #order-materials-table td.col-price {
         padding-right: 0;
     }
 
     #quote-items-table td.col-price .item-value-mobile-view,
-    #order-items-table td.col-price .item-value-mobile-view {
+    #order-items-table, #order-services-table, #order-materials-table td.col-price .item-value-mobile-view {
         font-weight: 500;
     }
 
@@ -3013,14 +3013,14 @@ body.dark-theme .custom-select-container {
     }
 
     #quote-items-table td.col-actions,
-    #order-items-table td.col-actions {
+    #order-items-table, #order-services-table, #order-materials-table td.col-actions {
         display: none;
     }
 
 
     /* Data cells */
     #quote-items-table td input,
-    #order-items-table td input {
+    #order-items-table, #order-services-table, #order-materials-table td input {
         text-align: right;
         flex-grow: 1;
         width: auto;
@@ -3029,7 +3029,7 @@ body.dark-theme .custom-select-container {
     }
 
     #quote-items-table td.col-total,
-    #order-items-table td.col-total {
+    #order-items-table, #order-services-table, #order-materials-table td.col-total {
         font-weight: 600;
         color: var(--color-accent-primary);
         text-align: right;
@@ -3748,3 +3748,4 @@ body.dark-theme .custom-select-container {
     z-index: 10;
     box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
 }
+

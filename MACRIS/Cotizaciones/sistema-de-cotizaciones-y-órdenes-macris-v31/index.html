@@ -301,11 +301,25 @@
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <label for="order-type">Tipo de Orden</label>
-                                        <select id="order-type">
-                                            <!-- Options will be populated by JS -->
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                            <label for="order-type" style="margin-bottom: 0;">Tipo de Orden</label>
+                                            <button id="order-auto-add-service-btn" class="btn btn-outline btn-sm" title="Agregar el Tipo de Orden como servicio" style="padding: 2px 10px; font-size: 0.75rem; border-radius: 12px; background-color: var(--color-bg-secondary);">
+                                                <i class="fas fa-magic"></i> Auto-Agregar
+                                            </button>
+                                        </div>
+                                        <div id="order-type-selector" class="custom-select-container" tabindex="0">
+                                            <div id="order-type-selected-pills" class="pill-input-container">
+                                                <span class="custom-select-placeholder">Seleccionar tipos...</span>
+                                            </div>
+                                            <i class="fas fa-chevron-down custom-select-arrow"></i>
+                                        </div>
+                                        <div id="order-type-dropdown" class="custom-select-dropdown search-results-popover">
+                                            <!-- Options injected via JS -->
+                                        </div>
+                                        <select id="order-type" style="display: none;">
                                             <option value="" disabled selected>Cargando...</option>
                                         </select>
+                                        
                                         <input type="text" id="order-type-custom" class="form-control"
                                             placeholder="Especifique el tipo..."
                                             style="display: none; margin-top: 10px;">
@@ -360,24 +374,45 @@
                             </div>
                         </div>
 
-                        <!-- Order Items -->
-                        <div class="quote-items card">
-                            <h3>Ítems de la Orden</h3>
+
+
+                        <!-- Order Services (Mano de Obra) -->
+                        <div class="quote-items card order-services-section" style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3>Servicios a Realizar <span>(Mano de Obra)</span></h3>
+                            </div>
                             <div class="table-container">
-                                <table id="order-items-table">
+                                <table id="order-services-table">
                                     <thead>
                                         <tr>
-                                            <th class="col-desc">Descripción</th>
+                                            <th class="col-desc">Descripción del Servicio</th>
                                             <th class="col-qty">Cant.</th>
                                             <th class="col-actions"></th>
                                         </tr>
                                     </thead>
-                                    <tbody id="order-items-tbody"></tbody>
+                                    <tbody id="order-services-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Order Materials (Insumos) -->
+                        <div class="quote-items card">
+                            <h3>Materiales e Insumos <span>(Opcional)</span></h3>
+                            <div class="table-container">
+                                <table id="order-materials-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-desc">Descripción del Material</th>
+                                            <th class="col-qty">Cant.</th>
+                                            <th class="col-actions"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="order-materials-tbody"></tbody>
                                 </table>
                             </div>
                             <div class="add-item-form-container">
                                 <div class="form-group">
-                                    <label for="order-item-search">Agregar Ítem</label>
+                                    <label for="order-item-search">Agregar Servicio o Material</label>
                                     <div class="input-with-button">
                                         <input type="text" id="order-item-search"
                                             placeholder="Buscar por código o nombre...">

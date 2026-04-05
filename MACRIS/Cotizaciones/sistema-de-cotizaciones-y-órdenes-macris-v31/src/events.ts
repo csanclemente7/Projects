@@ -127,6 +127,14 @@ function setupQuoteEventListeners() {
             State.updateActiveQuote(quote);
         }
     });
+
+    D.quoteInternalNotesTextarea.addEventListener('input', () => {
+        const quote = State.getActiveQuote();
+        if (quote) {
+            quote.internal_notes = D.quoteInternalNotesTextarea.value;
+            State.updateActiveQuote(quote);
+        }
+    });
 }
 
 function setupManagementEventListeners() {
@@ -277,6 +285,7 @@ function setupGlobalActionListeners() {
 }
 
 function setupOrderWorkspaceEventListeners() {
+    UI.setupOrderAnnexUpload();
     D.backToOrdersListBtn?.addEventListener('click', () => {
         const orderWorkspace = document.getElementById('page-order-workspace');
         if (orderWorkspace?.classList.contains('as-modal')) {
@@ -287,43 +296,51 @@ function setupOrderWorkspaceEventListeners() {
     });
     D.saveOrderBtn.addEventListener('click', UI.handleSaveOrder);
     D.generateOrderPdfBtn.addEventListener('click', UI.handleGenerateOrderPdf);
+    if (D.orderAutoAddServiceBtn) {
+        D.orderAutoAddServiceBtn.addEventListener('click', UI.syncOrderServicesFromTypes);
+    }
     // Client and Item Modals
     D.orderAddClientBtn.addEventListener('click', () => UI.openEntityModal('client'));
     D.orderEditClientBtn.addEventListener('click', UI.handleEditClientClickOrder);
     D.orderAddNewItemBtn.addEventListener('click', () => UI.openEntityModal('item'));
 
-    // Order Items Table (similar to quote items)
-    D.orderItemsTableBody.addEventListener('click', (e) => {
-        const target = e.target as HTMLElement;
-        const row = target.closest('tr');
-        if (!row || !row.dataset.itemId) return;
-    
-        const itemId = row.dataset.itemId;
-    
-        if (target.closest('.delete-item-btn')) {
-            UI.handleRemoveItemFromOrder(itemId);
-            return;
-        }
-    
-        const pencil = target.closest<HTMLElement>('.edit-indicator');
-        if (pencil) {
-            const descWrapper = pencil.closest('.item-desc-mobile-view');
-            if (descWrapper) {
-                UI.openDescriptionEditModal(itemId, 'order');
+    const setupTableListeners = (tbody: HTMLElement) => {
+        tbody.addEventListener('click', (e) => {
+            const target = e.target as HTMLElement;
+            const row = target.closest('tr');
+            if (!row || !row.dataset.itemId) return;
+        
+            const itemId = row.dataset.itemId;
+        
+            if (target.closest('.delete-item-btn')) {
+                UI.handleRemoveItemFromOrder(itemId);
                 return;
             }
-    
-            const valueWrapper = pencil.closest<HTMLElement>('.item-value-mobile-view');
-            if (valueWrapper) {
-                const field = valueWrapper.dataset.field as 'quantity' | 'price' | undefined;
-                if (field) {
-                    UI.openValueEditModal(itemId, field, 'order');
+        
+            const pencil = target.closest<HTMLElement>('.edit-indicator');
+            if (pencil) {
+                const descWrapper = pencil.closest('.item-desc-mobile-view');
+                if (descWrapper) {
+                    UI.openDescriptionEditModal(itemId, 'order');
+                    return;
+                }
+        
+                const valueWrapper = pencil.closest<HTMLElement>('.item-value-mobile-view');
+                if (valueWrapper) {
+                    const field = valueWrapper.dataset.field as 'quantity' | 'price' | undefined;
+                    if (field) {
+                        UI.openValueEditModal(itemId, field, 'order');
+                    }
                 }
             }
-        }
-    });
+        });
+        tbody.addEventListener('input', UI.handleOrderItemChange);
+    };
 
-    D.orderItemsTableBody.addEventListener('input', UI.handleOrderItemChange);
+    if (D.orderServicesTableBody) setupTableListeners(D.orderServicesTableBody);
+    if (D.orderMaterialsTableBody) setupTableListeners(D.orderMaterialsTableBody);
+    
+    // Listeners are setup via setupTableListeners
     D.orderTypeSelect.addEventListener('change', UI.handleOrderDetailsChange);
     D.orderTypeCustomInput.addEventListener('input', UI.handleOrderDetailsChange);
     D.orderStatusSelect.addEventListener('change', UI.handleOrderDetailsChange);
@@ -550,6 +567,7 @@ export function setupEventListeners() {
     UI.setupClientSearch(D.orderClientSearchInput, D.orderClientSearchResults, 'order');
     UI.setupOrderSourceSearch();
     UI.setupCustomTechnicianSelector();
+    UI.setupCustomOrderTypeSelector();
 
 
     flatpickr(D.quoteDateInput, {

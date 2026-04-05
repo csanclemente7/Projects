@@ -77,6 +77,7 @@ export type DatabaseQuotes = {
           taxRate: number
           terms: string
           image_urls?: string[] | null
+          internal_notes?: string | null
         }
         Insert: {
           id?: string
@@ -86,6 +87,7 @@ export type DatabaseQuotes = {
           taxRate: number
           terms: string
           image_urls?: string[] | null
+          internal_notes?: string | null
         }
         Update: {
           id?: string
@@ -95,6 +97,7 @@ export type DatabaseQuotes = {
           taxRate?: number
           terms?: string
           image_urls?: string[] | null
+          internal_notes?: string | null
         }
       }
       quote_items: {
@@ -200,6 +203,7 @@ export type DatabaseOrders = {
           order_type: string
           notes: string | null
           estimated_duration: number | null
+          image_urls?: string[] | null
         }
         Insert: {
           id?: string
@@ -212,6 +216,7 @@ export type DatabaseOrders = {
           order_type?: string
           notes?: string | null
           estimated_duration?: number | null
+          image_urls?: string[] | null
         }
         Update: {
           id?: string
@@ -224,6 +229,7 @@ export type DatabaseOrders = {
           order_type?: string
           notes?: string | null
           estimated_duration?: number | null
+          image_urls?: string[] | null
         }
       }
       order_items: {
@@ -234,6 +240,7 @@ export type DatabaseOrders = {
           itemId: string | null
           description: string
           quantity: number
+          completed_quantity: number
           price: number
           manualId: string | null
         }
@@ -243,6 +250,7 @@ export type DatabaseOrders = {
           itemId?: string | null
           description: string
           quantity: number
+          completed_quantity?: number
           price: number
           manualId?: string | null
         }
@@ -252,6 +260,7 @@ export type DatabaseOrders = {
           itemId?: string | null
           description?: string
           quantity?: number
+          completed_quantity?: number
           price?: number
           manualId?: string | null
         }

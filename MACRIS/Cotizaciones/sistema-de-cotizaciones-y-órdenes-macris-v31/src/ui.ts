@@ -202,17 +202,9 @@ export function renderAllLists() {
     if (document.querySelector('#page-agenda.active')) renderAgendaPage();
 }
 
+export let currentSelectedOrderTypes: string[] = [];
 export function renderOrderTypeOptions() {
-    const serviceTypes = State.getServiceTypes();
-    if (D.orderTypeSelect) {
-        D.orderTypeSelect.innerHTML = '<option value="">Seleccione un tipo...</option>';
-        serviceTypes.sort((a, b) => a.name.localeCompare(b.name)).forEach(type => {
-            const option = document.createElement('option');
-            option.value = type.name;
-            option.textContent = type.name;
-            D.orderTypeSelect.appendChild(option);
-        });
-    }
+    // La renderización tradicional se reemplaza por renderOrderTypeDropdown
 }
 
 export function renderQuote(quote: Quote | null) {
@@ -299,7 +291,8 @@ function cleanupOrderWorkspace() {
     D.orderTypeSelect.value = '';
     D.orderStatusSelect.value = 'pending';
     D.orderNotesTextarea.value = '';
-    D.orderItemsTableBody.innerHTML = '';
+    D.orderServicesTableBody.innerHTML = '';
+    D.orderMaterialsTableBody.innerHTML = '';
     D.orderItemSearchInput.value = '';
     renderTechnicianPills([]);
     updateOrderSummary();
@@ -1458,20 +1451,29 @@ export function renderOrderWorkspace(order: Order | null) {
     D.orderEditClientBtn.style.display = order.clientId ? 'inline-flex' : 'none';
     D.orderClientCityInput.value = client?.city || '';
 
-    (D.orderDateInput as any)._flatpickr.setDate(order.service_date, false);
-    D.orderTimeInput.value = order.service_time || '';
-    const optionExists = Array.from(D.orderTypeSelect.options).some(opt => opt.value === order.order_type) && order.order_type !== 'Otro';
-    if (order.order_type && !optionExists) {
-        D.orderTypeSelect.value = 'Otro';
-        D.orderTypeCustomInput.value = order.order_type;
-        D.orderTypeCustomInput.style.display = 'block';
-        D.orderTypeCustomInput.required = true;
+    if (order.service_date) {
+        (D.orderDateInput as any)._flatpickr.setDate(order.service_date, false);
     } else {
-        D.orderTypeSelect.value = order.order_type || '';
+        (D.orderDateInput as any)._flatpickr.clear();
+    }
+    D.orderTimeInput.value = order.service_time || '';
+
+    currentSelectedOrderTypes = order.order_type ? order.order_type.split(' • ').map(s => s.trim()).filter(s => s) : [];
+    
+    // Check for custom types
+    const knownTypes = State.getServiceTypes().map(t => t.name);
+    const customValues = currentSelectedOrderTypes.filter(t => !knownTypes.includes(t) && t !== 'Otro');
+    
+    if (customValues.length > 0 || currentSelectedOrderTypes.includes('Otro')) {
+        currentSelectedOrderTypes = currentSelectedOrderTypes.filter(t => knownTypes.includes(t));
+        if (!currentSelectedOrderTypes.includes('Otro')) currentSelectedOrderTypes.push('Otro');
+        D.orderTypeCustomInput.value = customValues.join(' • ');
+        D.orderTypeCustomInput.style.display = 'block';
+    } else {
         D.orderTypeCustomInput.value = '';
         D.orderTypeCustomInput.style.display = 'none';
-        D.orderTypeCustomInput.required = false;
     }
+    renderOrderTypePills();
     D.orderStatusSelect.value = order.status;
     D.orderNotesTextarea.value = order.notes || '';
     renderOrderAnnexPreviews(order);
@@ -1487,9 +1489,18 @@ export function renderOrderWorkspace(order: Order | null) {
     }
 
     renderTechnicianPills(order.technicianIds);
-    D.orderItemsTableBody.innerHTML = '';
-    order.items.forEach(item => D.orderItemsTableBody.appendChild(createItemRow(item, 'order')));
+    D.orderServicesTableBody.innerHTML = '';
+    D.orderMaterialsTableBody.innerHTML = '';
+    
 
+
+    order.items.forEach(item => {
+        if (isServiceItem(item.description)) {
+            D.orderServicesTableBody.appendChild(createItemRow(item, 'order'));
+        } else {
+            D.orderMaterialsTableBody.appendChild(createItemRow(item, 'order'));
+        }
+    });
     updateOrderSummary();
 }
 
@@ -1498,6 +1509,81 @@ export function handleRemoveItemFromOrder(itemId: string) {
     if (!order) return;
     order.items = order.items.filter(i => i.id !== itemId);
     renderOrderWorkspace(order);
+}
+
+export function syncOrderServicesFromTypes() {
+    const order = State.getCurrentOrder();
+    if (!order) return;
+
+    let finalOrderTypeArr = currentSelectedOrderTypes.filter(t => t !== 'Otro');
+    if (currentSelectedOrderTypes.includes('Otro') && D.orderTypeCustomInput.value.trim()) {
+        finalOrderTypeArr = finalOrderTypeArr.concat(D.orderTypeCustomInput.value.trim().split(' • ').map(s => s.trim()).filter(s => s));
+    }
+    
+    const predefinedTypes = State.getServiceTypes().map(t => t.name);
+
+    // Filter out items that are predefined types but no longer selected
+    order.items = order.items.filter(item => {
+        if (predefinedTypes.includes(item.description) && !finalOrderTypeArr.includes(item.description)) {
+            return false; // Remove this service because it was unchecked
+        }
+        return true;
+    });
+
+    finalOrderTypeArr.forEach(serviceName => {
+        const existingItem = order.items.find(i => i.description === serviceName);
+        if (existingItem) return; // Ya existe
+
+        const isMontaje = serviceName === 'Montaje/instalación';
+        
+        let relatedPrice = 0;
+        let qtyToUse = 1;
+
+        if (isMontaje) {
+            // Buscar cuántos equipos hay cotizados si es un montaje
+            const quoteRows = D.quoteItemsTableBody.querySelectorAll('tr');
+            let totalTeams = 0;
+            quoteRows.forEach(row => {
+                const desc = (row.querySelector('.item-desc') as HTMLTextAreaElement).value.toLowerCase();
+                const qtyStr = (row.querySelector('.item-qty') as HTMLInputElement).value;
+                const qtyPart = parseFloat(qtyStr);
+                if (desc.includes('equipo') || desc.includes('aire') || desc.includes('minisplit')) {
+                    if (!isNaN(qtyPart)) {
+                        totalTeams += qtyPart;
+                    }
+                }
+            });
+            if (totalTeams > 0) {
+                qtyToUse = totalTeams;
+            }
+        }
+
+        const newItem: OrderItem = {
+            id: crypto.randomUUID(),
+            created_at: new Date().toISOString(),
+            orderId: order.id || '',
+            itemId: null,
+            description: serviceName,
+            quantity: qtyToUse,
+            price: relatedPrice,
+            completed_quantity: 0,
+            manualId: null
+        };
+        
+        order.items.push(newItem);
+    });
+    
+    // Redraw ONLY the services table
+    D.orderServicesTableBody.innerHTML = '';
+    D.orderMaterialsTableBody.innerHTML = '';
+    order.items.forEach(item => {
+        if (item.description === 'Mantenimiento Preventivo' || item.description === 'Montaje/instalación' || item.description === 'Mantenimiento Correctivo' || item.description === 'Visita Técnica' || item.description === 'Diagnóstico' || predefinedTypes.includes(item.description)) {
+            D.orderServicesTableBody.appendChild(createItemRow(item, 'order'));
+        } else {
+            D.orderMaterialsTableBody.appendChild(createItemRow(item, 'order'));
+        }
+    });
+    updateOrderSummary();
 }
 
 export async function handleSaveOrder(): Promise<boolean> {
@@ -1514,6 +1600,12 @@ export async function handleSaveOrder(): Promise<boolean> {
         D.orderDateInput.focus();
         return false;
     }
+
+    let finalOrderTypeArr = currentSelectedOrderTypes.filter(t => t !== 'Otro');
+    if (currentSelectedOrderTypes.includes('Otro') && D.orderTypeCustomInput.value.trim()) {
+        finalOrderTypeArr = finalOrderTypeArr.concat(D.orderTypeCustomInput.value.trim().split(' • ').map(s => s.trim()).filter(s => s));
+    }
+    order.order_type = finalOrderTypeArr.join(' • ') as any;
 
     if (!order.order_type) {
         showNotification("Por favor, seleccione un tipo de servicio.", "error");
@@ -1577,6 +1669,7 @@ export async function handleSaveOrder(): Promise<boolean> {
             renderOrderWorkspace(savedOrder);
             renderAgendaPage(); // Update agenda after saving
             showNotification(`Orden #${savedOrder.manualId} guardada.`, 'success');
+            closeAllModals();
             return true;
         } catch (e: any) {
             showNotification(`Error al guardar: ${e.message}`, "error");
@@ -1658,7 +1751,7 @@ export function handleOrderItemChange(e: Event) {
 export function handleOrderDifficultyChange() {
     if (!D.orderDifficultySelect || !D.orderDurationHint) return;
     const difficulty = D.orderDifficultySelect.value;
-    const isMontaje = D.orderTypeSelect.value === 'Montaje/instalación';
+    const isMontaje = currentSelectedOrderTypes.includes('Montaje/instalación');
     
     let hours = 0;
     if (difficulty === 'facil') {
@@ -1684,20 +1777,11 @@ export function handleOrderDetailsChange() {
     const order = State.getCurrentOrder();
     if (!order) return;
     
-    const prevType = order.order_type;
-    if (D.orderTypeSelect.value === 'Otro') {
-        D.orderTypeCustomInput.style.display = 'block';
-        D.orderTypeCustomInput.required = true;
-        order.order_type = D.orderTypeCustomInput.value as any;
-    } else {
-        D.orderTypeCustomInput.style.display = 'none';
-        D.orderTypeCustomInput.required = false;
-        order.order_type = D.orderTypeSelect.value as any;
+    let finalOrderTypeArr = currentSelectedOrderTypes.filter(t => t !== 'Otro');
+    if (currentSelectedOrderTypes.includes('Otro') && D.orderTypeCustomInput.value.trim()) {
+        finalOrderTypeArr = finalOrderTypeArr.concat(D.orderTypeCustomInput.value.trim().split(' • ').map(s => s.trim()).filter(s => s));
     }
-    
-    if (prevType !== order.order_type && D.orderDifficultySelect && D.orderDifficultySelect.value) {
-        handleOrderDifficultyChange();
-    }
+    order.order_type = finalOrderTypeArr.join(' • ') as any;
 
     order.status = D.orderStatusSelect.value as Order['status'];
     order.notes = D.orderNotesTextarea.value;
@@ -1797,6 +1881,103 @@ export function setupCustomTechnicianSelector() {
     });
 }
 
+// --- Custom Order Type Selector ---
+export function setupCustomOrderTypeSelector() {
+    D.orderTypeSelector.addEventListener('click', () => {
+        const isOpen = D.orderTypeSelector.classList.toggle('open');
+        D.orderTypeDropdown.classList.toggle('open', isOpen);
+        if (isOpen) {
+            renderOrderTypeDropdown();
+        }
+    });
+
+    D.orderTypeDropdown.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        const item = target.closest<HTMLElement>('.order-type-dropdown-item');
+        if (!item || !item.dataset.type) return;
+
+        const typeName = item.dataset.type;
+
+        const index = currentSelectedOrderTypes.indexOf(typeName);
+
+        if (index > -1) {
+            currentSelectedOrderTypes.splice(index, 1);
+        } else {
+            currentSelectedOrderTypes.push(typeName);
+        }
+        
+        if (currentSelectedOrderTypes.includes('Otro')) {
+            D.orderTypeCustomInput.style.display = 'block';
+        } else {
+            D.orderTypeCustomInput.style.display = 'none';
+        }
+        
+        renderOrderTypePills();
+        renderOrderTypeDropdown(); 
+        handleOrderDetailsChange(); // <-- Added synchronization
+    });
+
+    D.orderTypeCustomInput.addEventListener('input', () => {
+        handleOrderDetailsChange(); // <-- Synchronize on custom input change
+    });
+
+    document.addEventListener('click', (e) => {
+        if (!D.orderTypeSelector.contains(e.target as Node)) {
+            D.orderTypeSelector.classList.remove('open');
+            D.orderTypeDropdown.classList.remove('open');
+        }
+    });
+}
+
+export function renderOrderTypePills() {
+    D.orderTypeSelectedPills.innerHTML = '';
+    if (currentSelectedOrderTypes.length === 0) {
+        D.orderTypeSelectedPills.appendChild(D.orderTypeSelectorPlaceholder);
+        D.orderTypeSelectorPlaceholder.style.display = 'inline';
+        return;
+    }
+    
+    D.orderTypeSelectorPlaceholder.style.display = 'none';
+    currentSelectedOrderTypes.forEach(typeName => {
+        const pill = document.createElement('div');
+        pill.className = 'pill';
+        pill.innerHTML = `<span>${typeName}</span><button class="pill-remove-btn" data-type="${typeName}" title="Quitar">&times;</button>`;
+        pill.querySelector('.pill-remove-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const index = currentSelectedOrderTypes.indexOf(typeName);
+            if (index > -1) currentSelectedOrderTypes.splice(index, 1);
+            
+            if (currentSelectedOrderTypes.includes('Otro')) {
+                D.orderTypeCustomInput.style.display = 'block';
+            } else {
+                D.orderTypeCustomInput.style.display = 'none';
+            }
+            
+            renderOrderTypePills();
+            renderOrderTypeDropdown();
+            handleOrderDetailsChange();
+        });
+        D.orderTypeSelectedPills.appendChild(pill);
+    });
+}
+
+function renderOrderTypeDropdown() {
+    const serviceTypes = State.getServiceTypes().sort((a, b) => a.name.localeCompare(b.name));
+    const allOptions = [...serviceTypes.map(t => t.name), 'Otro'];
+    const options = [...new Set(allOptions)];
+    
+    D.orderTypeDropdown.innerHTML = options.map(opt => {
+        const isSelected = currentSelectedOrderTypes.includes(opt);
+        return `
+            <div class="order-type-dropdown-item technician-dropdown-item ${isSelected ? 'selected' : ''}" data-type="${opt}">
+                <div class="tech-info">
+                    <span class="tech-name">${opt}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
 function renderTechnicianPills(ids: string[]) {
     D.technicianSelectedPills.innerHTML = '';
     if (ids.length === 0) {
@@ -1880,18 +2061,28 @@ function checkTechnicianConflict(technicianId: string, orderToCheck?: Order): { 
 
 // --- Agenda/Calendar ---
 
+export const isServiceItem = (desc: string) => /mantenimiento|montaje|instalaci[oó]n|desmonte|mano de obra|servicio/i.test(desc);
+
 function getServiceTypeStyle(type: string | undefined): string {
     if (!type) return '';
     const lowerType = type.toLowerCase();
     let color = 'var(--color-text-secondary)';
+    
     if (lowerType.includes('preventivo')) {
         color = '#007bff'; // blue
-    } else if (lowerType.includes('montaje') || lowerType.includes('instalación')) {
+    } else if (lowerType.includes('montaje') || lowerType.includes('instalación') || lowerType.includes('instalacion')) {
         color = '#fd7e14'; // orange
+    } else if (lowerType.includes('correctivo')) {
+        color = '#dc3545'; // red
+    } else if (lowerType.includes('desmonte')) {
+        color = '#6f42c1'; // purple
+    } else if (lowerType.includes('mano de obra')) {
+        color = '#20c997'; // teal
     } else {
-        color = 'var(--color-accent-primary)'; // teal (default, neither red nor green)
+        color = 'var(--color-accent-primary)'; // default teal-ish
     }
-    return `color: ${color}; text-decoration: underline; font-style: italic;`;
+    
+    return `color: ${color}; font-weight: 500; font-style: normal; display: inline-block; padding: 2px 6px; border-radius: 4px; background-color: rgba(0,0,0,0.03); border: 1px solid ${color}40; line-height: 1.2;`;
 }
 
 /**
@@ -2033,17 +2224,23 @@ function renderMonthView() {
         html += `<div class="day-orders">`;
         dailyOrders.forEach(order => {
             const client = State.getClients().find(c => c.id === order.clientId);
-            const serviceTypeStyle = getServiceTypeStyle(order.order_type);
-            const serviceType = order.order_type ? `<span style="${serviceTypeStyle}">(${order.order_type.substring(0, 10)})</span>` : '';
+            let serviceNames = order.order_type ? order.order_type.split(' • ').map((s: string) => s.trim().substring(0,15)).filter((s: string) => s) : ['Servicio'];
+            if (order.items && order.items.length > 0) {
+                const sItems = order.items.filter((i: any) => isServiceItem(i.description));
+                if (sItems.length > 0) {
+                    serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description.substring(0,15))].filter(Boolean))];
+                }
+            }
+            const serviceTypeHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px; display: inline-flex;">${serviceNames.map((name: string) => `<span style="${getServiceTypeStyle(name)}">${name}</span>`).join('')}</div>`;
             const needsTech = order.technicianIds.length === 0 || (order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID);
             const techWarningIcon = needsTech ? `<i class="fas fa-user-slash" style="color: var(--color-warning); margin-right: 3px;" title="Sin técnico asignado"></i>` : '';
             
             const addressParts = [client?.address, client?.city].filter(Boolean);
             const addressString = addressParts.length > 0 ? addressParts.join(' - ') : 'Sin dirección';
-            const pillTitle = `#${order.manualId} - ${client?.name}\n${addressString}\nTipo: ${order.order_type}`;
+            const pillTitle = `#${order.manualId} - ${client?.name}\n${addressString}\nTipo: ${serviceNames.join(' • ')}`;
             const formattedTime = formatTime(order.service_time) || '';
 
-            html += `<div class="agenda-order-pill status-${order.status}" data-order-id="${order.id}" title="${pillTitle}">${techWarningIcon}${formattedTime} ${client?.name?.split(' ')[0] || ''} ${serviceType}</div>`;
+            html += `<div class="agenda-order-pill status-${order.status}" data-order-id="${order.id}" title="${pillTitle}">${techWarningIcon}${formattedTime} ${client?.name?.split(' ')[0] || ''} <span style="margin-left: 3px;">${serviceTypeHtml}</span></div>`;
         });
         html += `</div></div>`;
 
@@ -2093,17 +2290,24 @@ function renderTimelineView(days: Date[]) {
         let allDayHtml = '';
         allDayOrders.forEach(order => {
             const client = State.getClients().find(c => c.id === order.clientId);
-            const serviceTypeStyle = getServiceTypeStyle(order.order_type);
-            const serviceType = order.order_type ? `<span style="${serviceTypeStyle}">(${order.order_type.substring(0, 10)})</span>` : '';
+            let serviceNames = order.order_type ? order.order_type.split(' • ').map((s: string) => s.trim().substring(0,15)).filter((s: string) => s) : ['Servicio'];
+            if (order.items && order.items.length > 0) {
+                const sItems = order.items.filter((i: any) => isServiceItem(i.description));
+                if (sItems.length > 0) {
+                    serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description.substring(0,15))].filter(Boolean))];
+                }
+            }
+            const serviceTypeHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px; display: inline-flex;">${serviceNames.map((name: string) => `<span style="${getServiceTypeStyle(name)}">${name.substring(0, 15)}</span>`).join('')}</div>`;
+            
             const needsTech = order.technicianIds.length === 0 || (order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID);
             const techWarningIcon = needsTech ? `<i class="fas fa-user-slash" style="color: var(--color-warning); margin-right: 3px;" title="Sin técnico asignado"></i>` : '';
             
             const addressParts = [client?.address, client?.city].filter(Boolean);
             const addressString = addressParts.length > 0 ? addressParts.join(' - ') : 'Sin dirección';
-            const pillTitle = `#${order.manualId} - ${client?.name}\n${addressString}\nTipo: ${order.order_type}`;
+            const pillTitle = `#${order.manualId} - ${client?.name}\n${addressString}\nTipo: ${serviceNames.join(' • ')}`;
             const formattedTime = formatTime(order.service_time) || '';
 
-            allDayHtml += `<div class="agenda-order-pill status-${order.status}" data-order-id="${order.id}" title="${pillTitle}">${techWarningIcon}${formattedTime} ${client?.name?.split(' ')[0] || ''} ${serviceType}</div>`;
+            allDayHtml += `<div class="agenda-order-pill status-${order.status}" data-order-id="${order.id}" title="${pillTitle}">${techWarningIcon}${formattedTime} ${client?.name?.split(' ')[0] || ''} <span style="margin-left: 3px;">${serviceTypeHtml}</span></div>`;
         });
 
         headerHtml += `<div class="header-day ${isToday ? 'today' : ''}">
@@ -2171,12 +2375,21 @@ function renderTimelineView(days: Date[]) {
             const addressHtml = addressString ? `<span class="event-address">${addressString}</span>` : '';
 
 
+            let serviceNames = order.order_type ? order.order_type.split(' • ').map((s: string) => s.trim().substring(0,15)).filter((s: string) => s) : ['Servicio'];
+            if (order.items && order.items.length > 0) {
+                const sItems = order.items.filter((i: any) => isServiceItem(i.description));
+                if (sItems.length > 0) {
+                    serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description.substring(0,15))].filter(Boolean))];
+                }
+            }
+            const serviceTypeHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px;">${serviceNames.map((name: string) => `<span style="${getServiceTypeStyle(name)}">${name}</span>`).join('')}</div>`;
+            
             timedOrdersHtml += `<div class="order-event status-${order.status}" style="top: ${top}px; height: ${height}px; left: ${left}%; width: calc(${width}% - 2px);" data-order-id="${order.id}">
                 <strong class="event-title">${techWarningIcon}${client?.name || 'Cliente'}</strong>
                 ${addressHtml}
                 <span class="event-time">${formattedTime} - #${order.manualId}</span>
-                <span class="event-type" style="${getServiceTypeStyle(order.order_type)}">${order.order_type}</span>
-                <em class="event-techs">${techs.map(t => t.name?.split(' ')[0]).join(', ')}</em>
+                <span class="event-type">${serviceTypeHtml}</span>
+                <em class="event-techs">${techs.map((t: any) => t.name?.split(' ')[0]).join(', ')}</em>
             </div>`;
         });
         dayColumnsHtml += `<div class="day-column" style="min-width: ${dayColumnMinWidth}px;">${timedOrdersHtml}</div>`;
@@ -2272,6 +2485,15 @@ function renderListWeekView() {
                     pillsHtml = `<span style="font-size: 0.9rem; font-weight: 500; color: var(--color-text-light);">No asignado</span>`;
                 }
 
+                let serviceNames = [order.order_type || 'Servicio'];
+                if (order.items && order.items.length > 0) {
+                    const sItems = order.items.filter((i: any) => isServiceItem(i.description));
+                    if (sItems.length > 0) {
+                        serviceNames = [...new Set([order.order_type, ...sItems.map((i: any) => i.description)].filter(Boolean))];
+                    }
+                }
+                const serviceTypeHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px;">${serviceNames.map((name: string) => `<span style="${getServiceTypeStyle(name)}">${name}</span>`).join('')}</div>`;
+
                 html += `
                     <div class="order-item order-item-two-col" data-order-id="${order.id}" style="display: flex; justify-content: space-between; align-items: flex-start; cursor: default;">
                         <div class="order-item-main" style="display: flex; gap: 15px; flex-grow: 1;">
@@ -2280,7 +2502,7 @@ function renderListWeekView() {
                             <div class="order-details" style="flex-grow: 1;">
                                 <div class="order-client">${client?.name || 'Cliente'} (#${order.manualId})${techWarningIcon}</div>
                                 ${addressHtml}
-                                <div class="order-type-mobile" style="${getServiceTypeStyle(order.order_type)}">${order.order_type}</div>
+                                <div class="order-type-mobile">${serviceTypeHtml}</div>
                                 
                                 <div style="margin-top: 10px; max-width: 320px;">
                                     <span style="font-size: 0.75rem; color: var(--color-text-light); margin-bottom: 2px; display: block;">Técnicos Asignados</span>
@@ -2339,19 +2561,25 @@ function renderListWeekView() {
     });
 
     D.agendaContainer.querySelectorAll('.delete-order-btn').forEach(el => {
-        el.addEventListener('click', async (e) => {
+        el.addEventListener('click', (e) => {
             e.stopPropagation();
             const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
-            if (orderId && confirm('¿Está seguro de que desea eliminar esta orden?')) {
-                try {
-                    await API.deleteOrder(orderId);
-                    const orders = State.getOrders().filter(o => o.id !== orderId);
-                    State.setOrders(orders);
-                    renderAgendaPage();
-                    showNotification('Orden eliminada exitosamente', 'success');
-                } catch (error: any) {
-                    showNotification(`Error al eliminar: ${error.message}`, 'error');
-                }
+            if (orderId) {
+                showConfirmationModal(
+                    'Eliminar Orden',
+                    '¿Está seguro de que desea eliminar esta orden?',
+                    async () => {
+                        try {
+                            await API.deleteOrder(orderId);
+                            const orders = State.getOrders().filter(o => o.id !== orderId);
+                            State.setOrders(orders);
+                            renderAgendaPage();
+                            showNotification('Orden eliminada exitosamente', 'success');
+                        } catch (error: any) {
+                            showNotification(`Error al eliminar: ${error.message}`, 'error');
+                        }
+                    }
+                );
             }
         });
     });
@@ -2728,7 +2956,7 @@ export function setupOrderAnnexUpload() {
   uploadInput.addEventListener("change", async (e) => {
     const files = (e.target as HTMLInputElement).files;
     if (!files || files.length === 0) return;
-    const activeOrder = State.getActiveOrder();
+    const activeOrder = State.getCurrentOrder();
     if (!activeOrder) return;
     if (!activeOrder.image_urls) activeOrder.image_urls = [];
 
@@ -2749,7 +2977,7 @@ export function setupOrderAnnexUpload() {
             console.error("Error compressing image:", err);
         }
     }
-    State.updateActiveOrder(activeOrder);
+    State.setCurrentOrder(activeOrder);
     renderOrderAnnexPreviews(activeOrder);
     uploadInput.value = "";
   });
@@ -2781,10 +3009,10 @@ export function renderOrderAnnexPreviews(order: Order | null) {
         el.innerHTML = `${imgHtml}<button class="remove-photo-btn" data-index="${index}"><i class="fas fa-times"></i></button>`;
         el.querySelector(".remove-photo-btn")?.addEventListener("click", (e) => {
             e.preventDefault();
-            const activeOrder = State.getActiveOrder();
+            const activeOrder = State.getCurrentOrder();
             if (!activeOrder || !activeOrder.image_urls) return;
             activeOrder.image_urls.splice(index, 1);
-            State.updateActiveOrder(activeOrder);
+            State.setCurrentOrder(activeOrder);
             renderOrderAnnexPreviews(activeOrder);
             handleOrderDetailsChange(); // Trigger unsaved changes
         });
