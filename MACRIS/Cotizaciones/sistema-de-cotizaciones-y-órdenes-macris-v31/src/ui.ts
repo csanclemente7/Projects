@@ -799,9 +799,9 @@ export function renderSavedQuotesPageList() {
 
 // --- Inter-DOM Drag & Drop Variables ---
 let draggedRow: HTMLTableRowElement | null = null;
-let reorderingContext: 'quote' | 'order' | null = null;
+let reorderingContext: 'quote' | 'order' | 'order-service' | null = null;
 
-function setupDragAndDropEvents(tr: HTMLTableRowElement, context: 'quote' | 'order') {
+function setupDragAndDropEvents(tr: HTMLTableRowElement, context: 'quote' | 'order' | 'order-service') {
     tr.addEventListener('dragstart', (e) => {
         // Ignorar el arrastre si se seleccionó un área de texto o input
         if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
@@ -823,7 +823,7 @@ function setupDragAndDropEvents(tr: HTMLTableRowElement, context: 'quote' | 'ord
         tr.classList.remove('is-dragging');
         
         // Al terminar de arrastrar debemos sincronizar el nuevo orden contra el State
-        syncItemsOrderFromDOM(context);
+        syncItemsOrderFromDOM(context === 'order-service' ? 'order' : context);
     });
 
     tr.addEventListener('dragover', (e) => {
@@ -875,7 +875,7 @@ function syncItemsOrderFromDOM(context: 'quote' | 'order') {
 }
 
 // --- UI Helpers ---
-function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' = 'quote'): HTMLTableRowElement {
+function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' | 'order-service' = 'quote'): HTMLTableRowElement {
     const tr = document.createElement('tr');
     tr.dataset.itemId = item.id;
     // Se habilita el attribute para Web Drag&Drop
@@ -900,10 +900,14 @@ function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' =
         let progressColor = "var(--color-text-secondary)";
         if (completed > 0 && completed < total) progressColor = "#e67e22";
         else if (completed >= total && total > 0) progressColor = "var(--color-primary)";
+        let avanceHtml = '';
+        if (context === 'order') {
+            avanceHtml = `<div style="font-size: 0.75rem; color: ${progressColor}; margin-top: 4px; font-weight: 500;">Avance: ${completed} / ${total}</div>`;
+        }
         qtyColumn = `<td class="col-qty" data-label="Cant.">
             <input type="number" class="item-qty" value="${total}" min="0">
             <div class="item-value-mobile-view" data-field="quantity"><span class="mobile-view-text">${total}</span><i class="fas fa-pencil-alt edit-indicator"></i></div>
-            <div style="font-size: 0.75rem; color: ${progressColor}; margin-top: 4px; font-weight: 500;">Avance: ${completed} / ${total}</div>
+            ${avanceHtml}
         </td>`;
     }
 
@@ -1496,7 +1500,7 @@ export function renderOrderWorkspace(order: Order | null) {
 
     order.items.forEach(item => {
         if (isServiceItem(item.description)) {
-            D.orderServicesTableBody.appendChild(createItemRow(item, 'order'));
+            D.orderServicesTableBody.appendChild(createItemRow(item, 'order-service'));
         } else {
             D.orderMaterialsTableBody.appendChild(createItemRow(item, 'order'));
         }
@@ -1578,7 +1582,7 @@ export function syncOrderServicesFromTypes() {
     D.orderMaterialsTableBody.innerHTML = '';
     order.items.forEach(item => {
         if (item.description === 'Mantenimiento Preventivo' || item.description === 'Montaje/instalación' || item.description === 'Mantenimiento Correctivo' || item.description === 'Visita Técnica' || item.description === 'Diagnóstico' || predefinedTypes.includes(item.description)) {
-            D.orderServicesTableBody.appendChild(createItemRow(item, 'order'));
+            D.orderServicesTableBody.appendChild(createItemRow(item, 'order-service'));
         } else {
             D.orderMaterialsTableBody.appendChild(createItemRow(item, 'order'));
         }

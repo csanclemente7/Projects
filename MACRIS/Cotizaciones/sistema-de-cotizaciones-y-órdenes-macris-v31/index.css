@@ -690,30 +690,34 @@ body.dark-theme .status-badge.cancelled {
     background-color: rgba(0, 168, 197, 0.1);
 }
 
-#quote-items-table .col-desc,
-#order-items-table, #order-services-table, #order-materials-table .col-desc {
+#quote-items-table .col-desc {
     width: 45%;
 }
 
-#quote-items-table .col-qty,
-#order-items-table, #order-services-table, #order-materials-table .col-qty {
+#quote-items-table .col-qty {
     width: 10%;
 }
 
-#quote-items-table .col-price,
-#order-items-table, #order-services-table, #order-materials-table .col-price {
+#quote-items-table .col-price {
     width: 20%;
 }
 
-#quote-items-table .col-total,
-#order-items-table, #order-services-table, #order-materials-table .col-total {
+#quote-items-table .col-total {
     width: 20%;
 }
 
 #quote-items-table .col-actions,
-#order-items-table, #order-services-table, #order-materials-table .col-actions {
+#order-items-table .col-actions, 
+#order-services-table .col-actions, 
+#order-materials-table .col-actions {
     width: 5%;
     text-align: right;
+}
+
+#order-items-table .col-qty,
+#order-services-table .col-qty,
+#order-materials-table .col-qty {
+    width: 15%;
 }
 
 #quote-items-table tbody tr:last-child td,
