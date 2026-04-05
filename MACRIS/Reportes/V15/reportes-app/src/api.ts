@@ -134,7 +134,13 @@ export async function fetchAppSettings(): Promise<AppSettings> {
     const settings: AppSettings = {};
     if (data) {
         (data as any[]).forEach(setting => {
-            settings[setting.key] = setting.value;
+            let parsedValue = setting.value;
+            // Si la base de datos devuelve strings 'true' o 'false', los convertimos a booleanos reales
+            // para no romper la lógica de la app existente que espera booleanos.
+            if (parsedValue === 'true' || parsedValue === 'TRUE') parsedValue = true;
+            if (parsedValue === 'false' || parsedValue === 'FALSE') parsedValue = false;
+            
+            settings[setting.key] = parsedValue;
         });
     }
     return settings;

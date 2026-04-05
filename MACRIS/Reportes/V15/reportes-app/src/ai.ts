@@ -5,8 +5,15 @@ import * as State from './state';
 import * as D from './dom';
 import { API_KEY } from './config';
 
-// Initialize the Google Gemini AI client for development.
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+// Get AI Client instance lazily to allow dynamic key loading from DB
+function getAiClient() {
+    // If settings aren't loaded yet, State.appSettings might be undefined.
+    const activeKey = (State.appSettings && State.appSettings.gemini_api_key) || API_KEY;
+    if (!activeKey) {
+        throw new Error("Clave de API de Gemini no configurada. Añádela en la tabla app_settings de Supabase bajo la clave 'gemini_api_key'.");
+    }
+    return new GoogleGenAI({ apiKey: activeKey });
+}
 
 
 // Define the expected JSON response schema from the AI for plate scanning.
@@ -82,6 +89,7 @@ Sigue estas REGLAS ESTRICTAMENTE:
     };
 
     try {
+        const ai = getAiClient();
         const response: GenerateContentResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: { parts: [imagePart, textPart] },
@@ -214,6 +222,7 @@ export async function runAiReconciliation() {
             Devuelve tu respuesta como un array de objetos JSON, siguiendo el esquema proporcionado. No incluyas texto adicional, solo el JSON.
         `;
 
+        const ai = getAiClient();
         const response: GenerateContentResponse = await ai.models.generateContent({
             model: 'gemini-2.5-flash',
             contents: prompt,

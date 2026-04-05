@@ -2697,7 +2697,13 @@ export function openAgendaTechDropdown(orderId: string, triggerEl: HTMLElement, 
         agendaTechDropdown = document.getElementById('agenda-tech-dropdown') as HTMLDivElement;
     }
 
-    const visibleTechnicians = State.getTechnicians().filter(t => t.is_active && t.role !== 'admin');
+    const visibleTechnicians = State.getTechnicians()
+        .filter(t => t.is_active && t.role !== 'admin' && !t.name.toLowerCase().includes('admin(dev)'))
+        .sort((a, b) => {
+            if (a.id === NO_ASIGNADO_TECHNICIAN_ID) return -1;
+            if (b.id === NO_ASIGNADO_TECHNICIAN_ID) return 1;
+            return a.name.localeCompare(b.name);
+        });
 
     agendaTechDropdown.innerHTML = visibleTechnicians.map(tech => {
         const isSelected = order.technicianIds.includes(tech.id);
@@ -2739,18 +2745,40 @@ export function openAgendaTechDropdown(orderId: string, triggerEl: HTMLElement, 
             if (newIds.length === 0) newIds = [NO_ASIGNADO_TECHNICIAN_ID];
             order.technicianIds = newIds;
             
-            // Re-render UI locally for instant feedback
-            openAgendaTechDropdown(orderId, triggerEl, true);
+            const shouldClose = techId === NO_ASIGNADO_TECHNICIAN_ID || newIds.filter(id => id !== NO_ASIGNADO_TECHNICIAN_ID).length >= 2;
             
-            // Auto-save logic
-            const savedOrder = await API.saveOrder(order);
-            const orders = [...State.getOrders()];
-            const idx = orders.findIndex(o => o.id === savedOrder.id);
-            if (idx !== -1) orders[idx] = savedOrder;
-            State.setOrders(orders);
+            if (shouldClose) {
+                dropdown.style.display = 'none';
+                const activeDoc = document as any;
+                if (activeDoc._agendaClickHandler) {
+                    document.removeEventListener('click', activeDoc._agendaClickHandler);
+                    window.removeEventListener('scroll', activeDoc._agendaClickHandler, true);
+                    activeDoc._agendaClickHandler = null;
+                }
+            } else {
+                // Re-render UI locally for instant feedback
+                openAgendaTechDropdown(orderId, triggerEl, true);
+            }
             
-            // Re-render the list week view after state update
-            renderListWeekView();
+            // Use processing indicator
+            const freshTriggerEl = (document.querySelector('.agenda-tech-trigger[data-order-id="' + orderId + '"]') as HTMLElement) || triggerEl;
+            const originalHtml = freshTriggerEl.innerHTML;
+            freshTriggerEl.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 5px; color: var(--color-primary);"></i> Procesando...';
+            
+            try {
+                // Auto-save logic
+                const savedOrder = await API.saveOrder(order);
+                const orders = [...State.getOrders()];
+                const idx = orders.findIndex(o => o.id === savedOrder.id);
+                if (idx !== -1) orders[idx] = savedOrder;
+                State.setOrders(orders);
+                
+                // Re-render the list week view after state update
+                renderListWeekView();
+            } catch (e) {
+                console.error(e);
+                freshTriggerEl.innerHTML = originalHtml;
+            }
         });
     });
 
@@ -2762,20 +2790,26 @@ export function openAgendaTechDropdown(orderId: string, triggerEl: HTMLElement, 
     
     // Auto-close logic
     const activeDoc = document as any;
-    const closeDropdown = (e: MouseEvent) => {
-        if (!dropdown.contains(e.target as Node) && !triggerEl.contains(e.target as Node)) {
-            dropdown.style.display = 'none';
-            document.removeEventListener('click', closeDropdown);
-            activeDoc._agendaClickHandler = null;
-        }
+    const closeDropdown = (e: Event) => {
+        if (e.type === 'scroll' && dropdown.contains(e.target as Node)) return;
+        if (e.type === 'click' && (dropdown.contains(e.target as Node) || triggerEl.contains(e.target as Node))) return;
+        
+        dropdown.style.display = 'none';
+        document.removeEventListener('click', closeDropdown);
+        window.removeEventListener('scroll', closeDropdown, true);
+        activeDoc._agendaClickHandler = null;
     };
     
     // Remove past listeners and add new one
-    activeDoc._agendaClickHandler && document.removeEventListener('click', activeDoc._agendaClickHandler);
+    if (activeDoc._agendaClickHandler) {
+        document.removeEventListener('click', activeDoc._agendaClickHandler);
+        window.removeEventListener('scroll', activeDoc._agendaClickHandler, true);
+    }
     activeDoc._agendaClickHandler = closeDropdown;
     
     setTimeout(() => {
         document.addEventListener('click', closeDropdown);
+        window.addEventListener('scroll', closeDropdown, true);
     }, 10);
 }
 
