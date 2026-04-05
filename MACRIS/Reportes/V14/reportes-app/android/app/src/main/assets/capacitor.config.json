@@ -1,0 +1,14 @@
+{
+	"appId": "com.macrisingenieria.reportes",
+	"appName": "Reportes Macris",
+	"webDir": "dist",
+	"bundledWebRuntime": false,
+	"plugins": {
+		"BackgroundRunner": {
+			"channelId": "background_runner_default",
+			"channelName": "Background Sync",
+			"icon": "ic_launcher",
+			"enableHeadless": true
+		}
+	}
+}

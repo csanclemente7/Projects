@@ -2559,12 +2559,23 @@ function createOrderCardHTML(order: Order): string {
         `;
     }
 
+    let serviceNamesString = order.order_type || 'Servicio General';
+    const isServiceItem = (desc: string) => /mano de obra|montaje|instalaci[oó]n|desmonte|mantenimiento/i.test(desc);
+    
+    if (order.items && order.items.length > 0) {
+        const sItems = order.items.filter(i => isServiceItem(i.description));
+        if (sItems.length > 0) {
+            // Eliminar duplicados y unir con un separador
+            serviceNamesString = [...new Set(sItems.map(i => i.description))].join(' • ');
+        }
+    }
+
     return `
         <details class="accordion-card" data-order-id="${order.id}">
             <summary class="order-card-summary">
                 <div class="summary-top">
                     <div class="summary-type">
-                        <span class="service-type"><i class="fas fa-tools"></i> ${order.order_type || 'Servicio General'}</span>
+                        <span class="service-type"><i class="fas fa-tools"></i> ${serviceNamesString}</span>
                     </div>
                     <span class="order-status ${statusInfo.class}">${statusInfo.text}</span>
                 </div>
@@ -2802,9 +2813,15 @@ export function openOrderDetailsModal(orderId: string) {
             D.orderImagesContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 0.9em;">Sin fotos adjuntas.</span>';
         }
     }
-    if (D.orderItemsTableBody) {
-        if (order.items && order.items.length > 0) {
-            D.orderItemsTableBody.innerHTML = order.items.map((item, index) => {
+    const isServiceItem = (desc: string) => /mano de obra|montaje|instalaci[oó]n|desmonte|mantenimiento/i.test(desc);
+
+    const services = order.items?.filter(i => isServiceItem(i.description)) || [];
+    const materials = order.items?.filter(i => !isServiceItem(i.description)) || [];
+
+    if (D.orderServicesTableBody && D.orderServicesEmpty) {
+        if (services.length > 0) {
+            D.orderServicesEmpty.style.display = 'none';
+            D.orderServicesTableBody.innerHTML = services.map((item, index) => {
                 const completed = item.completed_quantity || 0;
                 const isComplete = completed >= item.quantity;
                 const isWorker = State.currentUser?.role === 'worker';
@@ -2812,14 +2829,14 @@ export function openOrderDetailsModal(orderId: string) {
 
                 let actionHtml = '';
                 if (canReport) {
-                    actionHtml = `<button type="button" class="btn btn-sm btn-action report-item-btn" data-order-id="${order.id}" data-item-id="${item.id}" style="background-color: var(--primary-color); color: white;"><i class="fas fa-plus"></i> Reportar (+1)</button>`;
+                    actionHtml = `<button type="button" class="btn btn-sm btn-action report-item-btn" data-order-id="${order.id}" data-item-id="${item.id}" style="background-color: var(--primary-color); color: white;"><i class="fas fa-plus"></i> Reportar</button>`;
                 } else if (isComplete) {
                     actionHtml = `<span class="status-completed" style="font-size: 0.8rem; padding: 2px 6px;">Completado</span>`;
                 }
 
                 return `
-                <tr data-label="Item #${index + 1}">
-                    <td data-label="Item"><strong>#${index + 1}</strong></td>
+                <tr data-label="Servicio #${index + 1}">
+                    <td data-label="Servicio"><strong>#${index + 1}</strong></td>
                     <td data-label="Descripción">${item.description}</td>
                     <td data-label="Progreso">
                         <div style="font-size: 0.9rem; font-weight: bold; color: ${isComplete ? 'var(--success-color)' : 'var(--warning-color)'}">${completed} / ${item.quantity}</div>
@@ -2829,7 +2846,24 @@ export function openOrderDetailsModal(orderId: string) {
                 </tr>
             `}).join('');
         } else {
-            D.orderItemsTableBody.innerHTML = '<tr><td colspan="4">No hay items en esta orden.</td></tr>';
+            D.orderServicesTableBody.innerHTML = '';
+            D.orderServicesEmpty.style.display = 'block';
+        }
+    }
+
+    if (D.orderMaterialsTableBody && D.orderMaterialsEmpty) {
+        if (materials.length > 0) {
+            D.orderMaterialsEmpty.style.display = 'none';
+            D.orderMaterialsTableBody.innerHTML = materials.map((item, index) => `
+                <tr data-label="Material #${index + 1}">
+                    <td data-label="Material"><strong>#${index + 1}</strong></td>
+                    <td data-label="Descripción">${item.description}</td>
+                    <td data-label="Cantidad">${item.quantity}</td>
+                </tr>
+            `).join('');
+        } else {
+            D.orderMaterialsTableBody.innerHTML = '';
+            D.orderMaterialsEmpty.style.display = 'block';
         }
     }
 
@@ -2843,7 +2877,16 @@ export function openOrderDetailsModal(orderId: string) {
 
     if (D.startReportFromOrderButton) {
         D.startReportFromOrderButton.dataset.orderId = order.id;
-        const canStartReport = (State.currentUser?.role === 'admin' || order.assignedTechnicians?.some(t => t.id === State.currentUser?.id)) && (order.status !== 'completed' && order.status !== 'cancelada');
+        let canStartReport = (State.currentUser?.role === 'admin' || order.assignedTechnicians?.some(t => t.id === State.currentUser?.id)) && (order.status !== 'completed' && order.status !== 'cancelada');
+        
+        // Hide generic report button if there are specific service items (to force them to use the item-specific buttons)
+        const isServiceItem = (desc: string) => /mano de obra|montaje|instalaci[oó]n|desmonte|mantenimiento/i.test(desc);
+        const hasServiceItems = order.items && order.items.some(i => isServiceItem(i.description));
+        
+        if (hasServiceItems) {
+            canStartReport = false;
+        }
+
         D.startReportFromOrderButton.style.display = canStartReport ? 'inline-flex' : 'none';
     }
 

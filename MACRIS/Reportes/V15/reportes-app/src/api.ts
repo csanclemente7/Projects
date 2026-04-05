@@ -481,9 +481,9 @@ const enrichOrders = async (baseOrders: OrderWithItems[], allUsers: User[]): Pro
         const mappedOrder: Order = {
             id: dbOrder.id,
             created_at: dbOrder.created_at ?? undefined,
-            manualId: dbOrder.manual_id || dbOrder.manualId,
-            quoteId: dbOrder.quote_id || dbOrder.quoteId,
-            clientId: dbOrder.client_id || dbOrder.clientId,
+            manualId: (dbOrder as any).manual_id || dbOrder.manualId,
+            quoteId: (dbOrder as any).quote_id || dbOrder.quoteId,
+            clientId: (dbOrder as any).client_id || dbOrder.clientId,
             status: dbOrder.status,
             service_date: dbOrder.service_date,
             service_time: dbOrder.service_time,
@@ -991,12 +991,15 @@ export async function updateUserPoints(userId: string, newTotalPoints: number) {
 export async function incrementOrderItemCompletedQuantity(orderItemId: string) {
     const { data: itemData, error: fetchError } = await supabaseOrders
         .from('order_items')
-        .select('completed_quantity, quantity, order_id')
+        .select('completed_quantity, quantity, orderId')
         .eq('id', orderItemId)
         .single();
     if (fetchError) throw fetchError;
     
-    const newQuantity = (itemData.completed_quantity || 0) + 1;
+    // cast to any to avoid typescript inferring an error from the query format when it has no valid inference
+    const typedItemData = itemData as any;
+
+    const newQuantity = (typedItemData.completed_quantity || 0) + 1;
     const { error: updateError } = await supabaseOrders
         .from('order_items')
         .update({ completed_quantity: newQuantity })
@@ -1004,18 +1007,31 @@ export async function incrementOrderItemCompletedQuantity(orderItemId: string) {
         
     if (updateError) throw updateError;
     
-    return { newQuantity, maxQuantity: itemData.quantity, orderId: itemData.order_id };
+    return { newQuantity, maxQuantity: typedItemData.quantity, orderId: typedItemData.orderId };
 }
 
 export async function checkAndCompleteOrderIfFinished(orderId: string) {
     const { data: items, error: fetchError } = await supabaseOrders
         .from('order_items')
-        .select('completed_quantity, quantity')
-        .eq('order_id', orderId);
+        .select('completed_quantity, quantity, description')
+        .eq('orderId', orderId); // using mapped column name
         
     if (fetchError) throw fetchError;
     
-    const isCompleted = (items || []).every((item: any) => (item.completed_quantity || 0) >= item.quantity);
+    const isServiceItem = (desc: string) => /mano de obra|montaje|instalaci[oó]n|desmonte|mantenimiento/i.test(desc);
+    const serviceItems = (items || []).filter((item: any) => isServiceItem(item.description));
+    
+    // If no service items or all service items are complete, mark as complete.
+    // If there were no service items at front, it could technically complete right away, 
+    // but in practice orders always have at least 1 service item.
+    let isCompleted = false;
+    if (serviceItems.length > 0) {
+        isCompleted = serviceItems.every((item: any) => (item.completed_quantity || 0) >= item.quantity);
+    } else {
+        // Fallback for older orders without recognizable keyword: check all items
+        isCompleted = (items || []).every((item: any) => (item.completed_quantity || 0) >= item.quantity);
+    }
+
     if (isCompleted) {
         await updateOrderStatus(orderId, 'completed');
     }

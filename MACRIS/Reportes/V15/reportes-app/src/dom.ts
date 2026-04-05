@@ -248,7 +248,10 @@ export const orderServiceDate = document.getElementById('order-service-date') as
 export const orderType = document.getElementById('order-type') as HTMLSpanElement;
 export const orderNotes = document.getElementById('order-notes') as HTMLSpanElement;
 export const orderImagesContainer = document.getElementById('order-images-container') as HTMLDivElement;
-export const orderItemsTableBody = document.getElementById('order-items-table')?.getElementsByTagName('tbody')[0] as HTMLTableSectionElement;
+export const orderServicesTableBody = document.getElementById('order-services-table')?.getElementsByTagName('tbody')[0] as HTMLTableSectionElement;
+export const orderMaterialsTableBody = document.getElementById('order-materials-table')?.getElementsByTagName('tbody')[0] as HTMLTableSectionElement;
+export const orderServicesEmpty = document.getElementById('order-services-empty') as HTMLDivElement;
+export const orderMaterialsEmpty = document.getElementById('order-materials-empty') as HTMLDivElement;
 export const orderAssignedTechniciansList = document.getElementById('order-assigned-technicians-list') as HTMLDivElement;
 export const startReportFromOrderButton = document.getElementById('start-report-from-order-button') as HTMLButtonElement;
 

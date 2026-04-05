@@ -841,8 +841,16 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
                         UI.showAppNotification('La orden ha sido completada en su totalidad.', 'success', 6000);
                     }
                 } else {
-                    await updateOrderStatus(orderIdValue, 'completed');
-                    State.updateOrderInState(orderIdValue, { status: 'completed' });
+                    // Fail-safe: Si se grabó un reporte general sin ID de item, no completar la orden 
+                    // si tiene items de tipo 'servicio'. Esto evita cerrar la orden accidentalmente.
+                    const assignedOrder = State.assignedOrders.find(o => o.id === orderIdValue) || State.allServiceOrders.find(o => o.id === orderIdValue);
+                    const isServiceItem = (desc: string) => /mano de obra|montaje|instalaci[oó]n|desmonte|mantenimiento/i.test(desc);
+                    const hasServiceItems = assignedOrder?.items && assignedOrder.items.some(i => isServiceItem(i.description));
+                    
+                    if (!hasServiceItems) {
+                        await updateOrderStatus(orderIdValue, 'completed');
+                        State.updateOrderInState(orderIdValue, { status: 'completed' });
+                    }
                 }
 
                 if (State.currentUser.role === 'worker') UI.renderAssignedOrdersList();
@@ -1403,10 +1411,21 @@ if (!networkListenerActive) {
                     }
                 }
 
+                let sTypeToPass: string | undefined = order.order_type || undefined;
+                const item = order.items?.find(i => i.id === itemId);
+                if (item) {
+                    const exactMatch = State.serviceTypes.find(st => st.name.trim().toLowerCase() === item.description.trim().toLowerCase());
+                    if (exactMatch) {
+                        sTypeToPass = exactMatch.name;
+                    } else {
+                        sTypeToPass = "Otro: " + item.description;
+                    }
+                }
+
                 await UI.openReportFormModal({ 
                     category: determinedCategory,
                     isFromOrder: true,
-                    serviceType: order.order_type || undefined,
+                    serviceType: sTypeToPass,
                     order: order,
                     orderItemId: itemId
                 });

@@ -1073,19 +1073,35 @@
         <!-- Technicians will be listed here -->
       </div>
 
-      <h4><i class="fas fa-tools"></i> Items y Materiales</h4>
-      <div class="table-container">
-        <table id="order-items-table">
+      <h4><i class="fas fa-clipboard-check"></i> Servicios a Realizar</h4>
+      <div class="table-container" style="margin-bottom: 20px;">
+        <table id="order-services-table">
           <thead>
             <tr>
-              <th>Item</th>
+              <th>Servicio</th>
               <th>Descripción</th>
-              <th style="min-width: 100px;">Progreso / Cantidad</th>
+              <th style="min-width: 100px;">Progreso</th>
               <th>Acción</th>
             </tr>
           </thead>
           <tbody></tbody>
         </table>
+        <div id="order-services-empty" style="display: none; padding: 10px; text-align: center; color: var(--color-text-muted);">No hay servicios definidos.</div>
+      </div>
+
+      <h4><i class="fas fa-box-open"></i> Insumos y Materiales Autorizados</h4>
+      <div class="table-container">
+        <table id="order-materials-table">
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th>Descripción</th>
+              <th style="min-width: 100px;">Cantidad</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div id="order-materials-empty" style="display: none; padding: 10px; text-align: center; color: var(--color-text-muted);">No hay materiales requeridos.</div>
       </div>
 
       <div class="modal-actions">
