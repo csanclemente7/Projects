@@ -1437,6 +1437,9 @@ export async function navigateToOrderWorkspace(orderId: string | null, fromQuote
     State.setCurrentOrder(order);
     renderOrderWorkspace(order);
     navigateTo('page-order-workspace');
+    if (D.orderWorkspacePage) {
+        D.orderWorkspacePage.scrollTop = 0;
+    }
 }
 
 export function renderOrderWorkspace(order: Order | null) {
@@ -1498,8 +1501,9 @@ export function renderOrderWorkspace(order: Order | null) {
     
 
 
+    const currentTypes = order.order_type ? order.order_type.split(' • ').map(s => s.trim()) : [];
     order.items.forEach(item => {
-        if (isServiceItem(item.description)) {
+        if (isServiceItem(item.description) || currentTypes.includes(item.description)) {
             D.orderServicesTableBody.appendChild(createItemRow(item, 'order-service'));
         } else {
             D.orderMaterialsTableBody.appendChild(createItemRow(item, 'order'));
@@ -1515,12 +1519,12 @@ export function handleRemoveItemFromOrder(itemId: string) {
     renderOrderWorkspace(order);
 }
 
-export function syncOrderServicesFromTypes() {
+export function syncOrderServicesFromTypes(syncOtro: boolean = true) {
     const order = State.getCurrentOrder();
     if (!order) return;
 
     let finalOrderTypeArr = currentSelectedOrderTypes.filter(t => t !== 'Otro');
-    if (currentSelectedOrderTypes.includes('Otro') && D.orderTypeCustomInput.value.trim()) {
+    if (syncOtro && currentSelectedOrderTypes.includes('Otro') && D.orderTypeCustomInput.value.trim()) {
         finalOrderTypeArr = finalOrderTypeArr.concat(D.orderTypeCustomInput.value.trim().split(' • ').map(s => s.trim()).filter(s => s));
     }
     
@@ -1581,7 +1585,7 @@ export function syncOrderServicesFromTypes() {
     D.orderServicesTableBody.innerHTML = '';
     D.orderMaterialsTableBody.innerHTML = '';
     order.items.forEach(item => {
-        if (item.description === 'Mantenimiento Preventivo' || item.description === 'Montaje/instalación' || item.description === 'Mantenimiento Correctivo' || item.description === 'Visita Técnica' || item.description === 'Diagnóstico' || predefinedTypes.includes(item.description)) {
+        if (isServiceItem(item.description) || predefinedTypes.includes(item.description) || finalOrderTypeArr.includes(item.description)) {
             D.orderServicesTableBody.appendChild(createItemRow(item, 'order-service'));
         } else {
             D.orderMaterialsTableBody.appendChild(createItemRow(item, 'order'));
@@ -1674,6 +1678,7 @@ export async function handleSaveOrder(): Promise<boolean> {
             renderAgendaPage(); // Update agenda after saving
             showNotification(`Orden #${savedOrder.manualId} guardada.`, 'success');
             closeAllModals();
+            D.backToOrdersListBtn?.click();
             return true;
         } catch (e: any) {
             showNotification(`Error al guardar: ${e.message}`, "error");
@@ -1919,6 +1924,7 @@ export function setupCustomOrderTypeSelector() {
         renderOrderTypePills();
         renderOrderTypeDropdown(); 
         handleOrderDetailsChange(); // <-- Added synchronization
+        syncOrderServicesFromTypes(false);
     });
 
     D.orderTypeCustomInput.addEventListener('input', () => {
@@ -1960,6 +1966,7 @@ export function renderOrderTypePills() {
             renderOrderTypePills();
             renderOrderTypeDropdown();
             handleOrderDetailsChange();
+            syncOrderServicesFromTypes(false);
         });
         D.orderTypeSelectedPills.appendChild(pill);
     });
@@ -2489,11 +2496,11 @@ function renderListWeekView() {
                     pillsHtml = `<span style="font-size: 0.9rem; font-weight: 500; color: var(--color-text-light);">No asignado</span>`;
                 }
 
-                let serviceNames = [order.order_type || 'Servicio'];
+                let serviceNames = order.order_type ? order.order_type.split(' • ').map(s => s.trim()).filter(Boolean) : ['Servicio'];
                 if (order.items && order.items.length > 0) {
                     const sItems = order.items.filter((i: any) => isServiceItem(i.description));
                     if (sItems.length > 0) {
-                        serviceNames = [...new Set([order.order_type, ...sItems.map((i: any) => i.description)].filter(Boolean))];
+                        serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description)].filter(Boolean))];
                     }
                 }
                 const serviceTypeHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px;">${serviceNames.map((name: string) => `<span style="${getServiceTypeStyle(name)}">${name}</span>`).join('')}</div>`;
