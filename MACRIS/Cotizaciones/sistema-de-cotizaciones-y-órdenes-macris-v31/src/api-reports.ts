@@ -79,6 +79,19 @@ export async function updateReportPaymentStatus(id: string, isPaid: boolean) {
     return true;
 }
 
+export async function deleteReport(id: string): Promise<boolean> {
+    const { error } = await supabaseOrders
+        .from('maintenance_reports')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error deleting report:', error);
+        return false;
+    }
+    return true;
+}
+
 export async function fetchCities(): Promise<City[]> {
     const { data, error } = await supabaseOrders.from('maintenance_cities').select('*');
     if (error) return [];

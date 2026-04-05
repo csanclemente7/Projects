@@ -1,9 +1,10 @@
 import * as DOM from './dom';
-import { fetchReportsBatch, fetchAllExportableReports, fetchCities, fetchCompanies, fetchDependencies, SUPABASE_REPORT_BATCH, updateReportPaymentStatus } from './api-reports';
+import { fetchReportsBatch, fetchAllExportableReports, fetchCities, fetchCompanies, fetchDependencies, SUPABASE_REPORT_BATCH, updateReportPaymentStatus, deleteReport } from './api-reports';
 import { generateZipExport, generateExcelExport, generateMergedPdfExport, getMergedPdfBlob } from './exporter';
 import { generateReportPDF } from './pdf-reports';
 import type { Report, City, Company, Dependency } from './reports-types';
 import { supabaseOrders } from './supabase';
+import * as UI from './ui';
 
 let currentReports: Report[] = [];
 let selectedReportIds: Set<string> = new Set();
@@ -168,6 +169,31 @@ function setupEventListeners() {
                 }
             }
         }
+
+        const btnDelete = target.closest('.btn-delete-report') as HTMLButtonElement;
+        if (btnDelete) {
+            const reportId = btnDelete.getAttribute('data-id');
+            if (reportId) {
+                UI.showConfirmationModal('Eliminar Reporte', '¿Estás seguro de que deseas eliminar este reporte? Esta acción no se puede deshacer.', async () => {
+                    try {
+                        btnDelete.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                        btnDelete.disabled = true;
+                        
+                        const success = await deleteReport(reportId);
+                        if (success) {
+                            await resetAndLoadReports();
+                        } else {
+                            throw new Error("API returned false");
+                        }
+                    } catch (error) {
+                        console.error("Error al eliminar el reporte:", error);
+                        alert("No se pudo eliminar el reporte. Inténtalo nuevamente.");
+                        btnDelete.innerHTML = '<i class="fas fa-trash-alt"></i>';
+                        btnDelete.disabled = false;
+                    }
+                });
+            }
+        }
     });
 
     // Exporter Buttons
@@ -213,7 +239,11 @@ async function handleExport(type: string) {
             ? "No has seleccionado reportes. ¿Deseas incluir TODOS los reportes filtrados (incluso los no mostrados)?" 
             : "No has seleccionado reportes. ¿Deseas procesar TODOS los reportes históricos?";
         
-        if (confirm(confirmMsg)) {
+        const confirmed = await new Promise(resolve => {
+            UI.showConfirmationModal('Selección de Reportes', confirmMsg, () => resolve(true), () => resolve(false));
+        });
+
+        if (confirmed) {
             DOM.reportsExportExcelBtn.disabled = true;
             DOM.reportsExportZipBtn.disabled = true;
             DOM.reportsExportMergedBtn.disabled = true;
@@ -417,6 +447,9 @@ function renderReportRows(reports: Report[]) {
                 </button>
                 <button class="btn btn-outline btn-download-pdf" data-id="${r.id}" title="Ver PDF Local" style="padding: 0.25rem 0.5rem; font-size: 0.85rem;">
                     <i class="fas fa-file-pdf" style="color: #d9534f;"></i>
+                </button>
+                <button class="btn btn-outline btn-delete-report" data-id="${r.id}" title="Eliminar Reporte" style="padding: 0.25rem 0.5rem; font-size: 0.85rem; border-color: #d9534f; color: #d9534f;">
+                    <i class="fas fa-trash-alt"></i>
                 </button>
             </td>
         `;
