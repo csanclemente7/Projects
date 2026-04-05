@@ -582,9 +582,18 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
     if (!D.maintenanceReportForm || !State.currentUser) return;
 
     const validationErrors: string[] = [];
-    const serviceType = D.reportServiceTypeSelect.value;
-    const isInstallation = serviceType === 'Montaje/Instalación';
-    const isManualEntry = D.reportEquipmentIdHidden.value === 'MANUAL_NO_ID' && !isInstallation;
+    let serviceType = D.reportServiceTypeSelect.value;
+    if (serviceType === 'Otro') {
+        const otherDesc = D.reportServiceTypeOtherInput.value.trim();
+        if (!otherDesc) {
+            validationErrors.push('Debe especificar el tipo de servicio en la opción "Otro".');
+        } else {
+            serviceType = `Otro: ${otherDesc}`;
+        }
+    }
+
+    const isSimplifiedReport = serviceType === 'Montaje/Instalación' || serviceType.startsWith('Otro');
+    const isManualEntry = D.reportEquipmentIdHidden.value === 'MANUAL_NO_ID' && !isSimplifiedReport;
     const selectedCategory = D.reportLocationResidencialContainer.style.display === 'block' ? 'residencial' : 'empresa';
     
     let signatureData: string | null = State.currentReportSignatureDataUrl;
@@ -632,9 +641,9 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
         return;
     }
 
-    if (isInstallation && (!State.currentReportPhotoInternalBase64 || !State.currentReportPhotoExternalBase64)) {
+    if (isSimplifiedReport && (!State.currentReportPhotoInternalBase64 || !State.currentReportPhotoExternalBase64)) {
         const confirmed = await UI.showConfirmationModal(
-            "No ha adjuntado una o más fotos de la instalación. ¿Desea guardar el reporte como 'Fotos Pendientes'?",
+            "No ha adjuntado una o más fotos del servicio. ¿Desea guardar el reporte como 'Fotos Pendientes'?",
             "Guardar con Pendientes"
         );
         if (!confirmed) {
@@ -652,9 +661,9 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
         
         let equipmentSnapshot: Report['equipmentSnapshot'];
 
-        if (isInstallation) {
+        if (isSimplifiedReport) {
              equipmentSnapshot = {
-                id: 'INSTALL_NO_ID', manualId: null, model: 'N/A - Instalación', brand: 'N/A - Instalación', type: 'N/A', refrigerant: 'N/A',
+                id: 'INSTALL_NO_ID', manualId: null, model: 'N/A', brand: 'N/A', type: 'N/A', refrigerant: 'N/A',
                 category: selectedCategory,
                 address: selectedCategory === 'residencial' ? D.reportAddressInput.value : null,
                 client_name: selectedCategory === 'residencial' ? D.reportClientNameInput.value : null,
@@ -694,7 +703,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             finalObservations = 'Se realiza mantenimiento preventivo.';
         }
         
-        const itemsSnapshot = isInstallation ? Array.from(D.reportInstallationItemsTableBody.querySelectorAll('tr')).map(row => ({
+        const itemsSnapshot = isSimplifiedReport ? Array.from(D.reportInstallationItemsTableBody.querySelectorAll('tr')).map(row => ({
             description: row.cells[0]?.textContent || '',
             quantity: parseInt((row.cells[1]?.querySelector('input') as HTMLInputElement)?.value || '0', 10)
         })) : null;
@@ -718,8 +727,8 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             pressure: D.reportPressureInput.value || null,
             amperage: D.reportAmperageInput.value || null,
             is_paid: originalReport ? originalReport.is_paid : false, // Preserve paid status on edit
-            photo_internal_unit_url: isInstallation ? (State.currentReportPhotoInternalBase64 || 'PENDING_PHOTO') : null,
-            photo_external_unit_url: isInstallation ? (State.currentReportPhotoExternalBase64 || 'PENDING_PHOTO') : null,
+            photo_internal_unit_url: isSimplifiedReport ? (State.currentReportPhotoInternalBase64 || 'PENDING_PHOTO') : null,
+            photo_external_unit_url: isSimplifiedReport ? (State.currentReportPhotoExternalBase64 || 'PENDING_PHOTO') : null,
             orderId: orderIdValue || undefined,
         };
         
@@ -1367,8 +1376,10 @@ if (!networkListenerActive) {
         }
 
 
-        if (card) {
-            const orderId = card.dataset.orderId;
+        const openDetailsBtn = target.closest<HTMLButtonElement>('.open-order-details-btn');
+
+        if (openDetailsBtn) {
+            const orderId = openDetailsBtn.dataset.orderId;
             if (orderId) UI.openOrderDetailsModal(orderId);
             return;
         }

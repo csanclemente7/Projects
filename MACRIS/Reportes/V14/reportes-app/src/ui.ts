@@ -780,18 +780,32 @@ export async function openReportFormModal(options: { report?: Report; equipment?
 
     if (D.reportServiceTypeSelect) {
         D.reportServiceTypeSelect.innerHTML = '';
+        let hasOtro = false;
         State.serviceTypes.forEach(st => {
             const option = new Option(st.name, st.name);
             D.reportServiceTypeSelect.appendChild(option);
+            if (st.name === 'Otro') hasOtro = true;
         });
+        if (!hasOtro) {
+             const option = new Option('Otro', 'Otro');
+             D.reportServiceTypeSelect.appendChild(option);
+        }
     }
 
     const finalServiceType = serviceType || report?.serviceType;
     if (finalServiceType) {
-        D.reportServiceTypeSelect.value = finalServiceType;
+        if (finalServiceType.startsWith('Otro')) {
+            D.reportServiceTypeSelect.value = 'Otro';
+            D.reportServiceTypeOtherInput.value = finalServiceType.replace(/^Otro:\s*/, '').trim();
+            if (D.reportServiceTypeOtherInput.value === 'Otro') D.reportServiceTypeOtherInput.value = '';
+        } else {
+            D.reportServiceTypeSelect.value = finalServiceType;
+            D.reportServiceTypeOtherInput.value = '';
+        }
     } else if (!report) {
         // Default to 'Mantenimiento Preventivo' for new reports
         D.reportServiceTypeSelect.value = 'Mantenimiento Preventivo';
+        D.reportServiceTypeOtherInput.value = '';
     }
 
     toggleReportFormFields(D.reportServiceTypeSelect.value);
@@ -852,7 +866,16 @@ export function closeReportFormModal() {
 }
 
 export function toggleReportFormFields(serviceType: string) {
-    const isInstallation = serviceType === 'Montaje/Instalación';
+    const isInstallation = serviceType === 'Montaje/Instalación' || serviceType === 'Otro';
+    
+    if (serviceType === 'Otro') {
+        D.reportServiceTypeOtherContainer.style.display = 'block';
+        D.reportServiceTypeOtherInput.setAttribute('required', 'true');
+    } else {
+        D.reportServiceTypeOtherContainer.style.display = 'none';
+        D.reportServiceTypeOtherInput.removeAttribute('required');
+    }
+
 
     // Hide/show entire sections that are mutually exclusive
     D.reportEquipmentFieldsContainer.style.display = isInstallation ? 'none' : 'block';
@@ -2508,16 +2531,63 @@ function createOrderCardHTML(order: Order): string {
     };
     const statusInfo = statusMap[order.status || 'pending'] || statusMap.pending;
 
-    return `
-        <div class="order-card" data-order-id="${order.id}">
-            <div class="order-card-header">
-                <span class="order-id">#${order.manualId || order.id.substring(0, 8)}</span>
-                <span class="order-status ${statusInfo.class}">${statusInfo.text}</span>
+    let progressHTML = '';
+    if (order.items && order.items.length > 0) {
+        let totalQuantity = 0;
+        let completedQuantity = 0;
+        for (const item of order.items) {
+            totalQuantity += item.quantity || 1;
+            completedQuantity += item.completed_quantity || 0;
+        }
+        
+        // Prevent division by zero and cap at 100%
+        let progressPercent = 0;
+        if (totalQuantity > 0) {
+            progressPercent = Math.min(Math.round((completedQuantity / totalQuantity) * 100), 100);
+        }
+
+        progressHTML = `
+            <div class="summary-progress" style="margin-top: 10px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 3px;">
+                    <span><i class="fas fa-tasks"></i> Progreso</span>
+                    <span style="font-weight: bold; color: var(--color-accent-primary);">${completedQuantity} / ${totalQuantity} Equipos</span>
+                </div>
+                <div style="width: 100%; height: 6px; background-color: var(--color-border-light); border-radius: 3px; overflow: hidden;">
+                    <div style="width: ${progressPercent}%; height: 100%; background-color: var(--color-accent-primary); transition: width 0.3s ease;"></div>
+                </div>
             </div>
-            <div class="order-card-body">
+        `;
+    }
+
+    return `
+        <details class="accordion-card" data-order-id="${order.id}">
+            <summary class="order-card-summary">
+                <div class="summary-top">
+                    <div class="summary-type">
+                        <span class="service-type"><i class="fas fa-tools"></i> ${order.order_type || 'Servicio General'}</span>
+                    </div>
+                    <span class="order-status ${statusInfo.class}">${statusInfo.text}</span>
+                </div>
+                
+                ${progressHTML}
+                
+                <div class="summary-bottom">
+                    <div class="summary-datetime">
+                        <span><i class="fas fa-calendar-day"></i> ${formatDate(order.service_date, false)}</span>
+                        <span><i class="fas fa-clock"></i> ${formatTime(order.service_time)}</span>
+                    </div>
+                    <i class="fas fa-chevron-down expand-icon"></i>
+                </div>
+            </summary>
+            
+            <div class="details-body">
+                <div class="order-card-row">
+                    <p class="order-card-label"><i class="fas fa-hashtag"></i> ID de Orden</p>
+                    <p class="order-card-value">#${order.manualId || order.id.substring(0, 8)}</p>
+                </div>
                 <div class="order-card-row">
                     <p class="order-card-label"><i class="fas fa-user-tie"></i> Cliente</p>
-                    <p class="order-card-value client-name">${order.clientDetails?.name || 'Cliente Desconocido'}</p>
+                    <p class="order-card-value">${order.clientDetails?.name || 'Desconocido'}</p>
                 </div>
                 <div class="order-card-row">
                     <p class="order-card-label"><i class="fas fa-map-marker-alt"></i> Dirección</p>
@@ -2528,19 +2598,16 @@ function createOrderCardHTML(order: Order): string {
                     <p class="order-card-value">${order.clientDetails?.phone || 'N/A'}</p>
                 </div>
                 <div class="order-card-row">
-                    <p class="order-card-label"><i class="fas fa-tools"></i> Tipo de Servicio</p>
-                    <p class="order-card-value">${order.order_type || 'N/A'}</p>
-                </div>
-                <div class="order-card-row">
                     <p class="order-card-label"><i class="fas fa-sticky-note"></i> Notas</p>
                     <p class="order-card-value" style="white-space: pre-line;">${order.notes || 'Ninguna'}</p>
                 </div>
-                <div class="order-card-row order-card-datetime">
-                    <span><i class="fas fa-calendar-day"></i> ${formatDate(order.service_date, false)}</span>
-                    <span class="time-badge"><i class="fas fa-clock"></i> ${formatTime(order.service_time)}</span>
+                <div style="margin-top: 15px;">
+                    <button class="btn btn-primary btn-full-width open-order-details-btn" data-order-id="${order.id}">
+                        <i class="fas fa-search-plus"></i> Ver Detalles / Atender
+                    </button>
                 </div>
             </div>
-        </div>
+        </details>
     `;
 }
 

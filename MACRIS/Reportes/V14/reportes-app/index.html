@@ -551,10 +551,18 @@
         <input type="hidden" id="report-order-item-id-hidden" name="order_item_id" />
 
         <div class="form-section-card">
-          <h3 class="section-card-title"><i class="fas fa-clipboard-list"></i> Información del Servicio</h3>
+          <h3 class="section-card-title">
+            <i class="fas fa-clipboard-list"></i> Información del Servicio
+            <span class="label-hint">Paso 1</span>
+          </h3>
           <div class="form-group">
             <label for="report-service-type">Tipo de Servicio:</label>
             <select id="report-service-type" name="service_type" required></select>
+          </div>
+          
+          <div class="form-group" id="report-service-type-other-container" style="display: none; background-color: var(--color-bg-medium); padding: 10px; border-radius: var(--border-radius-sharp); border-left: 3px solid var(--color-accent-primary); margin-top: -10px; margin-bottom: 15px;">
+            <label for="report-service-type-other">Especifique el servicio:</label>
+            <input type="text" id="report-service-type-other" name="service_type_other" placeholder="Ej: Instalar tubería, mover equipo..." />
           </div>
 
 
@@ -629,7 +637,10 @@
         </div> <!-- Cierra form-section-card de Servicio -->
 
         <div class="form-section-card">
-          <h3 class="section-card-title"><i class="fas fa-fan"></i> Datos del Equipo y Operación</h3>
+          <h3 class="section-card-title">
+            <i class="fas fa-fan"></i> Datos del Equipo y Operación
+            <span class="label-hint">Paso 2</span>
+          </h3>
           <div id="report-equipment-fields-container">
             <div class="form-group">
               <button type="button" id="ai-scan-plate-button" class="btn-glow-dark btn-full-width">
@@ -773,7 +784,10 @@
         </div> <!-- Cierra form-section-card de Equipo -->
 
         <div class="form-section-card">
-          <h3 class="section-card-title"><i class="fas fa-file-signature"></i> Cierre y Validación</h3>
+          <h3 class="section-card-title">
+            <i class="fas fa-file-signature"></i> Cierre y Validación
+            <span class="label-hint">Paso 3</span>
+          </h3>
           <div id="signature-preview-container">
             <img id="signature-preview-image" style="
                 display: none;
@@ -826,11 +840,11 @@
           ">
         <canvas id="signature-canvas"></canvas>
       </div>
-      <div class="modal-actions report-actions">
-        <button type="button" id="clear-signature-button" class="btn btn-warning">
+      <div class="modal-actions signature-actions" style="display: flex; flex-direction: row; gap: 10px; justify-content: center; flex-wrap: nowrap;">
+        <button type="button" id="clear-signature-button" class="btn btn-warning" style="flex: 1; padding: 10px; font-size: 0.9rem;">
           <i class="fas fa-eraser"></i> Limpiar
         </button>
-        <button type="button" id="save-signature-button" class="btn btn-success">
+        <button type="button" id="save-signature-button" class="btn btn-success" style="flex: 1; padding: 10px; font-size: 0.9rem;">
           <i class="fas fa-check"></i> Aceptar
         </button>
       </div>

@@ -132,7 +132,7 @@ async function seedInitialUsers(initialUsers: any[]) {
         console.log("Seeding Admin user...");
         const adminUserData: Database['public']['Tables']['maintenance_users']['Insert'] = {
             username: 'admin',
-            password: 'admin123',
+            password: 'Admin@Macris2026!',
             role: 'admin',
             name: 'Administrador Principal',
             cedula: 'admin001',
