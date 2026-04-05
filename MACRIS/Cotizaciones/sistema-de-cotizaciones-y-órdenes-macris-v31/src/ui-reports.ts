@@ -496,56 +496,142 @@ function showReportDetailsModal(report: Report) {
 
     let itemsHtml = '';
     if (report.itemsSnapshot && report.itemsSnapshot.length > 0) {
-        itemsHtml = `<ul>` + report.itemsSnapshot.map(i => `<li>${i.quantity}x ${i.description}</li>`).join('') + `</ul>`;
+        itemsHtml = `<ul style="padding-left: 20px; margin: 0; color: var(--text-color);">` + 
+            report.itemsSnapshot.map(i => `<li style="margin-bottom: 4px;"><strong>${i.quantity}x</strong> ${i.description}</li>`).join('') + 
+            `</ul>`;
     } else {
-        itemsHtml = '<p>No se registraron insumos.</p>';
+        itemsHtml = '<p style="color: var(--text-muted); font-style: italic;">No se registraron insumos.</p>';
     }
 
     body.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
             <div>
-                <h4>Información General</h4>
-                <p><strong>Fecha:</strong> ${new Date(report.timestamp).toLocaleString()}</p>
-                <p><strong>Tipo Servicio:</strong> ${report.serviceType}</p>
-                <p><strong>Técnico:</strong> ${report.workerName}</p>
-                <p><strong>Estado:</strong> ${report.is_paid ? 'Pagado' : 'No pagado'}</p>
+                <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Información General</h4>
+                <p style="margin: 5px 0;"><strong>Fecha:</strong> ${new Date(report.timestamp).toLocaleString()}</p>
+                <p style="margin: 5px 0;"><strong>Tipo Servicio:</strong> ${report.serviceType}</p>
+                <p style="margin: 5px 0;"><strong>Técnico:</strong> ${report.workerName}</p>
+                <p style="margin: 5px 0;"><strong>Estado:</strong> <span style="color: ${report.is_paid ? '#28a745' : '#ffc107'}; font-weight: bold;">${report.is_paid ? 'Pagado' : 'No pagado'}</span></p>
             </div>
             <div>
-                <h4>Datos del Cliente/Empresa</h4>
-                <p><strong>Nombre:</strong> ${clientName || 'N/A'}</p>
-                <p><strong>Dirección:</strong> ${eq.address || 'N/A'}</p>
-                <p><strong>Dependencia:</strong> ${eq.dependencyName || 'N/A'}</p>
-            </div>
-        </div>
-        <hr>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-            <div>
-                <h4>Equipo Intervenido</h4>
-                <p><strong>Marca:</strong> ${eq.brand || 'N/A'}</p>
-                <p><strong>Modelo:</strong> ${eq.model || 'N/A'}</p>
-                <p><strong>Tipo:</strong> ${eq.type || 'N/A'}</p>
-                <p><strong>Capacidad:</strong> ${eq.capacity || 'N/A'}</p>
-                <p><strong>Refrigerante:</strong> ${eq.refrigerant || 'N/A'}</p>
-            </div>
-            <div>
-                <h4>Mediciones</h4>
-                <p><strong>Presión:</strong> ${report.pressure || 'N/A'}</p>
-                <p><strong>Amperaje:</strong> ${report.amperage || 'N/A'}</p>
+                <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;"><i class="fas fa-building"></i> Datos del Cliente/Empresa</h4>
+                <div class="form-group" style="margin-bottom: 8px;">
+                    <label style="font-size: 0.85rem; font-weight: bold;">Nombre del Cliente/Empresa:</label>
+                    <div style="display: flex; gap: 5px; margin-top: 3px;">
+                        <input type="text" id="report-client-name-input" class="input" value="${clientName || ''}" style="flex:1; padding: 6px; font-size: 0.9rem;" placeholder="Nombre...">
+                        <button id="report-save-client-btn" class="btn btn-primary" title="Guardar Nombre" style="padding: 6px 12px;"><i class="fas fa-save"></i></button>
+                    </div>
+                </div>
+                <p style="margin: 5px 0;"><strong>Dirección:</strong> ${eq.address || 'N/A'}</p>
+                <p style="margin: 5px 0;"><strong>Dependencia:</strong> ${eq.dependencyName || 'N/A'}</p>
             </div>
         </div>
-        <hr>
-        <div>
-            <h4>Observaciones</h4>
-            <p>${report.observations || 'Sin observaciones'}</p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 15px;">
+            <div>
+                <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;"><i class="fas fa-tools"></i> Equipo Intervenido</h4>
+                <p style="margin: 5px 0;"><strong>Marca:</strong> ${eq.brand || 'N/A'}</p>
+                <p style="margin: 5px 0;"><strong>Modelo:</strong> ${eq.model || 'N/A'}</p>
+                <p style="margin: 5px 0;"><strong>Tipo:</strong> ${eq.type || 'N/A'}</p>
+                <p style="margin: 5px 0;"><strong>Capacidad:</strong> ${eq.capacity || 'N/A'}</p>
+                <p style="margin: 5px 0;"><strong>Refrigerante:</strong> ${eq.refrigerant || 'N/A'}</p>
+            </div>
+            <div>
+                <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;"><i class="fas fa-tachometer-alt"></i> Mediciones</h4>
+                <p style="margin: 5px 0;"><strong>Presión:</strong> ${report.pressure || 'N/A'}</p>
+                <p style="margin: 5px 0;"><strong>Amperaje:</strong> ${report.amperage || 'N/A'}</p>
+            </div>
         </div>
-        <hr>
-        <div>
-            <h4>Insumos Utilizados</h4>
+
+        <div style="background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 15px;">
+            <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;"><i class="fas fa-clipboard-list"></i> Observaciones</h4>
+            <p style="margin: 0; font-style: italic;">${report.observations || 'Sin observaciones'}</p>
+        </div>
+
+        <div style="background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 15px;">
+            <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;"><i class="fas fa-box-open"></i> Insumos Utilizados</h4>
             ${itemsHtml}
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+            <button id="report-modal-download-btn" class="btn btn-danger" style="display: flex; align-items: center; gap: 8px; font-weight: bold;">
+                <i class="fas fa-file-pdf"></i> Descargar PDF
+            </button>
         </div>
     `;
 
     modal.classList.add('active');
+
+    // Attach Event Listeners
+    const saveBtn = document.getElementById('report-save-client-btn') as HTMLButtonElement;
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            const input = document.getElementById('report-client-name-input') as HTMLInputElement;
+            if (!input || !input.value.trim()) return;
+            
+            const newName = input.value.trim();
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            saveBtn.disabled = true;
+
+            try {
+                // Update local copy
+                if (isRes) {
+                    eq.client_name = newName;
+                } else {
+                    eq.companyName = newName;
+                }
+                
+                // Save to API
+                const { updateReportEquipmentSnapshot } = await import('./api-reports');
+                const success = await updateReportEquipmentSnapshot(report.id, eq);
+                
+                if (success) {
+                    UI.showNotification("Nombre del cliente/empresa actualizado.", "success");
+                    // Refresh table underlying info
+                    report.equipmentSnapshot = eq;
+                    renderReportRows(currentReports);
+                } else {
+                    throw new Error("Failed to update snapshot");
+                }
+            } catch (err) {
+                console.error("Error updating company name:", err);
+                UI.showNotification("Error al actualizar.", "error");
+            } finally {
+                saveBtn.innerHTML = '<i class="fas fa-save"></i>';
+                saveBtn.disabled = false;
+            }
+        });
+    }
+
+    const downloadBtn = document.getElementById('report-modal-download-btn') as HTMLButtonElement;
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', async () => {
+            downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+            downloadBtn.disabled = true;
+            try {
+                const blob = await generateReportPDF(report, cachedCities, cachedCompanies, cachedDependencies, 'blob');
+                const url = URL.createObjectURL(blob);
+                const file = new File([blob], `Reporte_${report.id.substring(0,8)}.pdf`, { type: 'application/pdf' });
+                
+                // Directly download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = file.name;
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                }, 100);
+            } catch (error) {
+                console.error("Error generating PDF:", error);
+                alert("Error al generar PDF.");
+            } finally {
+                downloadBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Descargar PDF';
+                downloadBtn.disabled = false;
+            }
+        });
+    }
 
     const closeBtn = modal.querySelector('.close-modal');
     if (closeBtn) {

@@ -92,6 +92,19 @@ export async function deleteReport(id: string): Promise<boolean> {
     return true;
 }
 
+export async function updateReportEquipmentSnapshot(id: string, snapshot: any): Promise<boolean> {
+    const { error } = await supabaseOrders
+        .from('maintenance_reports')
+        .update({ equipment_snapshot: snapshot } as any)
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error updating equipment snapshot:', error);
+        return false;
+    }
+    return true;
+}
+
 export async function fetchCities(): Promise<City[]> {
     const { data, error } = await supabaseOrders.from('maintenance_cities').select('*');
     if (error) return [];

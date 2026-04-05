@@ -2271,7 +2271,7 @@ function renderMonthView() {
         el.addEventListener('click', (e) => {
             e.stopPropagation();
             const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
-            if (orderId) openAgendaEditOrderModal(orderId);
+            if (orderId) navigateToOrderWorkspace(orderId, null);
         });
     });
 }
@@ -2431,7 +2431,7 @@ function renderTimelineView(days: Date[]) {
     D.agendaContainer.querySelectorAll('.order-event, .agenda-order-pill').forEach(el => {
         el.addEventListener('click', (e) => {
             const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
-            if (orderId) openAgendaEditOrderModal(orderId);
+            if (orderId) navigateToOrderWorkspace(orderId, null);
         });
     });
 }
@@ -2573,7 +2573,7 @@ function renderListWeekView() {
     D.agendaContainer.querySelectorAll('.edit-order-btn').forEach(el => {
         el.addEventListener('click', (e) => {
             const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
-            if (orderId) openAgendaEditOrderModal(orderId);
+            if (orderId) navigateToOrderWorkspace(orderId, null);
         });
     });
 
