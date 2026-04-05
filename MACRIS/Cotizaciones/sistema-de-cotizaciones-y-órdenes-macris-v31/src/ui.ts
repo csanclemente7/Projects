@@ -2978,13 +2978,23 @@ export function openAgendaEditOrderModal(orderId: string) {
 
 export function setupQuoteAnnexUpload() {
     const uploadInput = document.getElementById("quote-annex-upload") as HTMLInputElement;
-    if (!uploadInput) return;
+    const uploadBtn = document.querySelector('label[for="quote-annex-upload"]') as HTMLElement;
+    if (!uploadInput || !uploadBtn) return;
+
     uploadInput.addEventListener("change", async (e) => {
         const files = (e.target as HTMLInputElement).files;
         if (!files || files.length === 0) return;
         const activeQuote = State.getActiveQuote();
         if (!activeQuote) return;
         if (!activeQuote.image_urls) activeQuote.image_urls = [];
+
+        // UI feedback for processing
+        const originalText = uploadBtn.innerHTML;
+        uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+        uploadBtn.style.pointerEvents = 'none';
+        uploadBtn.style.opacity = '0.7';
+
+        let uploadErrors = [];
 
         for (let i = 0; i < files.length; i++) {
             try {
@@ -2993,18 +3003,30 @@ export function setupQuoteAnnexUpload() {
                 const { data, error } = await supabaseQuotes.storage.from("quote-images").upload(fileName, compressedBlob, { contentType: "image/jpeg" });
                 if (error) {
                     console.error("Error uploading image:", error);
+                    uploadErrors.push(`Error Supabase: ${error.message} - Posible problema con el bucket o RLS`);
                     continue;
                 }
                 if (data && data.path) {
                     activeQuote.image_urls.push(data.path);
                 }
-            } catch (err) {
-                console.error("Error compressing image:", err);
+            } catch (err: any) {
+                console.error("Error compressing/uploading image:", err);
+                uploadErrors.push(`Error local: ${err.message || 'Desconocido'}`);
             }
         }
+
+        // Restore UI
+        uploadBtn.innerHTML = originalText;
+        uploadBtn.style.pointerEvents = 'auto';
+        uploadBtn.style.opacity = '1';
+
+        if (uploadErrors.length > 0) {
+            alert(`Hubo un error al subir las fotos:\n\n${uploadErrors.join('\n')}\n\nPor favor, verifica que el bucket "quote-images" exista en Supabase y tenga políticas de acceso configuradas.`);
+        }
+
         State.updateActiveQuote(activeQuote);
         renderQuoteAnnexPreviews(activeQuote);
-        uploadInput.value = "";
+        uploadInput.value = ""; // Reset input
     });
 }
 

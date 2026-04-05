@@ -2532,10 +2532,18 @@ function createOrderCardHTML(order: Order): string {
     const statusInfo = statusMap[order.status || 'pending'] || statusMap.pending;
 
     let progressHTML = '';
+    const isServiceItem = (desc: string) => /mano de obra|montaje|instalaci[oó]n|desmonte|mantenimiento/i.test(desc);
+
     if (order.items && order.items.length > 0) {
         let totalQuantity = 0;
         let completedQuantity = 0;
-        for (const item of order.items) {
+        
+        let itemsToCount = order.items;
+        if (order.items.some(i => isServiceItem(i.description))) {
+            itemsToCount = order.items.filter(i => isServiceItem(i.description));
+        }
+
+        for (const item of itemsToCount) {
             totalQuantity += item.quantity || 1;
             completedQuantity += item.completed_quantity || 0;
         }
@@ -2560,7 +2568,6 @@ function createOrderCardHTML(order: Order): string {
     }
 
     let serviceNamesString = order.order_type || 'Servicio General';
-    const isServiceItem = (desc: string) => /mano de obra|montaje|instalaci[oó]n|desmonte|mantenimiento/i.test(desc);
     
     if (order.items && order.items.length > 0) {
         const sItems = order.items.filter(i => isServiceItem(i.description));
