@@ -74,7 +74,7 @@ export const orderClientDetails = document.getElementById('order-client-details'
 export const orderClientCityInput = document.getElementById('order-client-city') as HTMLInputElement;
 export const orderServicesTableBody = document.getElementById('order-services-tbody') as HTMLTableSectionElement;
 export const orderMaterialsTableBody = document.getElementById('order-materials-tbody') as HTMLTableSectionElement;
-export const orderAutoAddServiceBtn = document.getElementById('order-auto-add-service-btn') as HTMLButtonElement;
+
 export const orderItemSearchInput = document.getElementById('order-item-search') as HTMLInputElement;
 export const orderItemSearchResults = document.getElementById('order-item-search-results') as HTMLDivElement;
 export const orderAnnexUpload = document.getElementById("order-annex-upload") as HTMLInputElement;

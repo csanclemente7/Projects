@@ -296,9 +296,6 @@ function setupOrderWorkspaceEventListeners() {
     });
     D.saveOrderBtn.addEventListener('click', UI.handleSaveOrder);
     D.generateOrderPdfBtn.addEventListener('click', UI.handleGenerateOrderPdf);
-    if (D.orderAutoAddServiceBtn) {
-        D.orderAutoAddServiceBtn.addEventListener('click', () => UI.syncOrderServicesFromTypes(true));
-    }
     // Client and Item Modals
     D.orderAddClientBtn.addEventListener('click', () => UI.openEntityModal('client'));
     D.orderEditClientBtn.addEventListener('click', UI.handleEditClientClickOrder);

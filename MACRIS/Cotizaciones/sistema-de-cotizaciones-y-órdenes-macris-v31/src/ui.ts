@@ -1535,6 +1535,9 @@ export function syncOrderServicesFromTypes(syncOtro: boolean = true) {
         if (predefinedTypes.includes(item.description) && !finalOrderTypeArr.includes(item.description)) {
             return false; // Remove this service because it was unchecked
         }
+        if (item.manualId === 'AUTO_SYNC' && !finalOrderTypeArr.includes(item.description)) {
+            return false; // Auto-synced custom type no longer typed
+        }
         return true;
     });
 
@@ -1575,7 +1578,7 @@ export function syncOrderServicesFromTypes(syncOtro: boolean = true) {
             quantity: qtyToUse,
             price: relatedPrice,
             completed_quantity: 0,
-            manualId: null
+            manualId: 'AUTO_SYNC'
         };
         
         order.items.push(newItem);
@@ -1801,6 +1804,9 @@ export function handleOrderDetailsChange() {
     order.estimated_duration = hours + (minutes / 60);
     validateTechnicianAssignments();
     if (D.technicianSelector.classList.contains('open')) renderTechnicianDropdown();
+    
+    // Auto-sync services as the user edits order details (like typing "Otro")
+    syncOrderServicesFromTypes(true);
 }
 
 // --- Technicians ---
