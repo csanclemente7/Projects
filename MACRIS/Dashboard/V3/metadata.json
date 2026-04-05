@@ -1,0 +1,6 @@
+{
+  "name": "Dashboard Macris v3",
+  "description": "Un dashboard para acceder a las aplicaciones de la empresa Macris, con la capacidad de añadir, editar y eliminar enlaces.",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
