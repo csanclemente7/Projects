@@ -210,7 +210,6 @@ export async function generateBillPDFDoc(quote: Quote): Promise<jsPDF> {
     // Signature
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.line(margin + 50, finalTableY, margin + 250, finalTableY);
     finalTableY += 15;
     doc.text('JAIR SANCLEMENTE', margin + 150, finalTableY, { align: 'center' });
     finalTableY += 15;

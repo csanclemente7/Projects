@@ -860,7 +860,7 @@ export function renderSavedQuotesPageList() {
             const total = q.items.reduce((s, i) => s + i.quantity * i.price, 0) * (1 + q.taxRate / 100);
             const author = State.getQuoteAuthor(q.id);
             const authorColor = getAuthorColor(author);
-            return `<tr data-id="${q.id}" title="Haz clic para abrir esta cotización"><td style="cursor:pointer;"><strong>${client}</strong><br><small>#${q.manualId} &bull; ${date}</small><br><small class="quote-author">Por: <span style="color: ${authorColor}; font-weight: 600;">${author}</span> &bull; ${createdTime}</small></td><td>${client}</td><td>${date}</td><td>${formatCurrency(total)}</td><td class="actions" style="white-space: nowrap;"><button class="btn btn-secondary edit-quote-btn" data-id="${q.id}" title="Editar Cotización"><i class="fas fa-edit"></i> Editar cotización</button> <button class="btn btn-primary create-order-btn" data-id="${q.id}" title="Crear Orden"><i class="fas fa-clipboard-check"></i> Crear orden</button> <button class="btn btn-duplicate copy-quote-btn" data-id="${q.id}" title="Duplicar"><i class="fas fa-copy"></i> Duplicar</button> <button class="btn btn-icon-only btn-info generate-pdf-list-btn" data-id="${q.id}" title="Generar PDF"><i class="fas fa-file-pdf"></i></button> <button class="btn btn-icon-only generate-bill-list-btn" data-id="${q.id}" title="Generar Cuenta de Cobro" style="background-color: #28a745; color: white; border-color: #28a745;"><i class="fas fa-file-invoice-dollar"></i></button> <button class="btn btn-icon-only btn-danger delete-btn" data-id="${q.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`;
+            return `<tr data-id="${q.id}" title="Haz clic para abrir esta cotización"><td style="cursor:pointer;"><strong>${client}</strong><br><small>#${q.manualId} &bull; ${date}</small><br><small class="quote-author">Por: <span style="color: ${authorColor}; font-weight: 600;">${author}</span> &bull; ${createdTime}</small></td><td>${client}</td><td>${date}</td><td>${formatCurrency(total)}</td><td class="actions" style="white-space: nowrap;"><button class="btn btn-secondary edit-quote-btn" data-id="${q.id}" title="Editar Cotización"><i class="fas fa-edit"></i> Editar cotización</button> <button class="btn btn-primary create-order-btn" data-id="${q.id}" title="Crear Orden"><i class="fas fa-clipboard-check"></i> Crear orden</button> <button class="btn btn-duplicate copy-quote-btn" data-id="${q.id}" title="Duplicar"><i class="fas fa-copy"></i> Duplicar</button> <button class="btn btn-icon-only btn-info generate-pdf-list-btn" data-id="${q.id}" title="Generar PDF"><i class="fas fa-file-pdf"></i></button> <button class="btn btn-icon-only generate-bill-list-btn" data-id="${q.id}" title="Generar Cuenta de Cobro" style="background-color: white; color: #28a745; border: 1px solid #28a745;"><i class="fas fa-file-invoice-dollar"></i></button> <button class="btn btn-icon-only btn-danger delete-btn" data-id="${q.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`;
         }).join('');
     }
     D.savedQuotesPageContainer.innerHTML = html + `</tbody></table>`;
@@ -2660,10 +2660,15 @@ function renderListWeekView() {
                         </div>
                         <div class="order-item-actions agenda-item-actions" style="margin-left: auto; padding-left: 15px; display: flex; gap: 8px;">
                             <!-- White button fix -->
-                            <button class="btn edit-order-btn" data-order-id="${order.id}" style="background-color: white; border: 1px solid var(--color-border); color: var(--color-text); padding: 5px 10px; font-size: 0.9rem;">
-                                <i class="fas fa-edit" style="pointer-events:none; color: var(--color-primary);"></i> Editar
+                            <button class="btn edit-order-btn" data-order-id="${order.id}" style="background-color: white; border: 1px solid var(--color-border); color: var(--color-text); padding: 5px 10px; font-size: 0.9rem;" title="Editar">
+                                <i class="fas fa-edit" style="pointer-events:none; color: var(--color-primary);"></i>
                             </button>
-                            <button class="btn delete-order-btn" data-order-id="${order.id}" style="background-color: white; border: 1px solid var(--color-border); color: var(--color-danger); padding: 5px 10px; font-size: 0.9rem;">
+                            ${order.status !== 'completed' && order.status !== 'cancelled' ? `
+                            <button class="btn mark-completed-btn" data-order-id="${order.id}" style="background-color: white; border: 1px solid var(--color-border); color: #6c757d; padding: 5px 10px; font-size: 0.9rem;" title="Marcar como Finalizado / Realizado">
+                                <i class="fas fa-check-circle" style="pointer-events:none;"></i>
+                            </button>
+                            ` : ''}
+                            <button class="btn delete-order-btn" data-order-id="${order.id}" style="background-color: white; border: 1px solid var(--color-border); color: var(--color-danger); padding: 5px 10px; font-size: 0.9rem;" title="Eliminar">
                                 <i class="fas fa-trash" style="pointer-events:none;"></i>
                             </button>
                         </div>
@@ -2713,6 +2718,34 @@ function renderListWeekView() {
                             showNotification('Orden eliminada exitosamente', 'success');
                         } catch (error: any) {
                             showNotification(`Error al eliminar: ${error.message}`, 'error');
+                        }
+                    }
+                );
+            }
+        });
+    });
+
+    D.agendaContainer.querySelectorAll('.mark-completed-btn').forEach(el => {
+        el.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
+            if (orderId) {
+                showConfirmationModal(
+                    'Marcar como Realizado',
+                    '¿Está seguro de que desea aplicar el estado de completado a este trabajo?',
+                    async () => {
+                        try {
+                            const orderToUpdate = State.getOrders().find(o => o.id === orderId);
+                            if (!orderToUpdate) return;
+                            
+                            const updatedOrder = await API.saveOrder({ ...orderToUpdate, status: 'completed' });
+                            showNotification('Trabajo marcado como realizado', 'success');
+                            
+                            const orders = State.getOrders().map(o => o.id === orderId ? updatedOrder : o);
+                            State.setOrders(orders);
+                            renderAgendaPage();
+                        } catch (error: any) {
+                            showNotification(`Error al actualizar estado: ${error.message}`, 'error');
                         }
                     }
                 );
