@@ -2119,12 +2119,11 @@ body.dark-theme .order-event.status-in_progress {
 }
 
 .list-week-view .day-section.day-saturated-medium {
-    background-color: #fffaeb;
-    /* Very light yellow */
+    /* Background removed as requested, keeping it only for header */
 }
 
 body.dark-theme .list-week-view .day-section.day-saturated-medium {
-    background-color: rgba(255, 238, 0, 0.03);
+    /* Background removed */
 }
 
 .list-week-view .day-section.day-saturated-medium .day-header:not(.today) {
@@ -2132,12 +2131,11 @@ body.dark-theme .list-week-view .day-section.day-saturated-medium {
 }
 
 .list-week-view .day-section.day-saturated-heavy {
-    background-color: #fff2f2;
-    /* Very light red */
+    /* Background removed */
 }
 
 body.dark-theme .list-week-view .day-section.day-saturated-heavy {
-    background-color: rgba(255, 77, 109, 0.05);
+    /* Background removed */
 }
 
 .list-week-view .day-section.day-saturated-heavy .day-header:not(.today) {
