@@ -334,26 +334,26 @@ function renderDashboard() {
       <div class="app-card-icon"><i class="${iconClass}"></i></div>
       <span class="app-card-name">${app.name}</span>
     `;
-    
+
     const actionsContainer = document.createElement('div');
     actionsContainer.className = 'app-card-actions';
-    
+
     const editBtn = document.createElement('button');
     editBtn.className = 'action-btn';
     editBtn.setAttribute('aria-label', `Editar ${app.name}`);
     editBtn.innerHTML = `<i class="fa-solid fa-pencil"></i>`;
     editBtn.onclick = (e) => {
-        e.preventDefault(); // Prevent link navigation
-        openModal(app);
+      e.preventDefault(); // Prevent link navigation
+      openModal(app);
     };
-    
+
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'action-btn';
     deleteBtn.setAttribute('aria-label', `Eliminar ${app.name}`);
     deleteBtn.innerHTML = `<i class="fa-solid fa-trash-can"></i>`;
     deleteBtn.onclick = (e) => {
-        e.preventDefault(); // Prevent link navigation
-        deleteApp(app.id, app.name);
+      e.preventDefault(); // Prevent link navigation
+      deleteApp(app.id, app.name);
     };
 
     actionsContainer.append(editBtn, deleteBtn);
@@ -366,19 +366,19 @@ function renderDashboard() {
  * Populates the icon picker in the modal.
  */
 function populateIconPicker() {
-    iconPicker.innerHTML = '';
-    const sortedIcons = Object.entries(ICONS).sort((a, b) => a[0].localeCompare(b[0]));
-    
-    for (const [key, iconClass] of sortedIcons) {
-        const option = document.createElement('button');
-        option.type = 'button';
-        option.className = 'icon-option';
-        option.dataset.iconKey = key;
-        option.setAttribute('aria-label', `Seleccionar ícono ${key}`);
-        option.innerHTML = `<i class="${iconClass}"></i>`;
-        option.onclick = () => selectIcon(key, option);
-        iconPicker.appendChild(option);
-    }
+  iconPicker.innerHTML = '';
+  const sortedIcons = Object.entries(ICONS).sort((a, b) => a[0].localeCompare(b[0]));
+
+  for (const [key, iconClass] of sortedIcons) {
+    const option = document.createElement('button');
+    option.type = 'button';
+    option.className = 'icon-option';
+    option.dataset.iconKey = key;
+    option.setAttribute('aria-label', `Seleccionar ícono ${key}`);
+    option.innerHTML = `<i class="${iconClass}"></i>`;
+    option.onclick = () => selectIcon(key, option);
+    iconPicker.appendChild(option);
+  }
 }
 
 /**
@@ -387,10 +387,10 @@ function populateIconPicker() {
  * @param {HTMLElement} selectedElement - The button element that was clicked.
  */
 function selectIcon(iconKey, selectedElement) {
-    iconInput.value = iconKey;
-    // Update visual selection
-    document.querySelectorAll('.icon-option.selected').forEach(el => el.classList.remove('selected'));
-    selectedElement.classList.add('selected');
+  iconInput.value = iconKey;
+  // Update visual selection
+  document.querySelectorAll('.icon-option.selected').forEach(el => el.classList.remove('selected'));
+  selectedElement.classList.add('selected');
 }
 
 /**
@@ -413,16 +413,16 @@ function openModal(app = null) {
     // Select 'app' as default icon
     iconInput.value = 'app';
   }
-  
+
   // Visually select the correct icon
   document.querySelectorAll('.icon-option').forEach(el => {
-      el.classList.toggle('selected', el.dataset.iconKey === iconInput.value);
+    el.classList.toggle('selected', el.dataset.iconKey === iconInput.value);
   });
-  
+
   // Scroll selected icon into view
   const selectedIconEl = iconPicker.querySelector('.icon-option.selected');
   if (selectedIconEl) {
-      selectedIconEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    selectedIconEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
   modalOverlay.classList.add('visible');
@@ -453,7 +453,7 @@ async function deleteApp(appId, appName) {
       alert('No se pudo eliminar la aplicación.');
       return;
     }
-    
+
     await fetchAppsAndRender(); // Refresh the dashboard
   }
 }
