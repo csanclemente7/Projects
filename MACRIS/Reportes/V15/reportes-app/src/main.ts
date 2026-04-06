@@ -18,9 +18,37 @@ import { synchronizeQueue, startPeriodicSync } from './lib/sync';
 import { BackgroundRunner } from '@capacitor/background-runner';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
+import { Network } from '@capacitor/network';
 import { SERVICE_WORKER_URL } from './assets';
+import { checkOnlineStatus } from './utils';
 
 const NATIVE_APP_VERSION_KEY = 'maintenance_native_app_version';
+const INITIAL_BOOTSTRAP_MAX_ATTEMPTS = 3;
+const INITIAL_BOOTSTRAP_RETRY_DELAY_MS = 3500;
+
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+async function hasUsableInternetConnection(): Promise<boolean> {
+    try {
+        if (Capacitor.isNativePlatform()) {
+            const nativeStatus = await Network.getStatus();
+            if (!nativeStatus.connected) {
+                return false;
+            }
+        } else if (!navigator.onLine) {
+            return false;
+        }
+
+        return await checkOnlineStatus();
+    } catch (error) {
+        console.warn('[Startup] Could not verify internet connectivity.', error);
+        return false;
+    }
+}
+
+function hasMinimumBootstrapData(): boolean {
+    return State.users.length > 0 && State.cities.length > 0;
+}
 
 async function unregisterServiceWorkersOnNative(): Promise<void> {
     if (!Capacitor.isNativePlatform() || !('serviceWorker' in navigator)) return;
@@ -321,7 +349,8 @@ async function loadLocalDataIntoState(): Promise<boolean> {
  */
 async function refreshOnlineData(options: { silent?: boolean, hasLocalData: boolean }) {
     const { silent = false, hasLocalData } = options;
-    if (!navigator.onLine) {
+    const isOnline = await hasUsableInternetConnection();
+    if (!isOnline) {
         if (!hasLocalData) {
             showAppNotification("Sin conexión y sin datos locales. Conéctate a internet para la primera carga.", 'error', 10000);
         }
@@ -362,6 +391,7 @@ async function refreshOnlineData(options: { silent?: boolean, hasLocalData: bool
         const reportMap = new Map(combinedReports.map(r => [r.id, r]));
         State.setReports(Array.from(reportMap.values()));
         State.setAllServiceOrders(allEnrichedOrdersData);
+        populateLoginWorkerSelect();
 
         // 🔹 Cachea todo localmente
         await Promise.all([
@@ -395,6 +425,29 @@ async function refreshOnlineData(options: { silent?: boolean, hasLocalData: bool
         }
     } finally {
         if (!silent) hideLoader();
+    }
+}
+
+async function ensureInitialBootstrapData(hasLocalData: boolean): Promise<void> {
+    if (hasLocalData || hasMinimumBootstrapData()) {
+        return;
+    }
+
+    for (let attempt = 1; attempt <= INITIAL_BOOTSTRAP_MAX_ATTEMPTS; attempt++) {
+        await refreshOnlineData({ silent: false, hasLocalData: false });
+
+        if (hasMinimumBootstrapData()) {
+            return;
+        }
+
+        if (attempt < INITIAL_BOOTSTRAP_MAX_ATTEMPTS) {
+            showAppNotification(
+                `Reintentando carga inicial de técnicos y catálogos (${attempt + 1}/${INITIAL_BOOTSTRAP_MAX_ATTEMPTS})...`,
+                'info',
+                2500
+            );
+            await wait(INITIAL_BOOTSTRAP_RETRY_DELAY_MS);
+        }
     }
 }
 
@@ -467,8 +520,8 @@ export async function main() {
             // Refrescar en segundo plano para no bloquear el login del técnico
             refreshOnlineData({ silent: true, hasLocalData }).catch(err => console.error('Background refresh failed:', err));
         } else {
-            // Primera vez sin cache: mantenemos flujo bloqueante
-            await refreshOnlineData({ silent: false, hasLocalData: false });
+            // Primera vez sin cache: reintentar porque Android a veces reporta la red tarde al abrir.
+            await ensureInitialBootstrapData(false);
         }
 
         populateLoginWorkerSelect();

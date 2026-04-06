@@ -8,6 +8,8 @@
     "build": "npm run build:web",
     "build:web": "vite build",
     "build:mobile": "vite build --mode mobile",
+    "build:android": "npm run build:mobile && npx cap sync android",
+    "android:build:debug": "npm run build:android && cd android && gradlew.bat clean assembleDebug --console=plain --no-daemon",
     "preview": "vite preview"
   },
   "dependencies": {
