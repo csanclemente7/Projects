@@ -1448,6 +1448,7 @@ export async function navigateToOrderWorkspace(orderId: string | null, fromQuote
             technicianIds: [NO_ASIGNADO_TECHNICIAN_ID],
             taxRate: State.getDefaultVatRate(),
             estimated_duration: 0,
+            image_urls: [],
         };
 
         if (fromQuoteId) {
@@ -3118,14 +3119,26 @@ export function setupOrderAnnexUpload() {
         if (!activeOrder) return;
         if (!activeOrder.image_urls) activeOrder.image_urls = [];
 
+        // Show immediate visual feedback
+        const container = document.getElementById("order-annex-preview-container");
+        if (container) {
+            for (let i = 0; i < files.length; i++) {
+                const el = document.createElement("div");
+                el.className = "quote-annex-preview-item";
+                el.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;"><i class="fas fa-spinner fa-spin"></i></div>`;
+                container.appendChild(el);
+            }
+        }
+
         for (let i = 0; i < files.length; i++) {
             try {
                 const compressedBlob = await compressImage(files[i]);
-                const fileName = "ORDER_" + Date.now() + "_" + Math.random().toString(36).substring(7) + ".jpg";
+                const fileName = "public/ORDER_" + Date.now() + "_" + Math.random().toString(36).substring(7) + ".jpg";
                 // Uses order-images bucket (instructions provided to user to create it)
                 const { data, error } = await supabaseOrders.storage.from("order-images").upload(fileName, compressedBlob, { contentType: "image/jpeg" });
                 if (error) {
                     console.error("Error uploading order image:", error);
+                    showNotification("Error al cargar imagen en la nube.", "error");
                     continue;
                 }
                 if (data && data.path) {
@@ -3133,6 +3146,7 @@ export function setupOrderAnnexUpload() {
                 }
             } catch (err) {
                 console.error("Error compressing image:", err);
+                showNotification("Error al comprimir la imagen.", "error");
             }
         }
         State.setCurrentOrder(activeOrder);
