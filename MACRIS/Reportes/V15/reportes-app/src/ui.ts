@@ -9,7 +9,7 @@ import SignaturePad from 'signature_pad';
 import { EntityType, Equipment, Order, Report, User, MaintenanceTableKey, EquipmentType, RefrigerantType, City, Company, Dependency } from './types';
 import { extractDataFromImage } from './ai';
 // FIX: Changed import from 'fetchReports' to 'fetchAllReports' and 'fetchReportsForWorker'
-import { updateMaintenanceReport, fetchAllReports, fetchReportsForWorker, saveEntity, fetchCities } from './api';
+import { updateMaintenanceReport, fetchAllReports, fetchReportsForWorker, saveEntity, fetchCities, supabaseOrders, supabaseClients } from './api';
 // FIX: Added JSZip import to handle zip file creation for report downloads.
 import JSZip from 'jszip';
 import { getAllFromStore, updateLocalReport } from './lib/local-db';
@@ -2803,18 +2803,42 @@ export function openOrderDetailsModal(orderId: string) {
             order.image_urls.forEach(url => {
                 const imgWrap = document.createElement('div');
                 imgWrap.style.cssText = 'position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); cursor: pointer;';
-
-                const img = document.createElement('img');
-                img.src = url;
-                img.style.cssText = 'width: 100%; height: 100%; object-fit: cover;';
-
-                imgWrap.addEventListener('click', () => {
-                    const win = window.open();
-                    win?.document.write(`<html><body style="margin:0;display:flex;justify-content:center;align-items:center;background:#000;"><img src="${url}" style="max-width:100%;max-height:100%;"></body></html>`);
-                });
-
-                imgWrap.appendChild(img);
+                imgWrap.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;"><i class="fas fa-spinner fa-spin"></i></div>`;
                 D.orderImagesContainer.appendChild(imgWrap);
+
+                let downloadPromise;
+                if (url.startsWith('QUOTE_IMG::')) {
+                    const cleanUrl = url.replace('QUOTE_IMG::', '');
+                    downloadPromise = supabaseClients.storage.from("quote-images").download(cleanUrl);
+                } else if (url.startsWith('http')) {
+                    // Si ya es un http, no necesitamos descargarlo a través del bucket
+                    downloadPromise = Promise.resolve({ data: url, error: null, isDirectHttp: true });
+                } else {
+                    downloadPromise = supabaseOrders.storage.from("order-images").download(url);
+                }
+
+                downloadPromise.then((result: any) => {
+                    const { data, error, isDirectHttp } = result;
+                    let objectUrl = "";
+                    let imgHtml = "";
+                    
+                    if (!error && data) {
+                        objectUrl = isDirectHttp ? data : URL.createObjectURL(data);
+                        imgHtml = `<img src="${objectUrl}" style="width: 100%; height: 100%; object-fit: cover;" alt="Anexo Orden">`;
+                    } else {
+                        console.error("Error downloading order annex:", error);
+                        imgHtml = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#ff4444;"><i class="fas fa-exclamation-triangle"></i></div>`;
+                    }
+                    
+                    imgWrap.innerHTML = imgHtml;
+
+                    if (!error && data) {
+                        imgWrap.addEventListener('click', () => {
+                            const win = window.open();
+                            win?.document.write(`<html><body style="margin:0;display:flex;justify-content:center;align-items:center;background:#000;"><img src="${objectUrl}" style="max-width:100%;max-height:100%;"></body></html>`);
+                        });
+                    }
+                });
             });
         } else {
             D.orderImagesContainer.innerHTML = '<span style="color: var(--text-muted); font-size: 0.9em;">Sin fotos adjuntas.</span>';
