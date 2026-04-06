@@ -11,7 +11,8 @@ import { renderModernPDF } from './pdf-templates/modern';
 import { renderSleekPDF } from './pdf-templates/sleek';
 import { renderVividPDF } from './pdf-templates/vivid';
 import { renderOrderPDF } from './pdf-templates/order';
-import { isMobileDevice } from './utils';
+import { isMobileDevice, formatCurrency } from './utils';
+import autoTable from 'jspdf-autotable';
 
 // Dummy Data for Previews
 const dummyClient: Client = {
@@ -95,6 +96,125 @@ export async function generateQuotePDFDoc(quote: Quote): Promise<jsPDF> {
 
     await dispatchPdfGeneration(doc, quote, client, template);
     await appendImagesToPdf(doc, quote);
+
+    return doc;
+}
+
+export async function generateBillPDFDoc(quote: Quote): Promise<jsPDF> {
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+    const client = State.getClients().find(c => c.id === quote.clientId);
+    const clientName = client ? client.name.toUpperCase() : 'CLIENTE';
+
+    doc.setProperties({
+        title: `Cuenta de Cobro No. ${quote.manualId} ${clientName}.pdf`
+    });
+    State.setCurrentPdfFileName(`Cuenta de Cobro No. ${quote.manualId} ${clientName}.pdf`);
+
+    const margin = 40;
+    const pageWidth = doc.internal.pageSize.width;
+    let y = 80;
+
+    // FECHA
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    const options = { year: 'numeric', month: 'long', day: 'numeric' } as const;
+    const dateStr = new Date(quote.date).toLocaleDateString('es-CO', options);
+    doc.text(`Guadalajara de Buga, ${dateStr}`, pageWidth / 2, y, { align: 'center' });
+    
+    y += 40;
+    
+    // CUENTA DE COBRO
+    doc.setFontSize(11);
+    doc.text(`CUENTA DE COBRO No.          ${quote.manualId}`, pageWidth / 2, y, { align: 'center' });
+
+    y += 30;
+    doc.setFont('helvetica', 'bold');
+    doc.text('CLIENTE', pageWidth / 2, y, { align: 'center' });
+
+    y += 20;
+    doc.setFont('helvetica', 'normal');
+    doc.text(clientName, pageWidth / 2, y, { align: 'center' });
+
+    y += 30;
+    doc.setFont('helvetica', 'bold');
+    doc.text('DEBE A', pageWidth / 2, y, { align: 'center' });
+
+    y += 15;
+    doc.setFont('helvetica', 'normal');
+    doc.text('JAIR SANCLEMENTE AGUDELO', pageWidth / 2, y, { align: 'center' });
+    y += 15;
+    doc.text('C.C. 14.889.299', pageWidth / 2, y, { align: 'center' });
+
+    y += 40;
+
+    // TABLE
+    const tableHeaders = [['DESCRIPCION', 'CANT', 'V/R UNITARIO', 'V/R TOTAL']];
+    let total = 0;
+    const tableData = quote.items.map(item => {
+        const lineTotal = item.price * item.quantity;
+        total += lineTotal;
+        return [
+            item.description.toUpperCase(),
+            item.quantity.toString(),
+            formatCurrency(item.price),
+            formatCurrency(lineTotal)
+        ];
+    });
+
+    // Add empty rows to push the table down a bit if it's too short (like in screenshot)
+    for (let i = 0; i < 5; i++) {
+        tableData.push(['', '', '$ -', '$ -']);
+    }
+
+    // Add total row at the end
+    tableData.push(['', '', '', formatCurrency(total)]);
+
+    autoTable(doc, {
+        head: tableHeaders,
+        body: tableData,
+        startY: y,
+        theme: 'grid',
+        headStyles: {
+            fillColor: [255, 255, 255],
+            textColor: 0,
+            fontStyle: 'bold',
+            halign: 'center',
+            lineWidth: 1,
+            lineColor: 0
+        },
+        bodyStyles: {
+            textColor: 0,
+            lineWidth: 1,
+            lineColor: 0
+        },
+        styles: {
+            cellPadding: 8,
+            fontSize: 10
+        },
+        columnStyles: {
+            0: { cellWidth: 200 },
+            1: { halign: 'center', cellWidth: 50 },
+            2: { halign: 'center' },
+            3: { halign: 'center' }
+        },
+        didParseCell: function (data) {
+            // Make the last row bold for totals
+            if (data.section === 'body' && data.row.index === tableData.length - 1) {
+                data.cell.styles.fontStyle = 'bold';
+            }
+        }
+    });
+
+    let finalTableY = (doc as any).lastAutoTable.finalY + 80;
+
+    // Signature
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.line(margin + 50, finalTableY, margin + 250, finalTableY);
+    finalTableY += 15;
+    doc.text('JAIR SANCLEMENTE', margin + 150, finalTableY, { align: 'center' });
+    finalTableY += 15;
+    doc.text('C.C. 14.889.299', margin + 150, finalTableY, { align: 'center' });
 
     return doc;
 }

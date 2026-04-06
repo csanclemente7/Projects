@@ -266,6 +266,7 @@ function setupGlobalActionListeners() {
         const editQuoteBtn = target.closest('.edit-quote-btn');
         const duplicateListBtn = target.closest('.copy-quote-btn');
         const pdfListBtn = target.closest('.generate-pdf-list-btn');
+        const billListBtn = target.closest('.generate-bill-list-btn');
 
         if (deleteBtn) {
             e.stopPropagation();
@@ -279,6 +280,9 @@ function setupGlobalActionListeners() {
         } else if (pdfListBtn) {
             e.stopPropagation();
             UI.handleGeneratePdfFromList(quoteRow.dataset.id, pdfListBtn as HTMLButtonElement);
+        } else if (billListBtn) {
+            e.stopPropagation();
+            UI.handleGenerateBillFromList(quoteRow.dataset.id, billListBtn as HTMLButtonElement);
         } else if (editQuoteBtn) {
             e.stopPropagation();
             UI.loadQuote(quoteRow.dataset.id);

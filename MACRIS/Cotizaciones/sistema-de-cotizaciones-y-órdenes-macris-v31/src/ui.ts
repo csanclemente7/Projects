@@ -1,7 +1,7 @@
 import * as D from './dom';
 import * as State from './state';
 import * as API from './api';
-import { generateQuotePDFDoc, generateOrderPDFDoc, generatePreviewPDF, previewPdfInModal } from './pdf';
+import { generateQuotePDFDoc, generateOrderPDFDoc, generatePreviewPDF, previewPdfInModal, generateBillPDFDoc } from './pdf';
 import type { Quote, QuoteItem, Client, Item, PdfTemplate, Order, Technician, OrderItem, ClientInsert, ItemInsert, TechnicianInsert } from './types';
 import { formatCurrency, generateId, isMobileDevice, formatTime } from './utils';
 import { getSessionUser } from './user-session';
@@ -526,6 +526,39 @@ export async function handleGeneratePdfFromList(quoteId: string, btn: HTMLButton
     }
 }
 
+export async function handleGenerateBillFromList(quoteId: string, btn: HTMLButtonElement) {
+    const quote = State.getQuotes().find(q => q.id === quoteId);
+    if (!quote) return;
+    
+    const client = State.getClients().find(c => c.id === quote.clientId);
+    if (!client) {
+        showNotification("Debe asignar un cliente a esta cotización.", "error");
+        return;
+    }
+
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`;
+
+    try {
+        const doc = await generateBillPDFDoc(quote);
+        const preference = isMobileDevice() ? 'download' : State.getPdfOutputPreference();
+        if (preference === 'download') {
+            doc.save(`Cuenta de Cobro No. ${quote.manualId} ${client.name.toUpperCase()}.pdf`);
+        } else {
+            State.setCurrentPdfDocForDownload(doc);
+            State.setCurrentPdfFileName(`Cuenta de Cobro No. ${quote.manualId} ${client.name.toUpperCase()}.pdf`);
+            previewPdfInModal(doc);
+        }
+    } catch (err: any) {
+        console.error("Error generating bill pdf:", err);
+        showNotification("Error al generar la cuenta de cobro.", "error");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
 export async function handleGenerateOrderPdf() {
     const order = State.getCurrentOrder();
     if (!order || !order.clientId) {
@@ -827,7 +860,7 @@ export function renderSavedQuotesPageList() {
             const total = q.items.reduce((s, i) => s + i.quantity * i.price, 0) * (1 + q.taxRate / 100);
             const author = State.getQuoteAuthor(q.id);
             const authorColor = getAuthorColor(author);
-            return `<tr data-id="${q.id}" title="Haz clic para abrir esta cotización"><td style="cursor:pointer;"><strong>${client}</strong><br><small>#${q.manualId} &bull; ${date}</small><br><small class="quote-author">Por: <span style="color: ${authorColor}; font-weight: 600;">${author}</span> &bull; ${createdTime}</small></td><td>${client}</td><td>${date}</td><td>${formatCurrency(total)}</td><td class="actions" style="white-space: nowrap;"><button class="btn btn-secondary edit-quote-btn" data-id="${q.id}" title="Editar Cotización"><i class="fas fa-edit"></i> Editar cotización</button> <button class="btn btn-primary create-order-btn" data-id="${q.id}" title="Crear Orden"><i class="fas fa-clipboard-check"></i> Crear orden</button> <button class="btn btn-duplicate copy-quote-btn" data-id="${q.id}" title="Duplicar"><i class="fas fa-copy"></i> Duplicar</button> <button class="btn btn-icon-only btn-info generate-pdf-list-btn" data-id="${q.id}" title="Generar PDF"><i class="fas fa-file-pdf"></i></button> <button class="btn btn-icon-only btn-danger delete-btn" data-id="${q.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`;
+            return `<tr data-id="${q.id}" title="Haz clic para abrir esta cotización"><td style="cursor:pointer;"><strong>${client}</strong><br><small>#${q.manualId} &bull; ${date}</small><br><small class="quote-author">Por: <span style="color: ${authorColor}; font-weight: 600;">${author}</span> &bull; ${createdTime}</small></td><td>${client}</td><td>${date}</td><td>${formatCurrency(total)}</td><td class="actions" style="white-space: nowrap;"><button class="btn btn-secondary edit-quote-btn" data-id="${q.id}" title="Editar Cotización"><i class="fas fa-edit"></i> Editar cotización</button> <button class="btn btn-primary create-order-btn" data-id="${q.id}" title="Crear Orden"><i class="fas fa-clipboard-check"></i> Crear orden</button> <button class="btn btn-duplicate copy-quote-btn" data-id="${q.id}" title="Duplicar"><i class="fas fa-copy"></i> Duplicar</button> <button class="btn btn-icon-only btn-info generate-pdf-list-btn" data-id="${q.id}" title="Generar PDF"><i class="fas fa-file-pdf"></i></button> <button class="btn btn-icon-only generate-bill-list-btn" data-id="${q.id}" title="Generar Cuenta de Cobro" style="background-color: #28a745; color: white; border-color: #28a745;"><i class="fas fa-file-invoice-dollar"></i></button> <button class="btn btn-icon-only btn-danger delete-btn" data-id="${q.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`;
         }).join('');
     }
     D.savedQuotesPageContainer.innerHTML = html + `</tbody></table>`;
