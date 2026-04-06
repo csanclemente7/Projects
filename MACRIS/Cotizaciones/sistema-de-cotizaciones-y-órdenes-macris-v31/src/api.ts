@@ -3,6 +3,7 @@ import type {
     Item, Client, Quote, QuoteItem, Setting, Technician, Order, OrderItem, ServiceType,
     ClientInsert, ItemInsert, QuoteInsert, QuoteItemInsert, OrderInsert, OrderItemInsert, TechnicianInsert, OrderTechnicianInsert, SettingInsert, DatabaseQuotes 
 } from './types';
+import { generateId } from './utils';
 
 // --- ID Generation ---
 async function _findNextHighestManualId(
@@ -156,6 +157,7 @@ export async function saveQuote(quote: Quote): Promise<Quote> {
     if (image_urls && image_urls.length > 0) {
         image_urls.forEach((url, idx) => {
             itemsToInsert.push({
+                id: generateId(),
                 quoteId: savedQuote.id,
                 description: `<IMAGE::>${url}`,
                 quantity: 0,
@@ -206,7 +208,7 @@ export async function saveOrder(order: Order): Promise<Order> {
     if(fetchError || !finalOrderData) throw new Error("Could not re-fetch saved order.");
     
     // Reconstruct the Order object correctly, removing the 'technicians' property
-    const { technicians, ...restOfOrder } = finalOrderData;
+    const { technicians, ...restOfOrder } = finalOrderData as any;
     const finalOrder: Order = { 
         ...restOfOrder, 
         items: restOfOrder.items || [], 
@@ -235,7 +237,7 @@ export async function getSetting(key: string): Promise<string | null> {
         console.error(`Error fetching setting ${key}:`, error);
         return null;
     };
-    return data?.value ?? null;
+    return (data as any)?.value ?? null;
 }
 export async function setSetting(key: string, value: string): Promise<void> {
     const setting: SettingInsert = { key, value };

@@ -265,6 +265,7 @@ function setupGlobalActionListeners() {
         const createOrderBtn = target.closest('.create-order-btn');
         const editQuoteBtn = target.closest('.edit-quote-btn');
         const duplicateListBtn = target.closest('.copy-quote-btn');
+        const pdfListBtn = target.closest('.generate-pdf-list-btn');
 
         if (deleteBtn) {
             e.stopPropagation();
@@ -275,6 +276,9 @@ function setupGlobalActionListeners() {
         } else if (duplicateListBtn) {
             e.stopPropagation();
             UI.handleDuplicateQuote(quoteRow.dataset.id, false, duplicateListBtn as HTMLButtonElement);
+        } else if (pdfListBtn) {
+            e.stopPropagation();
+            UI.handleGeneratePdfFromList(quoteRow.dataset.id, pdfListBtn as HTMLButtonElement);
         } else if (editQuoteBtn) {
             e.stopPropagation();
             UI.loadQuote(quoteRow.dataset.id);

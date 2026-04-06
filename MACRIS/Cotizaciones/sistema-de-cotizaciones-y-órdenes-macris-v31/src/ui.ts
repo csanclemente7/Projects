@@ -483,10 +483,45 @@ export async function handleGeneratePdf() {
             previewPdfInModal(doc);
         }
     } catch (err: any) {
-        showNotification(`Error: ${err.message}`, "error");
+        showNotification(`Error al generar el PDF: ${err.message}`, 'error');
+        console.error(err);
     } finally {
         btn.disabled = false;
         D.saveQuoteBtn.disabled = false;
+        btn.innerHTML = originalText;
+    }
+}
+
+export async function handleGeneratePdfFromList(quoteId: string, btn: HTMLButtonElement) {
+    const quote = State.getQuotes().find(q => q.id === quoteId);
+    if (!quote) return;
+    
+    // Check client
+    const client = State.getClients().find(c => c.id === quote.clientId);
+    if (!client) {
+        showNotification("Debe asignar un cliente a esta cotización.", "error");
+        return;
+    }
+
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`;
+
+    try {
+        const doc = await generateQuotePDFDoc(quote);
+        const preference = isMobileDevice() ? 'download' : State.getPdfOutputPreference();
+        if (preference === 'download') {
+            doc.save(`Cotizacion_${quote.manualId}.pdf`);
+        } else {
+            State.setCurrentPdfDocForDownload(doc);
+            State.setCurrentPdfFileName(`Cotizacion_${quote.manualId}.pdf`);
+            previewPdfInModal(doc);
+        }
+    } catch (err: any) {
+        showNotification(`Error al generar el PDF: ${err.message}`, 'error');
+        console.error(err);
+    } finally {
+        btn.disabled = false;
         btn.innerHTML = originalText;
     }
 }
@@ -792,7 +827,7 @@ export function renderSavedQuotesPageList() {
             const total = q.items.reduce((s, i) => s + i.quantity * i.price, 0) * (1 + q.taxRate / 100);
             const author = State.getQuoteAuthor(q.id);
             const authorColor = getAuthorColor(author);
-            return `<tr data-id="${q.id}" title="Haz clic para abrir esta cotización"><td style="cursor:pointer;"><strong>${client}</strong><br><small>#${q.manualId} &bull; ${date}</small><br><small class="quote-author">Por: <span style="color: ${authorColor}; font-weight: 600;">${author}</span> &bull; ${createdTime}</small></td><td>${client}</td><td>${date}</td><td>${formatCurrency(total)}</td><td class="actions" style="white-space: nowrap;"><button class="btn btn-secondary edit-quote-btn" data-id="${q.id}" title="Editar Cotización"><i class="fas fa-edit"></i> Editar cotización</button> <button class="btn btn-primary create-order-btn" data-id="${q.id}" title="Crear Orden"><i class="fas fa-clipboard-check"></i> Crear orden</button> <button class="btn btn-duplicate copy-quote-btn" data-id="${q.id}" title="Duplicar"><i class="fas fa-copy"></i> Duplicar</button> <button class="btn btn-icon-only btn-danger delete-btn" data-id="${q.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`;
+            return `<tr data-id="${q.id}" title="Haz clic para abrir esta cotización"><td style="cursor:pointer;"><strong>${client}</strong><br><small>#${q.manualId} &bull; ${date}</small><br><small class="quote-author">Por: <span style="color: ${authorColor}; font-weight: 600;">${author}</span> &bull; ${createdTime}</small></td><td>${client}</td><td>${date}</td><td>${formatCurrency(total)}</td><td class="actions" style="white-space: nowrap;"><button class="btn btn-secondary edit-quote-btn" data-id="${q.id}" title="Editar Cotización"><i class="fas fa-edit"></i> Editar cotización</button> <button class="btn btn-primary create-order-btn" data-id="${q.id}" title="Crear Orden"><i class="fas fa-clipboard-check"></i> Crear orden</button> <button class="btn btn-duplicate copy-quote-btn" data-id="${q.id}" title="Duplicar"><i class="fas fa-copy"></i> Duplicar</button> <button class="btn btn-icon-only btn-info generate-pdf-list-btn" data-id="${q.id}" title="Generar PDF"><i class="fas fa-file-pdf"></i></button> <button class="btn btn-icon-only btn-danger delete-btn" data-id="${q.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`;
         }).join('');
     }
     D.savedQuotesPageContainer.innerHTML = html + `</tbody></table>`;
@@ -1432,6 +1467,8 @@ export async function navigateToOrderWorkspace(orderId: string | null, fromQuote
                     created_at: new Date().toISOString()
                 }));
                 order.order_type = inferOrderTypesFromItems(order.items, '');
+                order.notes = quote.internal_notes || '';
+                order.image_urls = quote.image_urls ? quote.image_urls.map(url => `QUOTE_IMG::${url}`) : [];
             }
         }
     }
@@ -1460,11 +1497,6 @@ export function renderOrderWorkspace(order: Order | null) {
     D.orderEditClientBtn.style.display = order.clientId ? 'inline-flex' : 'none';
     D.orderClientCityInput.value = client?.city || '';
 
-    if (order.service_date) {
-        (D.orderDateInput as any)._flatpickr.setDate(order.service_date, false);
-    } else {
-        (D.orderDateInput as any)._flatpickr.clear();
-    }
     D.orderTimeInput.value = order.service_time || '';
 
     currentSelectedOrderTypes = order.order_type ? order.order_type.split(' • ').map(s => s.trim()).filter(s => s) : [];
@@ -1501,8 +1533,6 @@ export function renderOrderWorkspace(order: Order | null) {
     D.orderServicesTableBody.innerHTML = '';
     D.orderMaterialsTableBody.innerHTML = '';
 
-
-
     const currentTypes = order.order_type ? order.order_type.split(' • ').map(s => s.trim()) : [];
     order.items.forEach(item => {
         if (isServiceItem(item.description) || currentTypes.includes(item.description)) {
@@ -1511,6 +1541,14 @@ export function renderOrderWorkspace(order: Order | null) {
             D.orderMaterialsTableBody.appendChild(createItemRow(item, 'order'));
         }
     });
+
+    // Update flatpickr last so that any synchronously triggered handleOrderDetailsChange
+    // reads the fully initialized correct DOM values.
+    if (order.service_date) {
+        (D.orderDateInput as any)._flatpickr.setDate(order.service_date, false);
+    } else {
+        (D.orderDateInput as any)._flatpickr.clear();
+    }
     updateOrderSummary();
 }
 
@@ -1526,8 +1564,13 @@ export function inferOrderTypesFromItems(items: Array<{description: string}>, cu
             if (match) inferredTypes.add(match);
             else inferredTypes.add('Montaje/Instalación');
         }
-        else if (desc.includes('mantenimiento preventivo') || desc.includes('preventivo')) {
-            const match = predefinedTypes.find(t => t.toLowerCase().includes('preventivo'));
+        else if (desc.includes('reparaci') || desc.includes('correctivo')) {
+            const match = predefinedTypes.find(t => t.toLowerCase().includes('correctivo') || t.toLowerCase().includes('reparaci'));
+            if (match) inferredTypes.add(match);
+            else inferredTypes.add('Mantenimiento Correctivo');
+        }
+        else if (desc.includes('mantenimiento') || desc.includes('preventivo')) {
+            const match = predefinedTypes.find(t => t.toLowerCase().includes('preventivo') || t.toLowerCase().includes('mantenimiento'));
             if (match) inferredTypes.add(match);
             else inferredTypes.add('Mantenimiento Preventivo');
         }
@@ -1540,11 +1583,6 @@ export function inferOrderTypesFromItems(items: Array<{description: string}>, cu
             const match = predefinedTypes.find(t => t.toLowerCase().includes('revis') || t.toLowerCase().includes('diagn'));
             if (match) inferredTypes.add(match);
             else inferredTypes.add('Revisión/Diagnóstico');
-        }
-        else if (desc.includes('reparaci') || desc.includes('correctivo')) {
-            const match = predefinedTypes.find(t => t.toLowerCase().includes('correctivo') || t.toLowerCase().includes('reparaci'));
-            if (match) inferredTypes.add(match);
-            else inferredTypes.add('Mantenimiento Correctivo');
         }
     });
 
@@ -3115,7 +3153,15 @@ export function renderOrderAnnexPreviews(order: Order | null) {
         el.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#aaa;"><i class="fas fa-spinner fa-spin"></i></div>`;
         container.appendChild(el);
 
-        supabaseOrders.storage.from("order-images").download(url).then(({ data, error }) => {
+        let downloadPromise;
+        if (url.startsWith('QUOTE_IMG::')) {
+            const cleanUrl = url.replace('QUOTE_IMG::', '');
+            downloadPromise = supabaseQuotes.storage.from("quote-images").download(cleanUrl);
+        } else {
+            downloadPromise = supabaseOrders.storage.from("order-images").download(url);
+        }
+
+        downloadPromise.then(({ data, error }) => {
             let objectUrl = "";
             let imgHtml = "";
             if (!error && data) {

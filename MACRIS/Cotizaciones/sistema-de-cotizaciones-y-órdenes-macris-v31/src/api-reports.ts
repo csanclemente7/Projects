@@ -33,8 +33,9 @@ export async function fetchReportsBatch(offset: number, limit: number, filters?:
         date_to: filters?.dateTo ? `${filters.dateTo}T23:59:59.999Z` : null
     };
 
+    // @ts-ignore
     const { data, error, count } = await supabaseOrders
-        .rpc('filter_maintenance_reports', rpcParams, { count: 'exact' })
+        .rpc('filter_maintenance_reports', rpcParams as any, { count: 'exact' })
         .range(offset, offset + limit - 1);
 
     if (error) {
@@ -55,8 +56,9 @@ export async function fetchAllExportableReports(filters?: { searchTerm?: string,
         date_to: filters?.dateTo ? `${filters.dateTo}T23:59:59.999Z` : null
     };
 
+    // @ts-ignore
     const { data, error } = await supabaseOrders
-        .rpc('filter_maintenance_reports', rpcParams);
+        .rpc('filter_maintenance_reports', rpcParams as any);
 
     if (error) {
         console.error('Error fetching all exportable reports:', error);
@@ -69,6 +71,7 @@ export async function fetchAllExportableReports(filters?: { searchTerm?: string,
 export async function updateReportPaymentStatus(id: string, isPaid: boolean) {
     const { error } = await supabaseOrders
         .from('maintenance_reports')
+        // @ts-ignore
         .update({ is_paid: isPaid } as any)
         .eq('id', id);
         
@@ -95,6 +98,7 @@ export async function deleteReport(id: string): Promise<boolean> {
 export async function updateReportEquipmentSnapshot(id: string, snapshot: any): Promise<boolean> {
     const { error } = await supabaseOrders
         .from('maintenance_reports')
+        // @ts-ignore
         .update({ equipment_snapshot: snapshot } as any)
         .eq('id', id);
 

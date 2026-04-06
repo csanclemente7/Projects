@@ -3700,14 +3700,14 @@ body.dark-theme .custom-select-container {
 #reports-data-table th {
     padding: 14px 16px;
     font-weight: 700;
-    color: var(--color-text-primary);
+    color: #ffffff;
     border-bottom: 2px solid var(--color-border-medium);
     border-right: 1px solid var(--color-border-light);
     border-top: 1px solid var(--color-border-light);
     text-transform: uppercase;
     font-size: 0.75rem;
     letter-spacing: 0.05em;
-    background-color: var(--color-bg-dark);
+    background-color: #0d213b;
     white-space: nowrap;
     text-align: left;
 }
@@ -3731,8 +3731,12 @@ body.dark-theme .custom-select-container {
     transition: background-color 0.2s ease;
 }
 
+#reports-data-table tbody tr:nth-child(even) {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
 #reports-data-table tbody tr:hover {
-    background-color: rgba(var(--color-primary-rgb), 0.04);
+    background-color: rgba(var(--color-primary-rgb), 0.08); /* slightly darker on hover so it stands out on zebra */
 }
 
 #reports-data-table tbody tr:last-child td {
