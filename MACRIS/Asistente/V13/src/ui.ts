@@ -1,8 +1,8 @@
-
 import * as D from './dom';
 import * as State from './state';
 import { formatDate, formatTime, fuzzyNormalize } from './utils';
 import { processAiRequest, AiResult } from './ai';
+import { getWidgetConfig, setWidgetConfig, updateDashboardData } from './dashboard';
 import { fetchReportDetails, fetchAllReports, fetchReportsForWorker, fetchAllReportsForExport, fetchUniqueNamesFromSnapshots } from './api';
 import { generateReportPDF, generateReportsPDF } from './lib/pdf-generator';
 import JSZip from 'jszip';
@@ -531,6 +531,40 @@ function setupChat() {
                 State.updateFilters(filtersToApply);
                 renderSelectedCompaniesChips();
                 await changePage(0);
+            } else if (result.action === 'build_dashboard' && result.dashboardConfig) {
+                // Ensure we switch to dashboard view
+                const btnDashboard = document.getElementById('btn-view-dashboard');
+                if (btnDashboard) btnDashboard.click();
+
+                // Apply implicitly any global filter logic if the AI inferred the user wants to filter first 
+                if (result.appliedFilters) {
+                    const filtersToApply: Partial<State.FilterState> = {};
+                    if (result.appliedFilters.companyName) {
+                        const companyName = result.appliedFilters.companyName;
+                        const company = (State.companies as Company[]).find(c => c.name === companyName);
+                        filtersToApply.companyId = company ? [company.id, companyName] : [companyName];
+                        filtersToApply.global = companyName; 
+                    }
+                    if (result.appliedFilters.dateStart) filtersToApply.dateStart = result.appliedFilters.dateStart;
+                    if (result.appliedFilters.dateEnd) filtersToApply.dateEnd = result.appliedFilters.dateEnd;
+                    State.updateFilters(filtersToApply);
+                    renderSelectedCompaniesChips();
+                }
+
+                // Handle Widget Configuration
+                let currentConfig = getWidgetConfig();
+                if (result.dashboardConfig.mode === 'replace') {
+                    currentConfig = result.dashboardConfig.widgets; // Use only the ones generated
+                } else {
+                    // Append only unique ones
+                    result.dashboardConfig.widgets.forEach(w => {
+                        // Generate dynamic IDs to prevent collision if ID was static
+                        w.id = 'w_' + Math.random().toString(36).substr(2, 9);
+                        currentConfig.push(w);
+                    });
+                }
+                setWidgetConfig(currentConfig);
+                await updateDashboardData();
             }
             
             const userHistory: ChatHistoryEntry = { role: 'user', parts: [{ text: textValue }] };
@@ -983,3 +1017,12 @@ export function updateUserPointsDisplay(p: any) {}
 export function populateLoginWorkerSelect() {}
 export function openReportFormModal(o: any) {}
 export function closeReportFormModal() {}
+
+export function openModal(id: string) {
+    const m = document.getElementById(id);
+    if(m) m.style.display = 'flex';
+}
+export function closeModal(id: string) {
+    const m = document.getElementById(id);
+    if(m) m.style.display = 'none';
+}

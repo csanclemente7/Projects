@@ -549,3 +549,13 @@ export type MaintenanceTableKey =
     'adminOrders';
 
 export type EntityType = 'city'|'company'|'dependency'|'equipment'|'employee' | 'equipmentType' | 'refrigerant';
+export interface WidgetConfig {
+    id: string;
+    title: string;
+    type: 'kpi' | 'bar' | 'donut' | 'line';
+    metric: 'count' | 'winrate' | 'utility';
+    dimension: 'none' | 'date' | 'workerName' | 'serviceType' | 'cityId';
+    size: 'col-100' | 'col-50' | 'col-33' | 'col-25';
+    widthPx?: number;
+    heightPx?: number;
+}

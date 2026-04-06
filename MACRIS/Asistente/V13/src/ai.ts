@@ -2,6 +2,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import * as State from './state';
 import type { ChatHistoryEntry } from './state';
+import type { WidgetConfig } from './types';
 
 export interface AiResult {
     isRequestApproved?: boolean;
@@ -17,7 +18,11 @@ export interface AiResult {
     };
     requiresClarification?: boolean;
     clarificationOptions?: string[];
-    action?: "none" | "filter" | "download_pdf" | "download_excel";
+    action?: "none" | "filter" | "download_pdf" | "download_excel" | "build_dashboard";
+    dashboardConfig?: {
+        mode: "replace" | "append";
+        widgets: WidgetConfig[];
+    }
 }
 
 const filterSchema = {
@@ -43,7 +48,28 @@ const filterSchema = {
             items: { type: Type.STRING },
             description: "Lista de nombres exactos de sedes o empresas que coinciden fonéticamente o por subcadena."
         },
-        action: { type: Type.STRING, enum: ["none", "filter", "download_pdf", "download_excel"] }
+        action: { type: Type.STRING, enum: ["none", "filter", "download_pdf", "download_excel", "build_dashboard"] },
+        dashboardConfig: {
+            type: Type.OBJECT,
+            description: "Obligatorio si action=build_dashboard. Define cómo reconfigurar la vista de Panel de Rendimiento.",
+            properties: {
+                mode: { type: Type.STRING, enum: ["replace", "append"], description: "replace para recrear un panel entero, append para añadir gráficas extra al panel actual." },
+                widgets: {
+                    type: Type.ARRAY,
+                    items: {
+                        type: Type.OBJECT,
+                        properties: {
+                            id: { type: Type.STRING },
+                            title: { type: Type.STRING, description: "Título claro y conciso de la métrica." },
+                            type: { type: Type.STRING, enum: ["kpi", "donut", "bar", "line"] },
+                            metric: { type: Type.STRING, enum: ["count", "winrate", "utility"] },
+                            dimension: { type: Type.STRING, enum: ["none", "date", "workerName", "serviceType"] },
+                            size: { type: Type.STRING, enum: ["col-100", "col-50", "col-33", "col-25"] }
+                        }
+                    }
+                }
+            }
+        }
     }
 };
 
@@ -79,7 +105,11 @@ export async function processAiRequest(userPrompt: string, history: ChatHistoryE
     2. DEPURACIÓN ACTIVA: Si el usuario pide "todas las de confandi", DEBES activar 'requiresClarification: true' y mostrar la lista de TODAS las sedes reales (Limonar, Tulua, Palmira, etc.) para que el usuario las vea y confirme. No filtres a ciegas.
     3. DETECCIÓN DE HISTORIAL: Usa 'empresasDisponibles' para mapear términos. Por ejemplo, "tulua" debería coincidir con "CONFANDI TULUA".
     4. EMPATÍA: Responde de forma amable indicando cuántas sedes o coincidencias has encontrado.
-
+    5. CONTROL DE DASHBOARD: Si el usuario te pide armar, generar o añadir gráficas a su panel, debes usar action='build_dashboard'. 
+       - Si dice "áramame un dashboard" -> mode="replace". Si dice "añade a mi dashboard" -> mode="append".
+       - Mapea correctamente las métricas: 'count' (cantidad), 'winrate' (efectividad/pagos), 'utility' (dinero).
+       - Mapea las dimensiones: 'date' (por fecha), 'workerName' (por técnico), 'serviceType' (por tipo), o 'none' (para KPIs globales).
+       - Usa sizes: 'col-25' para KPIs, 'col-50' para donas/barras pequeñas, 'col-100' para líneas de tiempo.
     Contexto de Base de Datos Real (Histórico Incluido):
     - Empresas/Sedes: ${dbContext.empresasDisponibles.join(', ')}
     - Técnicos: ${dbContext.tecnicosDisponibles.join(', ')}

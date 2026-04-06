@@ -47,9 +47,12 @@ export async function loadSharedLookupData() {
     }
 }
 
+import { setupDashboard } from './dashboard';
+
 export async function main() {
     setupEventListeners();
     initCompanyMerge();
+    setupDashboard();
 
     D.logoutBtn?.addEventListener('click', () => {
         if (confirm('¿Cerrar sesión?')) Auth.handleLogout();

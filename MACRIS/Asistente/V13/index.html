@@ -169,6 +169,14 @@
             <!-- Center: Data Table -->
             <section class="data-view">
                 <div class="results-info">
+                    <div class="view-switcher" style="display: flex; gap: 10px; margin-bottom: 10px;">
+                        <button id="btn-view-table" class="btn btn-secondary btn-compact" style="flex: 1; border-color: var(--primary); color: var(--primary);">
+                            <i class="fas fa-table"></i> Tabla de Datos
+                        </button>
+                        <button id="btn-view-dashboard" class="btn btn-secondary btn-compact" style="flex: 1;">
+                            <i class="fas fa-chart-line"></i> Panel de Rendimiento
+                        </button>
+                    </div>
                     <div class="results-header">
                         <span id="results-count">Mostrando 0 reportes</span>
                         <div id="table-loader-mini" class="mini-loader" style="display:none;"><i class="fas fa-sync fa-spin"></i> Actualizando...</div>
@@ -176,7 +184,22 @@
                     <!-- Chips de filtros activos -->
                     <div id="active-filters-container" class="active-filters-container"></div>
                 </div>
-                <div class="table-container">
+                <div id="dashboard-container" style="display: none; flex-direction: column; gap: 20px; flex: 1; overflow-y: auto; padding-right: 10px;">
+                    <!-- Top Toolbar for Builder -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(22, 27, 34, 0.4); backdrop-filter: blur(8px); border: 1px solid rgba(0, 223, 255, 0.15); border-radius: 10px; padding: 15px;">
+                        <h3 style="margin: 0; color: var(--text-main); font-size: 1.1rem;"><i class="fas fa-magic" style="color: var(--primary);"></i> Constructor de Tablero</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-reset-dashboard" class="btn btn-secondary btn-compact"><i class="fas fa-undo"></i> Restaurar Layout</button>
+                            <button id="btn-add-widget" class="btn btn-primary btn-compact"><i class="fas fa-plus"></i> Añadir Gráfica</button>
+                        </div>
+                    </div>
+                    <!-- Dynamic Grid for Sortable -->
+                    <div id="dashboard-grid" class="dashboard-grid" style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-start; align-content: flex-start;">
+                        <!-- Widgets injetados por JS -->
+                    </div>
+                </div>
+
+                <div class="table-container" id="table-container">
                     <table id="reports-table">
                         <thead>
                             <tr>
@@ -313,6 +336,10 @@
         </div>
     </div>
     </div>
+
+    <!-- Required Libraries for Dashboard -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 
     <script type="module" src="index.tsx"></script>
 <script type="module" src="/index.tsx"></script>
