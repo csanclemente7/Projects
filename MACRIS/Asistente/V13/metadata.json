@@ -1,0 +1,8 @@
+{
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "name": "Descargador de reportes V10",
+  "description": "descargar reportes",
+  "prompt": ""
+}

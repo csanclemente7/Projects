@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macris Analytics - Report Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+    <link rel="stylesheet" href="index.css">
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.1.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.43.4",
+    "jspdf": "https://esm.sh/jspdf@2.5.1",
+    "jszip": "https://esm.sh/jszip@3.10.1",
+    "qrcode": "https://esm.sh/qrcode@^1.5.4",
+    "jsqr": "https://esm.sh/jsqr@^1.4.0",
+    "xlsx": "https://esm.sh/xlsx@0.18.5"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body data-theme="admin-center">
+    <div id="loading-overlay">
+        <div class="loader-visual">
+            <div class="spinner"></div>
+            <div class="loader-orbit"></div>
+            <div class="loader-dots" aria-hidden="true">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+        <p>Sincronizando data streams...</p>
+    </div>
+
+    <section id="login-screen" class="login-screen">
+        <div class="login-ambient" aria-hidden="true">
+            <div class="ambient-orb orb-one"></div>
+            <div class="ambient-orb orb-two"></div>
+            <div class="ambient-orb orb-three"></div>
+            <div class="data-wave"></div>
+        </div>
+        <div class="login-panel">
+            <div class="login-header">
+                <img src="Macris-horizontal.png" alt="Macris Logo" class="login-logo">
+                <div class="login-badge">MACRIS DATA SCIENCE</div>
+            </div>
+            <h1 class="login-title">Acceso Administrador</h1>
+            <p class="login-subtitle">Ingrese la clave para abrir el centro de reportes.</p>
+            <div class="login-activity">
+                <span class="activity-dot"></span>
+                <span class="activity-dot"></span>
+                <span class="activity-dot"></span>
+                <span class="activity-text">Canal seguro activo · Datos en vivo</span>
+            </div>
+            <form id="admin-password-form" class="login-form">
+                <label for="admin-password-input">Clave de acceso</label>
+                <div class="input-shell">
+                    <i class="fas fa-key"></i>
+                    <input id="admin-password-input" type="password" placeholder="Ingrese la clave" autocomplete="current-password" required>
+                </div>
+                <div id="admin-password-error" class="login-error" role="alert"></div>
+                <button type="submit" class="btn btn-primary login-submit">
+                    <i class="fas fa-lock-open"></i> Ingresar
+                </button>
+            </form>
+            <div class="login-footer">
+                <span class="footer-pill">Sesión persistente</span>
+                <span class="footer-pill">Analítica avanzada</span>
+                <span class="footer-pill">Acceso admin</span>
+            </div>
+        </div>
+    </section>
+
+    <div id="app-screen">
+        <!-- Main Dashboard -->
+        <div id="app-container">
+        <!-- Header -->
+        <header class="main-header">
+            <div class="header-branding">
+                <button id="toggle-sidebar-mobile" class="btn-drawer-toggle mobile-only">
+                    <i class="fas fa-filter"></i>
+                </button>
+                <img src="Macris-horizontal.png" alt="Macris Logo" class="admin-logo">
+                <h1 class="desktop-only">Report Analytics <span class="badge">Admin</span></h1>
+            </div>
+            <div class="header-controls">
+                <button id="export-excel-btn" class="btn btn-success btn-compact desktop-only"><i class="fas fa-file-excel"></i> Excel</button>
+                <button id="export-zip-btn" class="btn btn-accent btn-compact desktop-only"><i class="fas fa-file-archive"></i> ZIP</button>
+                <button id="export-pdf-btn" class="btn btn-primary btn-compact desktop-only"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button id="company-merge-btn" class="btn btn-secondary btn-compact desktop-only"><i class="fas fa-code-branch"></i> Unificar</button>
+                <button id="toggle-chat-mobile" class="btn-drawer-toggle mobile-only">
+                    <i class="fas fa-robot"></i>
+                </button>
+                <button id="logout-btn" class="btn btn-danger btn-icon-only"><i class="fas fa-power-off"></i></button>
+            </div>
+        </header>
+
+        <main class="dashboard-layout">
+            <!-- Left: Manual Filters (Drawer on Mobile) -->
+            <aside id="filter-sidebar" class="filter-sidebar">
+                <div class="sidebar-header mobile-only">
+                    <h3>Filtros</h3>
+                    <button class="close-drawer"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="sidebar-section">
+                    <h3><i class="fas fa-filter"></i> Filtros Manuales</h3>
+                    
+                    <div class="filter-group">
+                        <label>Búsqueda Global</label>
+                        <div class="search-input-wrapper">
+                            <input type="search" id="global-search" placeholder="ID, Equipo, Observación...">
+                            <button id="trigger-global-search" class="btn btn-primary btn-icon-only"><i class="fas fa-search"></i></button>
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Rango de Fecha</label>
+                        <div class="date-inputs">
+                            <input type="date" id="date-start">
+                            <input type="date" id="date-end">
+                        </div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Ciudad</label>
+                        <select id="filter-city"><option value="">Todas las Ciudades</option></select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Empresas (Selección Múltiple)</label>
+                        <select id="filter-company"><option value="">Añadir Empresa...</option></select>
+                        <div id="selected-companies-list" class="multi-select-chips"></div>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Tipo de Servicio</label>
+                        <select id="filter-service-type"><option value="">Todos</option></select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Técnico</label>
+                        <select id="filter-tech"><option value="">Todos</option></select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Tipo de Equipo</label>
+                        <select id="filter-eq-type"><option value="">Todos</option></select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label>Estado Pago</label>
+                        <select id="filter-paid">
+                            <option value="">Todos</option>
+                            <option value="true">Pagados</option>
+                            <option value="false">Pendientes</option>
+                        </select>
+                    </div>
+
+                    <button id="reset-filters" class="btn btn-secondary btn-full-width">Limpiar Filtros</button>
+                </div>
+            </aside>
+
+            <!-- Center: Data Table -->
+            <section class="data-view">
+                <div class="results-info">
+                    <div class="results-header">
+                        <span id="results-count">Mostrando 0 reportes</span>
+                        <div id="table-loader-mini" class="mini-loader" style="display:none;"><i class="fas fa-sync fa-spin"></i> Actualizando...</div>
+                    </div>
+                    <!-- Chips de filtros activos -->
+                    <div id="active-filters-container" class="active-filters-container"></div>
+                </div>
+                <div class="table-container">
+                    <table id="reports-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Empresa / Cliente</th>
+                                <th>Servicio</th>
+                                <th>Equipo</th>
+                                <th>Técnico</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Inyectado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Right: AI Assistant (Drawer on Mobile) -->
+            <aside id="ai-chat-sidebar" class="ai-chat-sidebar">
+                <div class="chat-header">
+                    <i class="fas fa-robot"></i>
+                    <span>Macris AI Assistant</span>
+                    <button class="close-drawer mobile-only"><i class="fas fa-times"></i></button>
+                </div>
+                <div id="chat-messages" class="chat-flow">
+                    <div class="message ai">
+                        ¡Hola! Soy tu asistente. ¿En qué puedo ayudarte hoy?
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <textarea id="ai-input" placeholder="Escribe tu solicitud..." rows="1"></textarea>
+                    <button id="send-ai-btn" class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Bottom Navigation for mobile -->
+        <nav id="bottom-nav" class="bottom-nav-mobile mobile-only">
+            <button class="nav-btn active" data-action="reports">
+                <i class="fas fa-list"></i>
+                <span>Reportes</span>
+            </button>
+            <button class="nav-btn" data-action="filters">
+                <i class="fas fa-filter"></i>
+                <span>Filtros</span>
+            </button>
+            <button class="nav-btn" data-action="ai">
+                <i class="fas fa-robot"></i>
+                <span>Asistente</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Modal: Configuración Exportación Excel -->
+    <div id="excel-export-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h3 style="color: var(--primary); margin-bottom: 10px;"><i class="fas fa-file-excel"></i> Exportar a Excel</h3>
+            <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 20px;">Selecciona las columnas que deseas incluir en el archivo.</p>
+            
+            <div style="margin-bottom: 15px;">
+                <button id="excel-select-all-btn" class="btn btn-secondary btn-compact">
+                    <i class="fas fa-check-double"></i> Seleccionar Todo
+                </button>
+            </div>
+
+            <div id="excel-columns-grid" class="excel-columns-grid">
+                <!-- Inyectado dinámicamente -->
+            </div>
+
+            <div class="modal-actions" style="margin-top: 30px;">
+                <button id="confirm-excel-export" class="btn btn-success btn-full-width">
+                    <i class="fas fa-download"></i> Generar Excel
+                </button>
+                <button class="btn btn-secondary close-modal-btn">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="view-report-modal" class="modal">
+        <div class="modal-content">
+            <span id="close-view-report-modal" class="close-button">&times;</span>
+            <div id="report-details-body"></div>
+            <div class="modal-actions">
+                <button id="download-single-pdf" class="btn btn-accent"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button class="btn btn-secondary close-modal-btn">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content modal-content-small">
+            <h3 id="confirmation-title">Confirmar Acción</h3>
+            <p id="confirmation-message">¿Estás seguro de realizar esta acción?</p>
+            <div class="modal-actions">
+                <button id="confirm-action-btn" class="btn btn-primary">Confirmar</button>
+                <button id="cancel-action-btn" class="btn btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Unificador Inteligente de Empresas -->
+    <div id="company-merge-modal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <span id="close-company-merge-modal" class="close-button">&times;</span>
+            <div class="chat-header" style="padding: 0 0 15px 0; border-bottom: 1px solid var(--border);">
+                <i class="fas fa-code-branch"></i>
+                <span>Unificador Inteligente de Empresas</span>
+            </div>
+            <div id="company-merge-flow" class="chat-flow" style="max-height: 55vh;">
+                <div class="message ai">
+                    Haz clic en "Buscar duplicadas" para detectar empresas similares.
+                    <br>Luego confirma la sugerencia de Macris AI para unificar.
+                </div>
+            </div>
+            <div id="company-merge-progress" style="display:none; padding: 0 20px 12px 20px;">
+                <div class="mini-loader">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    <span id="company-merge-progress-text">Analizando...</span>
+                </div>
+                <div style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; height: 8px; margin-top: 6px;">
+                    <div id="company-merge-progress-bar" style="height: 100%; width: 0%; background: var(--primary);"></div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="chat-actions">
+                    <button id="company-merge-scan" class="btn btn-primary"><i class="fas fa-search"></i> Buscar duplicadas</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script type="module" src="index.tsx"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
