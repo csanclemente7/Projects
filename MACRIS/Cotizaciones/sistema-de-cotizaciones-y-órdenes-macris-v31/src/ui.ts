@@ -651,6 +651,9 @@ export async function handleDuplicateQuote(quoteId: string, openAfter: boolean =
         const savedQuote = await API.saveQuote(duplicatedQuote as any);
         State.setQuotes([...State.getQuotes(), savedQuote]);
 
+        const authorName = getSessionUser().name || 'Admin';
+        await State.setQuoteAuthor(savedQuote.id, authorName);
+
         State.addOpenQuote(savedQuote);
         renderQuoteTabs();
 

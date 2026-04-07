@@ -183,9 +183,13 @@ export function setQuoteAuthors(newAuthors: Record<string, string>) {
 
 export async function setQuoteAuthor(quoteId: string, author: string) {
     if (!quoteId || !author || quoteAuthors[quoteId]) return;
+    
     quoteAuthors[quoteId] = author;
     try {
-        await saveQuoteAuthors(quoteAuthors);
+        const latestAuthors = await fetchQuoteAuthors();
+        latestAuthors[quoteId] = author;
+        Object.assign(quoteAuthors, latestAuthors);
+        await saveQuoteAuthors(latestAuthors);
     } catch (error) {
         console.error('Failed to save quote author map:', error);
     }
@@ -197,9 +201,13 @@ export function setOrderAuthors(newAuthors: Record<string, string>) {
 
 export async function setOrderAuthor(orderId: string, author: string) {
     if (!orderId || !author || orderAuthors[orderId]) return;
+    
     orderAuthors[orderId] = author;
     try {
-        await saveOrderAuthors(orderAuthors);
+        const latestAuthors = await fetchOrderAuthors();
+        latestAuthors[orderId] = author;
+        Object.assign(orderAuthors, latestAuthors);
+        await saveOrderAuthors(latestAuthors);
     } catch (error) {
         console.error('Failed to save order author map:', error);
     }
