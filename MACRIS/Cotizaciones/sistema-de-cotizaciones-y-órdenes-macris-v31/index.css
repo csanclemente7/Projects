@@ -286,6 +286,10 @@ body.dark-theme .header-count-badge {
     gap: 20px;
 }
 
+#page-quotes .quote-workspace {
+    max-width: 1050px; /* Ancho ajustado a petición del usuario. Original era 900px */
+}
+
 .header-main-title {
     display: flex;
     align-items: center;
@@ -1172,6 +1176,14 @@ body.dark-theme .pill-input-container {
     width: 38px;
     height: 38px;
     justify-content: center;
+}
+
+#page-saved-quotes .btn-icon-only,
+#page-quotes .btn-icon-only {
+    width: 26px;
+    height: 26px;
+    padding: 3px;
+    font-size: 0.75rem;
 }
 
 .btn-add-inline {

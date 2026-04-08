@@ -511,10 +511,10 @@ export async function handleGeneratePdfFromList(quoteId: string, btn: HTMLButton
         const doc = await generateQuotePDFDoc(quote);
         const preference = isMobileDevice() ? 'download' : State.getPdfOutputPreference();
         if (preference === 'download') {
-            doc.save(`Cotizacion_${quote.manualId}.pdf`);
+            doc.save(State.getCurrentPdfFileName() || 'Cotizacion.pdf');
         } else {
             State.setCurrentPdfDocForDownload(doc);
-            State.setCurrentPdfFileName(`Cotizacion_${quote.manualId}.pdf`);
+            // State is already set by generateQuotePDFDoc
             previewPdfInModal(doc);
         }
     } catch (err: any) {
@@ -706,7 +706,7 @@ export function setupItemSearch(input: HTMLInputElement, results: HTMLDivElement
     input.addEventListener('input', () => {
         const term = input.value.toLowerCase();
         results.style.display = 'none';
-        if (term.length < 2) return;
+        if (term.length < 1) return;
         const items = State.getItems().filter(i => i.name.toLowerCase().includes(term) || i.manualId.toLowerCase().includes(term)).slice(0, 5);
         if (items.length > 0) {
             results.innerHTML = items.map(i => `<div class="search-result-item" data-id="${i.id}"><span class="item-code">[${i.manualId}]</span> ${i.name} <span class="item-price">${formatCurrency(i.price)}</span></div>`).join('');
@@ -985,7 +985,7 @@ function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' |
 
     tr.innerHTML = `<td class="col-desc" data-label="Descripción">
         <div class="drag-handle-wrapper"><i class="fas fa-bars drag-handle-icon"></i></div>
-        <textarea class="item-desc" rows="2">${item.description}</textarea>
+        <textarea class="item-desc" rows="1">${item.description}</textarea>
         <div class="item-desc-mobile-wrapper"><div class="item-desc-mobile-view"><span class="mobile-view-text">${item.description}</span><i class="fas fa-pencil-alt edit-indicator"></i></div><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-mobile" title="Eliminar ítem"><i class="fas fa-trash"></i></button></div>
     </td>
     ${qtyColumn}${priceColumns}<td class="col-actions" data-label="Acción"><button class="btn btn-danger btn-icon-only delete-item-btn delete-item-btn-desktop"><i class="fas fa-trash"></i></button></td>`;
@@ -994,6 +994,20 @@ function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' |
         const priceInput = tr.querySelector('.item-price') as HTMLInputElement;
         priceInput.addEventListener('input', () => { priceInput.value = formatCurrency(parseFloat(priceInput.value.replace(/[^0-9]+/g, "")) || 0); });
     }
+    
+    // Auto-expand textarea for both quote and order contexts
+    const descTextarea = tr.querySelector('.item-desc') as HTMLTextAreaElement;
+    if (descTextarea) {
+        descTextarea.style.overflow = 'hidden'; // Prevent scrollbar flash
+        const resizeTextarea = () => {
+            descTextarea.style.height = 'auto';
+            descTextarea.style.height = descTextarea.scrollHeight + 'px';
+        };
+        descTextarea.addEventListener('input', resizeTextarea);
+        // Ligero retraso para permitir inserción en el DOM antes de medir altura
+        setTimeout(resizeTextarea, 0);
+    }
+    
     return tr;
 }
 

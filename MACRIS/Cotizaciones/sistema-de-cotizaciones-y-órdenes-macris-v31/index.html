@@ -151,7 +151,7 @@
                                 <h3>Cliente</h3>
                                 <div class="form-group">
                                     <div class="input-with-button">
-                                        <input type="text" id="client-search" placeholder="Buscar por nombre o ID...">
+                                        <input type="text" id="client-search" placeholder="Buscar por nombre o ID..." autocomplete="off" data-lpignore="true" data-1p-ignore>
                                         <button id="add-client-btn" class="btn btn-add-inline" title="Nuevo Cliente"><i
                                                 class="fas fa-plus"></i></button>
                                         <button id="edit-client-btn" class="btn btn-add-inline"
@@ -164,7 +164,22 @@
                         </div>
 
                         <div class="quote-items card">
-                            <h3>Ítems de la Cotización</h3>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h3 style="margin: 0;">Ítems de la Cotización</h3>
+                            </div>
+                            
+                            <div class="add-item-form-container" style="margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 15px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="item-search">Agregar Ítem</label>
+                                    <div class="input-with-button">
+                                        <input type="text" id="item-search" placeholder="Buscar por código o nombre..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                                        <button id="add-new-item-quote-page-btn" class="btn btn-add-inline"
+                                            title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div id="item-search-results"></div>
+                                </div>
+                            </div>
+
                             <div class="table-container">
                                 <table id="quote-items-table">
                                     <thead>
@@ -180,17 +195,6 @@
                                         <!-- Items will be added here -->
                                     </tbody>
                                 </table>
-                            </div>
-                            <div class="add-item-form-container">
-                                <div class="form-group">
-                                    <label for="item-search">Agregar Ítem</label>
-                                    <div class="input-with-button">
-                                        <input type="text" id="item-search" placeholder="Buscar por código o nombre...">
-                                        <button id="add-new-item-quote-page-btn" class="btn btn-add-inline"
-                                            title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
-                                    </div>
-                                    <div id="item-search-results"></div>
-                                </div>
                             </div>
                         </div>
 
@@ -337,7 +341,7 @@
                                     <div class="form-group">
                                         <div class="input-with-button">
                                             <input type="text" id="order-client-search"
-                                                placeholder="Buscar por nombre o ID...">
+                                                placeholder="Buscar por nombre o ID..." autocomplete="off" data-lpignore="true" data-1p-ignore>
                                             <button id="order-add-client-btn" class="btn btn-add-inline"
                                                 title="Nuevo Cliente"><i class="fas fa-plus"></i></button>
                                             <button id="order-edit-client-btn" class="btn btn-add-inline"
@@ -394,7 +398,23 @@
 
                         <!-- Order Materials (Insumos) -->
                         <div class="quote-items card">
-                            <h3>Materiales e Insumos <span>(Opcional)</span></h3>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <h3 style="margin: 0;">Materiales e Insumos <span>(Opcional)</span></h3>
+                            </div>
+                            
+                            <div class="add-item-form-container" style="margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 15px;">
+                                <div class="form-group" style="margin-bottom: 0;">
+                                    <label for="order-item-search">Agregar Servicio o Material</label>
+                                    <div class="input-with-button">
+                                        <input type="text" id="order-item-search"
+                                            placeholder="Buscar por código o nombre..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                                        <button id="order-add-new-item-btn" class="btn btn-add-inline"
+                                            title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div id="order-item-search-results"></div>
+                                </div>
+                            </div>
+
                             <div class="table-container">
                                 <table id="order-materials-table">
                                     <thead>
@@ -406,18 +426,6 @@
                                     </thead>
                                     <tbody id="order-materials-tbody"></tbody>
                                 </table>
-                            </div>
-                            <div class="add-item-form-container">
-                                <div class="form-group">
-                                    <label for="order-item-search">Agregar Servicio o Material</label>
-                                    <div class="input-with-button">
-                                        <input type="text" id="order-item-search"
-                                            placeholder="Buscar por código o nombre...">
-                                        <button id="order-add-new-item-btn" class="btn btn-add-inline"
-                                            title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
-                                    </div>
-                                    <div id="order-item-search-results"></div>
-                                </div>
                             </div>
                         </div>
 
@@ -460,7 +468,7 @@
                     <div class="page-header-main">
                         <h2>Gestión de Órdenes <span id="order-count-badge" class="header-count-badge"></span></h2>
                         <div class="page-actions">
-                            <input type="text" id="order-list-search" placeholder="Buscar orden...">
+                            <input type="text" id="order-list-search" placeholder="Buscar orden..." autocomplete="off" data-lpignore="true" data-1p-ignore>
                             <button id="add-new-order-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i>
                                 <span>Nueva Orden</span></button>
                         </div>
@@ -515,7 +523,7 @@
                     <div class="page-header-main">
                         <h2>Gestión de Clientes <span id="client-count-badge" class="header-count-badge"></span></h2>
                         <div class="page-actions">
-                            <input type="text" id="client-list-search" placeholder="Buscar cliente...">
+                            <input type="text" id="client-list-search" placeholder="Buscar cliente..." autocomplete="off" data-lpignore="true" data-1p-ignore>
                             <button id="add-new-client-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i>
                                 <span>Agregar Cliente</span></button>
                         </div>
@@ -536,7 +544,7 @@
                     <div class="page-header-main">
                         <h2>Gestión de Insumos <span id="item-count-badge" class="header-count-badge"></span></h2>
                         <div class="page-actions">
-                            <input type="text" id="item-list-search" placeholder="Buscar insumo o servicio...">
+                            <input type="text" id="item-list-search" placeholder="Buscar insumo o servicio..." autocomplete="off" data-lpignore="true" data-1p-ignore>
                             <button id="add-new-item-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i>
                                 <span>Agregar Insumo</span></button>
                         </div>
@@ -558,7 +566,7 @@
                         <h2>Gestión de Técnicos <span id="technician-count-badge" class="header-count-badge"></span>
                         </h2>
                         <div class="page-actions">
-                            <input type="text" id="technician-list-search" placeholder="Buscar técnico...">
+                            <input type="text" id="technician-list-search" placeholder="Buscar técnico..." autocomplete="off" data-lpignore="true" data-1p-ignore>
                             <button id="add-new-technician-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i>
                                 <span>Agregar Técnico</span></button>
                         </div>
@@ -577,7 +585,7 @@
                     <div class="page-header-main">
                         <h2>Mis Cotizaciones <span id="saved-quotes-count-badge" class="header-count-badge"></span></h2>
                         <div class="page-actions">
-                            <input type="text" id="saved-quotes-search" placeholder="Buscar por ID o cliente...">
+                            <input type="text" id="saved-quotes-search" placeholder="Buscar por ID o cliente..." autocomplete="off" data-lpignore="true" data-1p-ignore>
                         </div>
                     </div>
                     <button id="delete-all-quotes-btn" class="btn btn-icon-only btn-subtle-danger"

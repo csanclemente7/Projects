@@ -293,8 +293,8 @@ async function dispatchPdfGeneration(
     client: Client | undefined,
     template: PdfTemplate
 ) {
-    const clientName = client ? client.name.toUpperCase() : 'CLIENTE';
-    const fileName = `Cotizacion No. ${quote.manualId} ${clientName}.pdf`;
+    const clientName = client ? client.name : 'CLIENTE';
+    const fileName = `Cotizacion_${quote.manualId}_${clientName}.pdf`;
     doc.setProperties({
         title: fileName
     });
