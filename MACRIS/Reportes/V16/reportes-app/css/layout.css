@@ -9,41 +9,78 @@
 }
 
 .login-container {
-    background-color: var(--color-bg-medium);
-    padding: 35px 40px;
-    border-radius: var(--border-radius-sharp);
-    box-shadow: var(--shadow-dark), 0 0 25px rgba(0, 223, 255, 0.1);
-    border: 1px solid var(--color-border-light);
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 40px 45px;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 40px rgba(0, 223, 255, 0.03) inset;
+    border: 1px solid rgba(255, 255, 255, 0.05);
     width: 100%;
-    max-width: 450px; 
+    max-width: 400px; 
     text-align: center;
 }
 
 .login-logo {
-    max-width: 220px; 
+    max-width: 190px; 
     height: auto; 
     margin-bottom: 25px;
 }
 
 .login-container h2 {
-    margin-bottom: 30px;
-    color: var(--color-text-primary); 
-    font-weight: 600;
-    font-size: 1.6rem; 
+    margin-bottom: 35px;
+    color: var(--corporate-white); 
+    font-weight: 700;
+    font-size: 1.4rem; 
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 2px;
 }
 .login-container h2 .fas {
-    margin-right: 10px;
+    margin-right: 12px;
     vertical-align: middle;
-    color: var(--color-accent-primary);
+    color: #00dfff; /* Accent cyan */
+}
+
+#login-form .form-group {
+    margin-bottom: 20px;
+}
+
+#login-form .form-group label {
+    display: block;
+    text-align: left;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+#login-form .form-group select,
+#login-form .form-group input {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    color: var(--corporate-white);
+    padding: 12px 15px;
+    width: 100%;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+#login-form .form-group select:focus,
+#login-form .form-group input:focus {
+    border-color: #00dfff;
+    box-shadow: 0 0 15px rgba(0, 223, 255, 0.15);
+    outline: none;
+    background: rgba(0, 0, 0, 0.4);
 }
 
 /* Development Login Buttons */
 .dev-login-buttons-container {
-    margin-top: 25px;
-    padding-top: 15px;
-    border-top: 1px dashed var(--color-border-medium);
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05); /* Subtle thin solid line */
 }
 .dev-info-text {
     font-size: 0.8rem;
@@ -51,6 +88,24 @@
     margin-bottom: 10px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.btn-dev-login {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #94a3b8;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+}
+
+.btn-dev-login:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--corporate-white);
+    border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* App Screen */

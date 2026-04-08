@@ -399,15 +399,18 @@ export function checkForPersistedSession() {
                 // User might have been deactivated or deleted. Clear the session.
                 console.log("Found persisted session for an inactive/deleted user. Clearing session.");
                 localStorage.removeItem(USER_SESSION_KEY);
+                if (D.loginScreen) D.loginScreen.style.display = 'flex';
                 hideLoader(); // Hide loader if session was invalid
             }
         } catch (error) {
             console.error("Failed to parse persisted user session:", error);
             localStorage.removeItem(USER_SESSION_KEY);
+            if (D.loginScreen) D.loginScreen.style.display = 'flex';
             hideLoader(); // Hide loader on error
         }
     } else {
         console.log("No persisted session found. Showing login screen.");
+        if (D.loginScreen) D.loginScreen.style.display = 'flex';
         hideLoader(); // Hide loader if no session exists
     }
 }

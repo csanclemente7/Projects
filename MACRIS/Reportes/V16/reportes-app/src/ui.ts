@@ -787,8 +787,8 @@ export async function openReportFormModal(options: { report?: Report; equipment?
             if (st.name === 'Otro') hasOtro = true;
         });
         if (!hasOtro) {
-             const option = new Option('Otro', 'Otro');
-             D.reportServiceTypeSelect.appendChild(option);
+            const option = new Option('Otro', 'Otro');
+            D.reportServiceTypeSelect.appendChild(option);
         }
     }
 
@@ -867,7 +867,7 @@ export function closeReportFormModal() {
 
 export function toggleReportFormFields(serviceType: string) {
     const isInstallation = serviceType === 'Montaje/Instalación' || serviceType === 'Otro';
-    
+
     if (serviceType === 'Otro') {
         D.reportServiceTypeOtherContainer.style.display = 'block';
         D.reportServiceTypeOtherInput.setAttribute('required', 'true');
@@ -2058,7 +2058,7 @@ export async function renderMyReportsTable() {
     });
 
     if (paginatedReports.length === 0) {
-        D.myReportsTableBody.innerHTML = `<tr><td colspan="6" class="empty-state-td"><i class="fas fa-search" style="font-size: 2rem; margin-bottom: 10px; opacity: 0.5;"></i> No se encontraron reportes que coincidan con su búsqueda.</td></tr>`;
+        D.myReportsTableBody.innerHTML = `<tr><td colspan="6" class="empty-state-td" style="border: none; padding: 50px 10px;"><div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 15px;"><i class="fas fa-file-invoice" style="font-size: 3rem; color: rgba(0, 223, 255, 0.2);"></i> <span class="text-muted" style="font-size: 0.95rem;">No se encontraron reportes que coincidan con su búsqueda.</span></div></td></tr>`;
     }
 
     renderPagination('myReports', D.myReportsPaginationContainer, paginatedReports, filteredReports.length, renderMyReportsTable);
@@ -2537,7 +2537,7 @@ function createOrderCardHTML(order: Order): string {
     if (order.items && order.items.length > 0) {
         let totalQuantity = 0;
         let completedQuantity = 0;
-        
+
         let itemsToCount = order.items;
         if (order.items.some(i => isServiceItem(i.description))) {
             itemsToCount = order.items.filter(i => isServiceItem(i.description));
@@ -2547,7 +2547,7 @@ function createOrderCardHTML(order: Order): string {
             totalQuantity += item.quantity || 1;
             completedQuantity += item.completed_quantity || 0;
         }
-        
+
         // Prevent division by zero and cap at 100%
         let progressPercent = 0;
         if (totalQuantity > 0) {
@@ -2568,7 +2568,7 @@ function createOrderCardHTML(order: Order): string {
     }
 
     let serviceNamesString = order.order_type || 'Servicio General';
-    
+
     if (order.items && order.items.length > 0) {
         const sItems = order.items.filter(i => isServiceItem(i.description));
         if (sItems.length > 0) {
@@ -2639,7 +2639,14 @@ export function renderAssignedOrdersList() {
         .sort((a, b) => new Date(a.service_date!).getTime() - new Date(b.service_date!).getTime());
 
     if (orders.length === 0) {
-        D.workerOrdersListContainer.innerHTML = '<p class="text-muted" style="text-align: center;">No tiene órdenes de servicio asignadas.</p>';
+        D.workerOrdersListContainer.innerHTML = `
+            <div class="tip-banner" style="margin-top: 20px;">
+                <div class="tip-icon-container">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <span class="tip-text" style="font-size: 0.9rem;">Aún no hay ordenes asignadas</span>
+            </div>
+        `;
         return;
     }
     D.workerOrdersListContainer.innerHTML = orders.map(createOrderCardHTML).join('');
@@ -2788,7 +2795,7 @@ export function handleContinueWithoutEquipment() {
 function openImageLightbox(urls: string[], startingIndex: number) {
     const validUrls = urls.filter(url => url !== '');
     if (validUrls.length === 0) return;
-    
+
     let actualIndex = 0;
     let validCount = 0;
     for (let i = 0; i < urls.length; i++) {
@@ -2798,28 +2805,28 @@ function openImageLightbox(urls: string[], startingIndex: number) {
         }
         if (urls[i] !== '') validCount++;
     }
-    
+
     const overlay = document.createElement('div');
     overlay.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.95); z-index:99999; display:flex; flex-direction:column; justify-content:center; align-items:center; touch-action:none;';
-    
+
     const closeBtn = document.createElement('button');
     closeBtn.innerHTML = '<i class="fas fa-times"></i>';
     closeBtn.style.cssText = 'position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.1); border:none; color:white; font-size:1.5rem; cursor:pointer; z-index:10; width:45px; height:45px; border-radius:50%; display:flex; align-items:center; justify-content:center;';
     overlay.appendChild(closeBtn);
-    
+
     const counter = document.createElement('div');
     counter.style.cssText = 'position:absolute; top:30px; left:20px; color:white; font-size:1.1rem; font-weight:bold; z-index:10; font-family:var(--font-family-main); background:rgba(0,0,0,0.5); padding:4px 10px; border-radius:15px;';
     overlay.appendChild(counter);
 
     const imgContainer = document.createElement('div');
     imgContainer.style.cssText = 'width:100%; height:80%; display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;';
-    
+
     const imgElement = document.createElement('img');
     imgElement.style.cssText = 'max-width:100%; max-height:100%; object-fit:contain; transition:transform 0.2s ease-out;';
     imgContainer.appendChild(imgElement);
-    
+
     overlay.appendChild(imgContainer);
-    
+
     const createNavBtn = (iconClass: string, isLeft: boolean) => {
         const btn = document.createElement('button');
         btn.innerHTML = `<i class="fas ${iconClass}"></i>`;
@@ -2828,10 +2835,10 @@ function openImageLightbox(urls: string[], startingIndex: number) {
         btn.onmouseout = () => btn.style.background = 'rgba(255,255,255,0.1)';
         return btn;
     };
-    
+
     const prevBtn = createNavBtn('fa-chevron-left', true);
     const nextBtn = createNavBtn('fa-chevron-right', false);
-    
+
     overlay.appendChild(prevBtn);
     overlay.appendChild(nextBtn);
 
@@ -2844,14 +2851,14 @@ function openImageLightbox(urls: string[], startingIndex: number) {
         counter.textContent = `${actualIndex + 1} / ${validUrls.length}`;
         prevBtn.style.display = validUrls.length > 1 ? 'flex' : 'none';
         nextBtn.style.display = validUrls.length > 1 ? 'flex' : 'none';
-        
+
         // Visual indicator if at ends
         prevBtn.style.opacity = actualIndex === 0 ? '0.3' : '1';
         nextBtn.style.opacity = actualIndex === validUrls.length - 1 ? '0.3' : '1';
     };
-    
+
     closeBtn.onclick = () => document.body.removeChild(overlay);
-    
+
     prevBtn.onclick = (e) => {
         e.stopPropagation();
         if (actualIndex > 0) {
@@ -2859,7 +2866,7 @@ function openImageLightbox(urls: string[], startingIndex: number) {
             updateImage();
         }
     };
-    
+
     nextBtn.onclick = (e) => {
         e.stopPropagation();
         if (actualIndex < validUrls.length - 1) {
@@ -2870,11 +2877,11 @@ function openImageLightbox(urls: string[], startingIndex: number) {
 
     let touchStartX = 0;
     let touchEndX = 0;
-    
+
     imgContainer.addEventListener('touchstart', e => {
         touchStartX = e.changedTouches[0].screenX;
     });
-    
+
     imgContainer.addEventListener('touchend', e => {
         touchEndX = e.changedTouches[0].screenX;
         const threshold = 40;
@@ -2886,7 +2893,7 @@ function openImageLightbox(urls: string[], startingIndex: number) {
             updateImage();
         }
     });
-    
+
     updateImage();
     document.body.appendChild(overlay);
 }
@@ -2931,7 +2938,7 @@ export function openOrderDetailsModal(orderId: string) {
                     const { data, error, isDirectHttp } = result;
                     let objectUrl = "";
                     let imgHtml = "";
-                    
+
                     if (!error && data) {
                         objectUrl = isDirectHttp ? data : URL.createObjectURL(data);
                         currentObjectUrls[index] = objectUrl;
@@ -2940,7 +2947,7 @@ export function openOrderDetailsModal(orderId: string) {
                         console.error("Error downloading order annex:", error);
                         imgHtml = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:#ff4444;"><i class="fas fa-exclamation-triangle"></i></div>`;
                     }
-                    
+
                     imgWrap.innerHTML = imgHtml;
 
                     if (!error && data) {
@@ -3022,11 +3029,11 @@ export function openOrderDetailsModal(orderId: string) {
     if (D.startReportFromOrderButton) {
         D.startReportFromOrderButton.dataset.orderId = order.id;
         let canStartReport = (State.currentUser?.role === 'admin' || order.assignedTechnicians?.some(t => t.id === State.currentUser?.id)) && (order.status !== 'completed' && order.status !== 'cancelada');
-        
+
         // Hide generic report button if there are specific service items (to force them to use the item-specific buttons)
         const isServiceItem = (desc: string) => /mano de obra|montaje|instalaci[oó]n|desmonte|mantenimiento/i.test(desc);
         const hasServiceItems = order.items && order.items.some(i => isServiceItem(i.description));
-        
+
         if (hasServiceItems) {
             canStartReport = false;
         }

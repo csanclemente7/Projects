@@ -61,8 +61,8 @@
           <input type="password" id="password" name="password" required autocomplete="current-password"
             inputmode="numeric" />
         </div>
-        <button type="submit" class="btn btn-primary">
-          <i class="fas fa-fingerprint"></i> Ingresar
+        <button type="submit" class="btn-iniciar-reporte" style="font-weight: 600; letter-spacing: 1px;">
+          <i class="fas fa-fingerprint"></i> INGRESAR
         </button>
         <p id="login-error" class="error-message"></p>
       </form>
@@ -164,27 +164,27 @@
       <section id="worker-my-reports-section" class="data-section"
         style="display: none; background: transparent; border: none; padding: 0">
         <div class="worker-actions-panel">
-          <div class="actions-header" style="display: flex; justify-content: space-between; align-items: flex-end;">
-            <div>
-              <h3><i class="fas fa-history"></i> Mis Reportes Enviados</h3>
-              <p style="margin-bottom: 0;">Historial de todos los reportes que has generado.</p>
+          <div class="actions-header" style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+              <h3 style="margin: 0;"><i class="fas fa-history"></i> Mis Reportes Enviados</h3>
+              <button id="toggle-my-reports-view-button" class="btn btn-outline-primary btn-compact"
+                style="white-space: nowrap; padding: 6px 12px; font-size: 0.75rem; border-radius: 20px; font-weight: 600;">
+                VER TODOS
+              </button>
             </div>
-            <button id="toggle-my-reports-view-button" class="btn btn-outline-primary btn-compact"
-              style="margin-bottom: 10px;">
-              Ver Todos
-            </button>
+            <p style="margin-bottom: 0; font-size: 0.85rem;">Historial de todos los reportes que has generado.</p>
           </div>
           <div class="actions-body">
 
-            <div class="modern-search-bar">
-              <i class="fas fa-search search-icon"></i>
+            <div class="modern-search-bar" style="margin-bottom: 15px; border-radius: 12px; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.02); padding: 5px 10px;">
+              <i class="fas fa-search search-icon" style="color: #00dfff; margin-left: 5px;"></i>
               <input type="search" id="my-reports-search" placeholder="Buscar en mis reportes..."
-                aria-label="Buscar en mis reportes" />
+                aria-label="Buscar en mis reportes" style="background: transparent; border: none; color: white;" />
               <button id="my-reports-search-clear" class="btn-clear-search" title="Limpiar búsqueda">
                 <i class="fas fa-times"></i>
               </button>
             </div>
-            <div class="table-container">
+            <div class="table-container" style="border: none; background: transparent; padding: 0;">
               <table id="my-reports-table">
                 <thead>
                   <tr>
