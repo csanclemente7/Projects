@@ -1155,6 +1155,10 @@ function renderDigitizeReviewForm() {
                         <input type="text" class="input dark" id="dig-company-${index}" value="${data.companyName}" style="width: 100%; box-sizing: border-box;" />
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Sede/Dependencia</label>
+                        <input type="text" class="input dark" id="dig-dependency-${index}" value="${data.dependency}" style="width: 100%; box-sizing: border-box;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Ciudad</label>
                         <input type="text" class="input dark" id="dig-city-${index}" value="${data.city}" style="width: 100%; box-sizing: border-box;" />
                     </div>
@@ -1173,6 +1177,10 @@ function renderDigitizeReviewForm() {
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Tipo Eq.</label>
                         <input type="text" class="input dark" id="dig-type-${index}" value="${data.equipmentType}" style="width: 100%; box-sizing: border-box;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Capacidad</label>
+                        <input type="text" class="input dark" id="dig-capacity-${index}" value="${data.capacity}" style="width: 100%; box-sizing: border-box;" />
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                         <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Presión</label>
@@ -1242,11 +1250,13 @@ export async function handleDigitizeSave() {
             const timestampValue = (document.getElementById(`dig-timestamp-${i}`) as HTMLInputElement)?.value || '';
             const workerName = (document.getElementById(`dig-worker-${i}`) as HTMLInputElement)?.value || '';
             const companyName = (document.getElementById(`dig-company-${i}`) as HTMLInputElement)?.value || '';
+            const dependencyName = (document.getElementById(`dig-dependency-${i}`) as HTMLInputElement)?.value || '';
             const cityValue = (document.getElementById(`dig-city-${i}`) as HTMLInputElement)?.value || '';
             const serviceType = (document.getElementById(`dig-service-${i}`) as HTMLInputElement)?.value || '';
             const brand = (document.getElementById(`dig-brand-${i}`) as HTMLInputElement)?.value || '';
             const model = (document.getElementById(`dig-model-${i}`) as HTMLInputElement)?.value || '';
             const typeValue = (document.getElementById(`dig-type-${i}`) as HTMLInputElement)?.value || '';
+            const capacity = (document.getElementById(`dig-capacity-${i}`) as HTMLInputElement)?.value || '';
             const pressure = (document.getElementById(`dig-pressure-${i}`) as HTMLInputElement)?.value || '';
             const amperage = (document.getElementById(`dig-amperage-${i}`) as HTMLInputElement)?.value || '';
             const obs = (document.getElementById(`dig-obs-${i}`) as HTMLTextAreaElement)?.value || '';
@@ -1263,9 +1273,11 @@ export async function handleDigitizeSave() {
             const equipmentSnapshot = {
                 category: 'empresa',
                 companyName: companyName,
+                dependencyName: dependencyName !== 'N/A' ? dependencyName : 'General',
                 brand: brand !== 'N/A' ? brand : 'Desconocida',
                 model: model !== 'N/A' ? model : 'Desconocido',
-                type: typeValue !== 'N/A' ? typeValue : 'Desconocido'
+                type: typeValue !== 'N/A' ? typeValue : 'Desconocido',
+                capacity: capacity !== 'N/A' ? capacity : '',
             };
 
             const matchedWorker = State.users.find(u => u.name?.toLowerCase().trim() === workerName.toLowerCase().trim());
@@ -1322,11 +1334,13 @@ export async function handleDigitizePdf() {
             const timestampValue = (document.getElementById(`dig-timestamp-${i}`) as HTMLInputElement)?.value || '';
             const workerName = (document.getElementById(`dig-worker-${i}`) as HTMLInputElement)?.value || '';
             const companyName = (document.getElementById(`dig-company-${i}`) as HTMLInputElement)?.value || '';
+            const dependencyName = (document.getElementById(`dig-dependency-${i}`) as HTMLInputElement)?.value || '';
             const cityValue = (document.getElementById(`dig-city-${i}`) as HTMLInputElement)?.value || '';
             const serviceType = (document.getElementById(`dig-service-${i}`) as HTMLInputElement)?.value || '';
             const brand = (document.getElementById(`dig-brand-${i}`) as HTMLInputElement)?.value || '';
             const model = (document.getElementById(`dig-model-${i}`) as HTMLInputElement)?.value || '';
             const typeValue = (document.getElementById(`dig-type-${i}`) as HTMLInputElement)?.value || '';
+            const capacity = (document.getElementById(`dig-capacity-${i}`) as HTMLInputElement)?.value || '';
             const pressure = (document.getElementById(`dig-pressure-${i}`) as HTMLInputElement)?.value || '';
             const amperage = (document.getElementById(`dig-amperaje-${i}`) as HTMLInputElement)?.value || '';
             const obs = (document.getElementById(`dig-obs-${i}`) as HTMLTextAreaElement)?.value || '';
@@ -1344,9 +1358,9 @@ export async function handleDigitizePdf() {
                 brand: brand !== 'N/A' ? brand : 'Desconocida',
                 model: model !== 'N/A' ? model : 'Desconocido',
                 type: typeValue !== 'N/A' ? typeValue : 'Desconocido',
-                capacity: '',
+                capacity: capacity !== 'N/A' ? capacity : '',
                 refrigerant: '',
-                dependencyName: 'General',
+                dependencyName: dependencyName !== 'N/A' ? dependencyName : 'General',
                 manualId: 'S/N'
             };
 
@@ -1400,11 +1414,13 @@ export async function handleDigitizeExcel() {
             const timestampValue = (document.getElementById(`dig-timestamp-${i}`) as HTMLInputElement)?.value;
             const workerName = (document.getElementById(`dig-worker-${i}`) as HTMLInputElement)?.value;
             const companyName = (document.getElementById(`dig-company-${i}`) as HTMLInputElement)?.value;
+            const dependencyName = (document.getElementById(`dig-dependency-${i}`) as HTMLInputElement)?.value;
             const city = (document.getElementById(`dig-city-${i}`) as HTMLInputElement)?.value;
             const serviceType = (document.getElementById(`dig-service-${i}`) as HTMLInputElement)?.value;
             const equipmentBrand = (document.getElementById(`dig-brand-${i}`) as HTMLInputElement)?.value;
             const equipmentModel = (document.getElementById(`dig-model-${i}`) as HTMLInputElement)?.value;
             const equipmentType = (document.getElementById(`dig-type-${i}`) as HTMLInputElement)?.value;
+            const capacity = (document.getElementById(`dig-capacity-${i}`) as HTMLInputElement)?.value;
             const pressure = (document.getElementById(`dig-pressure-${i}`) as HTMLInputElement)?.value;
             const amperage = (document.getElementById(`dig-amperaje-${i}`) as HTMLInputElement)?.value;
             const obs = (document.getElementById(`dig-obs-${i}`) as HTMLTextAreaElement)?.value;
@@ -1414,6 +1430,8 @@ export async function handleDigitizeExcel() {
                 type: equipmentType !== 'N/A' ? equipmentType : 'Desconocido',
                 brand: equipmentBrand !== 'N/A' ? equipmentBrand : 'Sin marca',
                 model: equipmentModel !== 'N/A' ? equipmentModel : 'N/A',
+                capacity: capacity !== 'N/A' ? capacity : '',
+                dependencyName: dependencyName !== 'N/A' ? dependencyName : 'General',
                 manualId: 'S/N'
             };
 
@@ -1425,10 +1443,12 @@ export async function handleDigitizeExcel() {
                 "Tipo de Servicio": serviceType !== 'N/A' ? serviceType : 'Mantenimiento Preventivo',
                 "Técnico": workerName || 'No detectado',
                 "Empresa/Cliente": companyName || 'No detectado',
+                "Sede/Dependencia": dependencyName || 'General',
                 "Ciudad": city || 'No detectado',
                 "Equipo (Tipo)": equipmentSnapshot.type,
                 "Equipo (Marca)": equipmentSnapshot.brand,
                 "Equipo (Modelo)": equipmentSnapshot.model,
+                "Capacidad": equipmentSnapshot.capacity,
                 "Presión": pressure !== 'N/A' ? pressure : '',
                 "Amperaje": amperage !== 'N/A' ? amperage : '',
                 "Firma": dataObj.croppedSignatureBase64 ? 'SI' : 'NO',

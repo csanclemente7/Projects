@@ -138,12 +138,14 @@ export async function runAiReconciliation() {
 export interface DigitizedReportData {
     workerName: string;
     companyName: string;
+    dependency: string;
     city: string;
     serviceType: string;
     observations: string;
     equipmentModel: string;
     equipmentBrand: string;
     equipmentType: string;
+    capacity: string;
     hasSignature: boolean;
     signatureBox?: number[];
     croppedSignatureBase64?: string;
@@ -165,6 +167,8 @@ const digitizedReportSchema = {
             equipmentModel: { type: Type.STRING, description: "Modelo del equipo." },
             equipmentBrand: { type: Type.STRING, description: "Marca del equipo." },
             equipmentType: { type: Type.STRING, description: "Tipo de equipo (ej. Aire Acondicionado, Nevera)." },
+            capacity: { type: Type.STRING, description: "Capacidad del equipo (ej. 12000, 24000). Extrae solo el número que indica la capacidad BTU o similar que tenga el reporte." },
+            dependency: { type: Type.STRING, description: "Sede o Dependencia donde se encuentra el equipo." },
             hasSignature: { type: Type.BOOLEAN, description: "Verdadero si hay firma manuscrita dentro del recuadro 'CLIENTE Y/O ENCARGADO'. Falso si ese recuadro está vacío." },
             signatureBox: { 
                 type: Type.ARRAY, 
@@ -174,7 +178,7 @@ const digitizedReportSchema = {
             pressure: { type: Type.STRING, description: "Valor de presión registrada." },
             amperage: { type: Type.STRING, description: "Valor de amperaje registrado." }
         },
-        required: ["workerName", "companyName", "city", "serviceType", "observations", "equipmentModel", "equipmentBrand", "equipmentType", "hasSignature", "pressure", "amperage"]
+        required: ["workerName", "companyName", "dependency", "city", "serviceType", "observations", "equipmentModel", "equipmentBrand", "equipmentType", "capacity", "hasSignature", "pressure", "amperage"]
     }
 };
 
