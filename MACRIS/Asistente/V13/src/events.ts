@@ -588,6 +588,20 @@ export function setupEventListeners() {
     D.closeRedeemPointsModal?.addEventListener('click', UI.closeRedeemPointsModal);
     D.cancelRedeemPointsButton?.addEventListener('click', UI.closeRedeemPointsModal);
     
+    // Digitize Modals & Buttons
+    D.closeDigitizeModalBtn?.addEventListener('click', UI.closeDigitizeReviewModal);
+    D.cancelDigitizeBtn?.addEventListener('click', UI.closeDigitizeReviewModal);
+    D.btnDigitalizar?.addEventListener('click', () => D.digitalizarInput?.click());
+    D.digitalizarInput?.addEventListener('change', UI.handleDigitizarUpload);
+    D.confirmDigitizeSaveBtn?.addEventListener('click', UI.handleDigitizeSave);
+    if (D.generateDigitizePdfBtn) {
+        D.generateDigitizePdfBtn.addEventListener('click', UI.handleDigitizePdf);
+    }
+    
+    if (D.generateDigitizeExcelBtn) {
+        D.generateDigitizeExcelBtn.addEventListener('click', UI.handleDigitizeExcel);
+    }
+    
     // New unified edit assignment modal listeners
     D.editReportAssignmentForm?.addEventListener('submit', handleEditReportAssignmentSubmit);
     D.closeEditReportAssignmentModal?.addEventListener('click', UI.closeEditReportAssignmentModal);

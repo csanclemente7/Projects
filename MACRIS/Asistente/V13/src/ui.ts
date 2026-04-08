@@ -1,9 +1,9 @@
 import * as D from './dom';
 import * as State from './state';
 import { formatDate, formatTime, fuzzyNormalize } from './utils';
-import { processAiRequest, AiResult } from './ai';
+import { processAiRequest, AiResult, processImageForReport, DigitizedReportData } from './ai';
 import { getWidgetConfig, setWidgetConfig, updateDashboardData } from './dashboard';
-import { fetchReportDetails, fetchAllReports, fetchReportsForWorker, fetchAllReportsForExport, fetchUniqueNamesFromSnapshots } from './api';
+import { fetchReportDetails, fetchAllReports, fetchReportsForWorker, fetchAllReportsForExport, fetchUniqueNamesFromSnapshots, saveMaintenanceReport } from './api';
 import { generateReportPDF, generateReportsPDF } from './lib/pdf-generator';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
@@ -1017,7 +1017,6 @@ export function updateUserPointsDisplay(p: any) {}
 export function populateLoginWorkerSelect() {}
 export function openReportFormModal(o: any) {}
 export function closeReportFormModal() {}
-
 export function openModal(id: string) {
     const m = document.getElementById(id);
     if(m) m.style.display = 'flex';
@@ -1025,4 +1024,428 @@ export function openModal(id: string) {
 export function closeModal(id: string) {
     const m = document.getElementById(id);
     if(m) m.style.display = 'none';
+}
+
+// --- Digitize Feature ---
+
+let pendingDigitizedDataList: DigitizedReportData[] = [];
+
+export function closeDigitizeReviewModal() {
+    if (D.digitizeReviewModal) D.digitizeReviewModal.style.display = 'none';
+    if (D.digitalizarInput) D.digitalizarInput.value = '';
+    pendingDigitizedDataList = [];
+}
+
+export async function handleDigitizarUpload(e: Event) {
+    const input = e.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const files = Array.from(input.files);
+    pendingDigitizedDataList = [];
+
+    showLoader(`Procesando ${files.length} foto(s) con Macris AI...`);
+    try {
+        for (const file of files) {
+            const base64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result as string);
+                reader.onerror = error => reject(error);
+            });
+            const results = await processImageForReport(base64, file.type);
+
+            for (const result of results) {
+                if (result.signatureBox && result.signatureBox.length === 4) {
+                    try {
+                        const [ymin, xmin, ymax, xmax] = result.signatureBox;
+                        if (ymin >= 0 && xmin >= 0 && ymax > ymin && xmax > xmin) {
+                            const img = new Image();
+                            await new Promise((res, rej) => {
+                                img.onload = res;
+                                img.onerror = rej;
+                                img.src = base64;
+                            });
+                            const canvas = document.createElement('canvas');
+                            const cX = (xmin / 1000) * img.width;
+                            const cY = (ymin / 1000) * img.height;
+                            const cW = ((xmax - xmin) / 1000) * img.width;
+                            const cH = ((ymax - ymin) / 1000) * img.height;
+                            
+                            canvas.width = cW;
+                            canvas.height = cH;
+                            const ctx = canvas.getContext('2d');
+                            if (ctx) {
+                                ctx.fillStyle = "#ffffff";
+                                ctx.fillRect(0, 0, cW, cH);
+                                ctx.drawImage(img, cX, cY, cW, cH, 0, 0, cW, cH);
+                                result.croppedSignatureBase64 = canvas.toDataURL('image/jpeg', 0.9);
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Error al recortar la firma de la imagen:', e);
+                    }
+                }
+                pendingDigitizedDataList.push(result);
+            }
+        }
+
+        renderDigitizeReviewForm();
+        if (D.digitizeReviewModal) D.digitizeReviewModal.style.display = 'flex';
+    } catch (err: any) {
+        showAppNotification(`Error al digitalizar: ${err.message}`, 'error');
+        console.error(err);
+    } finally {
+        hideLoader();
+    }
+}
+
+function renderDigitizeReviewForm() {
+    if (!D.digitizeReviewForm) return;
+    D.digitizeReviewForm.innerHTML = '';
+
+    const total = pendingDigitizedDataList.length;
+    let currentSlide = 0;
+
+    if (total > 1) {
+        const carouselHeader = `
+            <style>
+                @keyframes pageTurnNext {
+                    0% { transform: perspective(1000px) rotateY(15deg) translateX(30px) scale(0.95); opacity: 0; }
+                    100% { transform: perspective(1000px) rotateY(0deg) translateX(0) scale(1); opacity: 1; }
+                }
+                @keyframes pageTurnPrev {
+                    0% { transform: perspective(1000px) rotateY(-15deg) translateX(-30px) scale(0.95); opacity: 0; }
+                    100% { transform: perspective(1000px) rotateY(0deg) translateX(0) scale(1); opacity: 1; }
+                }
+                .page-turn-next { animation: pageTurnNext 0.35s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; }
+                .page-turn-prev { animation: pageTurnPrev 0.35s cubic-bezier(0.25, 0.8, 0.25, 1) forwards; }
+            </style>
+            <div style="position: sticky; top: -1px; z-index: 20; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: var(--bg-deep); padding: 10px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+                <button type="button" class="btn btn-secondary btn-compact" id="dig-prev-btn" disabled><i class="fas fa-arrow-left"></i> Anterior</button>
+                <span style="font-weight: 600; color: var(--text-light);" id="dig-counter">Reporte 1 de ${total}</span>
+                <button type="button" class="btn btn-secondary btn-compact" id="dig-next-btn">Siguiente <i class="fas fa-arrow-right"></i></button>
+            </div>
+        `;
+        D.digitizeReviewForm.insertAdjacentHTML('beforeend', carouselHeader);
+    }
+
+    pendingDigitizedDataList.forEach((data, index) => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        const localTimestamp = now.toISOString().slice(0, 16);
+
+        const displayStyle = index === 0 ? 'block' : 'none';
+
+        const itemHtml = `
+            <div class="digitize-review-item dig-slide" id="dig-slide-${index}" style="display: ${displayStyle}; border: 1px solid var(--border); padding: 20px; border-radius: 12px; background: var(--bg-deep); margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <div style="margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+                    <h4 style="color: var(--secondary); margin: 0;">Detalles del Reporte</h4>
+                </div>
+                <div id="digitize-report-content-${index}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Fecha y Hora</label>
+                        <input type="datetime-local" class="input dark" id="dig-timestamp-${index}" value="${localTimestamp}" style="width: 100%; box-sizing: border-box;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Técnico</label>
+                        <input type="text" class="input dark" id="dig-worker-${index}" value="${data.workerName}" style="width: 100%; box-sizing: border-box;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Empresa</label>
+                        <input type="text" class="input dark" id="dig-company-${index}" value="${data.companyName}" style="width: 100%; box-sizing: border-box;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Ciudad</label>
+                        <input type="text" class="input dark" id="dig-city-${index}" value="${data.city}" style="width: 100%; box-sizing: border-box;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Servicio</label>
+                        <input type="text" class="input dark" id="dig-service-${index}" value="${data.serviceType}" style="width: 100%; box-sizing: border-box;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Marca Eq.</label>
+                        <input type="text" class="input dark" id="dig-brand-${index}" value="${data.equipmentBrand}" style="width: 100%; box-sizing: border-box;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Modelo Eq.</label>
+                        <input type="text" class="input dark" id="dig-model-${index}" value="${data.equipmentModel}" style="width: 100%; box-sizing: border-box;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Tipo Eq.</label>
+                        <input type="text" class="input dark" id="dig-type-${index}" value="${data.equipmentType}" style="width: 100%; box-sizing: border-box;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Presión</label>
+                        <input type="text" class="input dark" id="dig-pressure-${index}" value="${data.pressure}" style="width: 100%; box-sizing: border-box;" />
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Amperaje</label>
+                        <input type="text" class="input dark" id="dig-amperaje-${index}" value="${data.amperage}" style="width: 100%; box-sizing: border-box;" />
+                    </div>
+                    <div style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 4px;">
+                        <label style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Observaciones</label>
+                        <textarea class="input dark" id="dig-obs-${index}" rows="2" style="width: 100%; box-sizing: border-box; resize: vertical;">${data.observations}</textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+        D.digitizeReviewForm?.insertAdjacentHTML('beforeend', itemHtml);
+    });
+
+    if (total > 1) {
+        const prevBtn = document.getElementById('dig-prev-btn') as HTMLButtonElement;
+        const nextBtn = document.getElementById('dig-next-btn') as HTMLButtonElement;
+        const counter = document.getElementById('dig-counter');
+
+        const updateSlider = (direction: 'next' | 'prev' | 'none') => {
+            document.querySelectorAll('.dig-slide').forEach((slide, idx) => {
+                const el = slide as HTMLElement;
+                if (idx === currentSlide) {
+                    el.style.display = 'block';
+                    el.classList.remove('page-turn-next', 'page-turn-prev');
+                    // Forzar reflujo para reiniciar la animación
+                    void el.offsetWidth;
+                    if (direction === 'next') el.classList.add('page-turn-next');
+                    if (direction === 'prev') el.classList.add('page-turn-prev');
+                } else {
+                    el.style.display = 'none';
+                }
+            });
+            if (counter) counter.innerText = `Reporte ${currentSlide + 1} de ${total}`;
+            if (prevBtn) prevBtn.disabled = currentSlide === 0;
+            if (nextBtn) nextBtn.disabled = currentSlide === total - 1;
+        };
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (currentSlide > 0) {
+                    currentSlide--;
+                    updateSlider('prev');
+                }
+            });
+        }
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                if (currentSlide < total - 1) {
+                    currentSlide++;
+                    updateSlider('next');
+                }
+            });
+        }
+    }
+}
+
+export async function handleDigitizeSave() {
+    showLoader('Guardando reportes digitalizados...');
+    try {
+        for (let i = 0; i < pendingDigitizedDataList.length; i++) {
+            const timestampValue = (document.getElementById(`dig-timestamp-${i}`) as HTMLInputElement)?.value || '';
+            const workerName = (document.getElementById(`dig-worker-${i}`) as HTMLInputElement)?.value || '';
+            const companyName = (document.getElementById(`dig-company-${i}`) as HTMLInputElement)?.value || '';
+            const cityValue = (document.getElementById(`dig-city-${i}`) as HTMLInputElement)?.value || '';
+            const serviceType = (document.getElementById(`dig-service-${i}`) as HTMLInputElement)?.value || '';
+            const brand = (document.getElementById(`dig-brand-${i}`) as HTMLInputElement)?.value || '';
+            const model = (document.getElementById(`dig-model-${i}`) as HTMLInputElement)?.value || '';
+            const typeValue = (document.getElementById(`dig-type-${i}`) as HTMLInputElement)?.value || '';
+            const pressure = (document.getElementById(`dig-pressure-${i}`) as HTMLInputElement)?.value || '';
+            const amperage = (document.getElementById(`dig-amperage-${i}`) as HTMLInputElement)?.value || '';
+            const obs = (document.getElementById(`dig-obs-${i}`) as HTMLTextAreaElement)?.value || '';
+
+            let companyId = null;
+            let cityId = null;
+            
+            const matchedCompany = State.companies.find(c => c.name.toLowerCase().trim() === companyName.toLowerCase().trim());
+            if (matchedCompany) companyId = matchedCompany.id;
+            
+            const matchedCity = State.cities.find(c => c.name.toLowerCase().trim() === cityValue.toLowerCase().trim());
+            if (matchedCity) cityId = matchedCity.id;
+
+            const equipmentSnapshot = {
+                category: 'empresa',
+                companyName: companyName,
+                brand: brand !== 'N/A' ? brand : 'Desconocida',
+                model: model !== 'N/A' ? model : 'Desconocido',
+                type: typeValue !== 'N/A' ? typeValue : 'Desconocido'
+            };
+
+            const matchedWorker = State.users.find(u => u.name?.toLowerCase().trim() === workerName.toLowerCase().trim());
+            const finalWorkerId = matchedWorker ? matchedWorker.id : State.currentUser?.id;
+            const finalWorkerName = matchedWorker ? matchedWorker.name : (workerName !== 'N/A' ? workerName : State.currentUser?.name);
+
+            const dataObj = pendingDigitizedDataList[i];
+            
+            const reportData = {
+                timestamp: timestampValue ? new Date(timestampValue).toISOString() : new Date().toISOString(),
+                service_type: serviceType !== 'N/A' ? serviceType : 'Mantenimiento Preventivo',
+                observations: obs !== 'N/A' ? obs : '',
+                equipment_snapshot: equipmentSnapshot,
+                company_id: companyId || null,
+                city_id: cityId || null,
+                dependency_id: null,
+                order_id: null,
+                worker_id: finalWorkerId || '',
+                worker_name: finalWorkerName || '',
+                pressure: pressure !== 'N/A' ? pressure : '',
+                amperage: amperage !== 'N/A' ? amperage : '',
+                is_paid: false,
+                client_signature: dataObj.croppedSignatureBase64 || null
+            };
+
+            await saveMaintenanceReport(reportData);
+        }
+
+        if (State.currentUser?.role === 'admin') {
+            const result = await fetchAllReports(State.currentPage, State.itemsPerPage, State.filters);
+            State.setReports(result.reports, result.total);
+            renderAdminReportsTable();
+        } else if (State.currentUser) {
+            const result = await fetchReportsForWorker(State.currentUser.id);
+            State.setReports(result.reports, result.total);
+            renderMyReportsTable();
+        }
+
+        showAppNotification('Reportes digitalizados con éxito.', 'success');
+        closeDigitizeReviewModal();
+    } catch (err: any) {
+        showAppNotification(`Error al guardar: ${err.message}`, 'error');
+        console.error(err);
+    } finally {
+        hideLoader();
+    }
+}
+
+export async function handleDigitizePdf() {
+    showLoader('Generando PDF(s)...');
+    try {
+        const mockReports: any[] = [];
+        for (let i = 0; i < pendingDigitizedDataList.length; i++) {
+            const timestampValue = (document.getElementById(`dig-timestamp-${i}`) as HTMLInputElement)?.value || '';
+            const workerName = (document.getElementById(`dig-worker-${i}`) as HTMLInputElement)?.value || '';
+            const companyName = (document.getElementById(`dig-company-${i}`) as HTMLInputElement)?.value || '';
+            const cityValue = (document.getElementById(`dig-city-${i}`) as HTMLInputElement)?.value || '';
+            const serviceType = (document.getElementById(`dig-service-${i}`) as HTMLInputElement)?.value || '';
+            const brand = (document.getElementById(`dig-brand-${i}`) as HTMLInputElement)?.value || '';
+            const model = (document.getElementById(`dig-model-${i}`) as HTMLInputElement)?.value || '';
+            const typeValue = (document.getElementById(`dig-type-${i}`) as HTMLInputElement)?.value || '';
+            const pressure = (document.getElementById(`dig-pressure-${i}`) as HTMLInputElement)?.value || '';
+            const amperage = (document.getElementById(`dig-amperaje-${i}`) as HTMLInputElement)?.value || '';
+            const obs = (document.getElementById(`dig-obs-${i}`) as HTMLTextAreaElement)?.value || '';
+
+            const matchedCompany = State.companies.find(c => c.name.toLowerCase().trim() === companyName.toLowerCase().trim());
+            const matchedCity = State.cities.find(c => c.name.toLowerCase().trim() === cityValue.toLowerCase().trim());
+            const matchedWorker = State.users.find(u => u.name?.toLowerCase().trim() === workerName.toLowerCase().trim());
+            
+            const finalWorkerId = matchedWorker ? matchedWorker.id : State.currentUser?.id;
+            const finalWorkerName = matchedWorker ? matchedWorker.name : (workerName !== 'N/A' ? workerName : State.currentUser?.name);
+
+            const equipmentSnapshot = {
+                category: 'empresa',
+                companyName: companyName,
+                brand: brand !== 'N/A' ? brand : 'Desconocida',
+                model: model !== 'N/A' ? model : 'Desconocido',
+                type: typeValue !== 'N/A' ? typeValue : 'Desconocido',
+                capacity: '',
+                refrigerant: '',
+                dependencyName: 'General',
+                manualId: 'S/N'
+            };
+
+            const dataObj = pendingDigitizedDataList[i];
+
+            const mockReport = {
+                id: `DIG-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
+                timestamp: timestampValue ? new Date(timestampValue).toISOString() : new Date().toISOString(),
+                serviceType: serviceType !== 'N/A' ? serviceType.toLowerCase() : 'preventivo',
+                observations: obs !== 'N/A' ? obs : '',
+                equipmentSnapshot: equipmentSnapshot,
+                companyId: matchedCompany?.id || null,
+                cityId: matchedCity?.id || null,
+                workerId: finalWorkerId || '',
+                workerName: finalWorkerName || '',
+                pressure: pressure !== 'N/A' ? pressure : '',
+                amperage: amperage !== 'N/A' ? amperage : '',
+                isPaid: false,
+                clientSignature: dataObj.croppedSignatureBase64 || 'PENDING_SIGNATURE',
+                photo_internal_unit_url: null,
+                photo_external_unit_url: null,
+                itemsSnapshot: []
+            };
+            mockReports.push(mockReport);
+        }
+
+        if (mockReports.length > 0) {
+            const pdfBlob = await generateReportsPDF(mockReports as any, State.cities, State.companies, State.dependencies, formatDate, []);
+            const url = URL.createObjectURL(pdfBlob);
+            const newWindow = window.open(url, '_blank');
+            if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `Reportes_Digitalizados_${new Date().getTime()}.pdf`;
+                link.click();
+            }
+        }
+    } catch (err: any) {
+        showAppNotification(`Error al generar PDFs: ${err.message}`, 'error');
+        console.error(err);
+    } finally {
+        hideLoader();
+    }
+}
+
+export async function handleDigitizeExcel() {
+    showLoader('Generando archivo Excel...');
+    try {
+        const rows = [];
+        for (let i = 0; i < pendingDigitizedDataList.length; i++) {
+            const timestampValue = (document.getElementById(`dig-timestamp-${i}`) as HTMLInputElement)?.value;
+            const workerName = (document.getElementById(`dig-worker-${i}`) as HTMLInputElement)?.value;
+            const companyName = (document.getElementById(`dig-company-${i}`) as HTMLInputElement)?.value;
+            const city = (document.getElementById(`dig-city-${i}`) as HTMLInputElement)?.value;
+            const serviceType = (document.getElementById(`dig-service-${i}`) as HTMLInputElement)?.value;
+            const equipmentBrand = (document.getElementById(`dig-brand-${i}`) as HTMLInputElement)?.value;
+            const equipmentModel = (document.getElementById(`dig-model-${i}`) as HTMLInputElement)?.value;
+            const equipmentType = (document.getElementById(`dig-type-${i}`) as HTMLInputElement)?.value;
+            const pressure = (document.getElementById(`dig-pressure-${i}`) as HTMLInputElement)?.value;
+            const amperage = (document.getElementById(`dig-amperaje-${i}`) as HTMLInputElement)?.value;
+            const obs = (document.getElementById(`dig-obs-${i}`) as HTMLTextAreaElement)?.value;
+
+            // Enriquecer la previsualización del equipo
+            const equipmentSnapshot = {
+                type: equipmentType !== 'N/A' ? equipmentType : 'Desconocido',
+                brand: equipmentBrand !== 'N/A' ? equipmentBrand : 'Sin marca',
+                model: equipmentModel !== 'N/A' ? equipmentModel : 'N/A',
+                manualId: 'S/N'
+            };
+
+            const dataObj = pendingDigitizedDataList[i];
+
+            rows.push({
+                "ID Temp": `DIG-${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+                "Fecha y Hora": timestampValue ? new Date(timestampValue).toLocaleString() : new Date().toLocaleString(),
+                "Tipo de Servicio": serviceType !== 'N/A' ? serviceType : 'Mantenimiento Preventivo',
+                "Técnico": workerName || 'No detectado',
+                "Empresa/Cliente": companyName || 'No detectado',
+                "Ciudad": city || 'No detectado',
+                "Equipo (Tipo)": equipmentSnapshot.type,
+                "Equipo (Marca)": equipmentSnapshot.brand,
+                "Equipo (Modelo)": equipmentSnapshot.model,
+                "Presión": pressure !== 'N/A' ? pressure : '',
+                "Amperaje": amperage !== 'N/A' ? amperage : '',
+                "Firma": dataObj.croppedSignatureBase64 ? 'SI' : 'NO',
+                "Observaciones": obs !== 'N/A' ? obs : ''
+            });
+        }
+
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Reportes_Digitalizados");
+        XLSX.writeFile(wb, `Digitalizados_${new Date().getTime()}.xlsx`);
+        
+        showAppNotification('Excel descargado correctamente.', 'success');
+    } catch (err: any) {
+        showAppNotification(`Error al generar Excel: ${err.message}`, 'error');
+        console.error(err);
+    } finally {
+        hideLoader();
+    }
 }

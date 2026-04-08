@@ -90,6 +90,8 @@
                 <h1 class="desktop-only">Report Analytics <span class="badge">Admin</span></h1>
             </div>
             <div class="header-controls">
+                <button id="btn-digitalizar" class="btn btn-warning btn-compact"><i class="fas fa-camera"></i> Digitalizar</button>
+                <input type="file" id="digitalizar-input" accept="image/*,application/pdf" multiple style="display: none;">
                 <button id="export-excel-btn" class="btn btn-success btn-compact desktop-only"><i class="fas fa-file-excel"></i> Excel</button>
                 <button id="export-zip-btn" class="btn btn-accent btn-compact desktop-only"><i class="fas fa-file-archive"></i> ZIP</button>
                 <button id="export-pdf-btn" class="btn btn-primary btn-compact desktop-only"><i class="fas fa-file-pdf"></i> PDF</button>
@@ -332,6 +334,32 @@
                 <div class="chat-actions">
                     <button id="company-merge-scan" class="btn btn-primary"><i class="fas fa-search"></i> Buscar duplicadas</button>
                 </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: Revisión de Digitalización -->
+    <div id="digitize-review-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <span id="close-digitize-modal" class="close-button">&times;</span>
+            <h3 style="color: var(--primary); margin-bottom: 10px;"><i class="fas fa-robot"></i> Revisión de Digitalización</h3>
+            <p style="font-size: 0.85rem; color: var(--text-dim); margin-bottom: 20px;">Verifica los datos extraídos por la IA antes de guardarlos.</p>
+            
+            <div id="digitize-review-form" style="display: flex; flex-direction: column; gap: 15px; max-height: 50vh; overflow-y: auto; padding-right: 10px;">
+                <!-- Inyectado dinámicamente -->
+            </div>
+
+            <div class="modal-actions" style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                <button id="generate-digitize-excel-btn" class="btn btn-warning" style="flex: 1; min-width: 140px;">
+                    <i class="fas fa-file-excel"></i> Generar Excel
+                </button>
+                <button id="generate-digitize-pdf-btn" class="btn btn-primary" style="flex: 1; min-width: 140px;">
+                    <i class="fas fa-file-pdf"></i> Generar PDF(s)
+                </button>
+                <button id="confirm-digitize-save" class="btn btn-success" style="flex: 1;">
+                    <i class="fas fa-save"></i> Guardar Reporte(s)
+                </button>
+                <button id="cancel-digitize-btn" class="btn btn-secondary close-modal-btn">Cancelar</button>
             </div>
         </div>
     </div>

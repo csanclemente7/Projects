@@ -156,6 +156,17 @@ export const excelColumnsGrid = document.getElementById('excel-columns-grid');
 export const excelSelectAllBtn = document.getElementById('excel-select-all-btn');
 export const confirmExcelExportBtn = document.getElementById('confirm-excel-export');
 
+// Digitize elements
+export const btnDigitalizar = document.getElementById('btn-digitalizar');
+export const digitalizarInput = document.getElementById('digitalizar-input') as HTMLInputElement;
+export const digitizeReviewModal = document.getElementById('digitize-review-modal');
+export const digitizeReviewForm = document.getElementById('digitize-review-form');
+export const closeDigitizeModalBtn = document.getElementById('close-digitize-modal');
+export const confirmDigitizeSaveBtn = document.getElementById('confirm-digitize-save') as HTMLButtonElement | null;
+export const cancelDigitizeBtn = document.getElementById('cancel-digitize-btn') as HTMLButtonElement | null;
+export const generateDigitizePdfBtn = document.getElementById('generate-digitize-pdf-btn') as HTMLButtonElement | null;
+export const generateDigitizeExcelBtn = document.getElementById('generate-digitize-excel-btn') as HTMLButtonElement | null;
+
 // Modals
 export const adminPasswordModal = document.getElementById('admin-password-modal');
 export const changePasswordModal = document.getElementById('change-password-modal');
