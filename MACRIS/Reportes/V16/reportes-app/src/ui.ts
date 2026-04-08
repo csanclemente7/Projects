@@ -4,14 +4,10 @@ import { formatDate, formatTime, resizeCanvas, withTimeout } from './utils';
 import * as State from './state';
 import { calculateSchedule } from './lib/schedule-calculator';
 // FIX: Add missing import for PDF generation, required by handleDownloadReportsZip.
-import { generateReportPDF } from './lib/pdf-generator';
 import SignaturePad from 'signature_pad';
 import { EntityType, Equipment, Order, Report, User, MaintenanceTableKey, EquipmentType, RefrigerantType, City, Company, Dependency } from './types';
-import { extractDataFromImage } from './ai';
 // FIX: Changed import from 'fetchReports' to 'fetchAllReports' and 'fetchReportsForWorker'
 import { updateMaintenanceReport, fetchAllReports, fetchReportsForWorker, saveEntity, fetchCities, supabaseOrders, supabaseClients } from './api';
-// FIX: Added JSZip import to handle zip file creation for report downloads.
-import JSZip from 'jszip';
 import { getAllFromStore, updateLocalReport } from './lib/local-db';
 import { FormAutosave } from './form-autosave';
 import { Capacitor } from '@capacitor/core';
@@ -1154,7 +1150,14 @@ export function handlePlatePictureTaken() {
     const base64Image = canvas.toDataURL('image/jpeg', 0.9);
     closePlateScanModal();
     showLoader('Analizando imagen con IA...');
-    extractDataFromImage(base64Image).finally(hideLoader);
+    import('./ai').then(({ extractDataFromImage }) => {
+        return extractDataFromImage(base64Image);
+    }).catch(err => {
+        console.error('Error cargando modulo IA:', err);
+        showAppNotification('No se pudo cargar el análisis por IA', 'error');
+    }).finally(() => {
+        hideLoader();
+    });
 }
 
 // FIX: Add missing AI Reconciliation Modal functions
@@ -1655,6 +1658,7 @@ export async function openViewReportDetailsModal(reportId: string) {
         showLoader('Generando PDF...');
         try {
             const isNative = Capacitor.isNativePlatform();
+            const { generateReportPDF } = await import('./lib/pdf-generator');
             const pdfOutput = await generateReportPDF(
                 report,
                 State.cities,
@@ -2206,9 +2210,13 @@ export async function handleDownloadReportsZip() {
             return;
         }
 
+        const JSZipModule = await import('jszip');
+        const JSZip = JSZipModule.default || JSZipModule;
         const zip = new JSZip();
 
         showLoader(`Generando ${reportsToDownload.length} PDFs...`);
+
+        const { generateReportPDF } = await import('./lib/pdf-generator');
 
         // Generate PDFs in parallel
         const pdfPromises = reportsToDownload.map(report =>
@@ -2277,6 +2285,7 @@ export async function handleDownloadReportsMergedPdf() {
 
             showLoader(`Uniendo reporte ${i + 1} de ${reportsToDownload.length}...`);
 
+            const { generateReportPDF } = await import('./lib/pdf-generator');
             // For the very first iteration, existingDoc will evaluate falsy so it internally instantiates the jsPDF doc
             mergedDoc = await generateReportPDF(
                 report,

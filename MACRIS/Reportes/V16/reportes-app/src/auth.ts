@@ -292,7 +292,7 @@ function stopMasterDataAutoRefresh() {
     }
 }
 
-async function refreshAssignedOrdersForWorker(
+export async function refreshAssignedOrdersForWorker(
     user: User,
     options: { notifyOnNew?: boolean; onlyIfChanged?: boolean } = {}
 ) {

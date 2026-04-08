@@ -19,6 +19,7 @@ export const allSections = document.querySelectorAll('#app-screen main .data-sec
 // Worker Section Elements
 export const workerOrdersSection = document.getElementById('worker-orders-section') as HTMLElement;
 export const workerOrdersListContainer = document.getElementById('worker-orders-list-container') as HTMLDivElement;
+export const btnRefreshOrders = document.getElementById('btn-refresh-orders') as HTMLButtonElement;
 export const scanQrCameraButton = document.getElementById('scan-qr-camera-button') as HTMLButtonElement;
 export const scanQrFromFileButton = document.getElementById('scan-qr-file-button') as HTMLButtonElement;
 export const qrFileInput = document.getElementById('qr-file-input') as HTMLInputElement;

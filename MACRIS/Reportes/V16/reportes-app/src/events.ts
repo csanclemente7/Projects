@@ -8,7 +8,7 @@ import { EntityType, Report, Equipment, Order, Database, Company, Dependency } f
 import { deleteEntity as apiDeleteEntity, deleteReport as apiDeleteReport, saveEntity, deleteAllReports as apiDeleteAllReports, toggleEmployeeStatus, saveMaintenanceReport, updateMaintenanceReport, fetchAllEquipment, fetchCities, fetchCompanies, fetchDependencies, fetchUsers, toggleReportPaidStatus, updateOrderItemQuantity, checkAndCompleteOrderIfFinished, incrementOrderItemCompletedQuantity, updateOrderStatus, updateAppSetting, fetchAllReports, fetchReportsForWorker, awardPointToTechnician, updateUserPoints, fetchEquipmentTypes, fetchRefrigerantTypes } from './api';
 import { addReportToQueue, updateLocalReport, cacheAllData } from './lib/local-db';
 import QRCode from 'qrcode';
-import { runAiReconciliation } from './ai';
+
 import { synchronizeQueue, startPeriodicSync, stopPeriodicSync } from './lib/sync';
 import { currentUser } from './state';
 import { FormAutosave } from './form-autosave';
@@ -1162,6 +1162,21 @@ if (!networkListenerActive) {
     });
 
     // --- Worker Actions ---
+    D.btnRefreshOrders?.addEventListener('click', async () => {
+        if (!State.currentUser) return;
+        const icon = D.btnRefreshOrders.querySelector('i');
+        if (icon) icon.classList.add('fa-spin');
+        
+        try {
+            await Auth.refreshAssignedOrdersForWorker(State.currentUser, { notifyOnNew: true, onlyIfChanged: false });
+            UI.showAppNotification('Órdenes actualizadas exitosamente', 'success');
+        } catch (e) {
+            UI.showAppNotification('Error al recuperar órdenes, revisa tu conexión', 'error');
+        } finally {
+            if (icon) icon.classList.remove('fa-spin');
+        }
+    });
+    
     D.createManualReportButton?.addEventListener('click', () => UI.openCategorySelectionModal('manual'));
     D.searchByIdButton?.addEventListener('click', () => UI.openCategorySelectionModal('search'));
     D.toggleMyReportsViewButton?.addEventListener('click', async () => {
@@ -1718,7 +1733,10 @@ if (!networkListenerActive) {
     });
 
     // --- AI Reconciliation ---
-    D.aiReconciliationBtn?.addEventListener('click', runAiReconciliation);
+    D.aiReconciliationBtn?.addEventListener('click', async () => {
+        const { runAiReconciliation } = await import('./ai');
+        runAiReconciliation();
+    });
     D.downloadZipButton?.addEventListener('click', UI.handleDownloadReportsZip);
     D.downloadMergedPdfButton?.addEventListener('click', UI.handleDownloadReportsMergedPdf);
 
