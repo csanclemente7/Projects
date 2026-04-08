@@ -1814,11 +1814,3 @@ if (!networkListenerActive) {
         }
     });
 }
-
-
-// --- Inicialización automática de sincronización ---
-// Inicia el sincronizador periódico cuando arranca la app
-window.addEventListener('DOMContentLoaded', () => {
-  console.log('[App Init] Iniciando sincronización periódica...');
-  startPeriodicSync();
-});

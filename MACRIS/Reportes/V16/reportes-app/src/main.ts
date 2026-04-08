@@ -15,7 +15,7 @@ import { UserPrefsManager } from './user-preferences';
 import { FormAutosave } from './form-autosave';
 import { initDB, getAllFromStore, cacheAllData, resetLocalDatabase } from './lib/local-db';
 import { synchronizeQueue, startPeriodicSync } from './lib/sync';
-import { BackgroundRunner } from '@capacitor/background-runner';
+
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { Network } from '@capacitor/network';
@@ -357,6 +357,17 @@ async function refreshOnlineData(options: { silent?: boolean, hasLocalData: bool
         return;
     }
 
+    // Detectar el rol del usuario persistido para evitar descargas innecesarias.
+    // Para técnicos: los reportes y órdenes específicos se cargan en handlePostLogin().
+    let persistedRole: string | null = null;
+    try {
+        const storedUserJSON = localStorage.getItem('maintenance_app_current_user');
+        if (storedUserJSON) {
+            persistedRole = JSON.parse(storedUserJSON)?.role || null;
+        }
+    } catch { /* ignore parse errors */ }
+    const isWorker = persistedRole === 'worker';
+
     const maybeShowLoader = (msg: string) => {
         if (!silent) showLoader(msg);
     };
@@ -364,12 +375,13 @@ async function refreshOnlineData(options: { silent?: boolean, hasLocalData: bool
     try {
         maybeShowLoader(hasLocalData ? 'Actualizando datos...' : 'Descargando datos iniciales...');
 
+        // Catálogos base: necesarios para todos los roles (login, formularios, etc.)
         const [
             usersData, appSettingsData, citiesData, companiesData, dependenciesData,
-            equipmentData, serviceTypesData, equipmentTypesData, refrigerantTypesData, allReportsData
+            equipmentData, serviceTypesData, equipmentTypesData, refrigerantTypesData
         ] = await Promise.all([
             fetchUsers(), fetchAppSettings(), fetchCities(), fetchCompanies(), fetchDependencies(),
-            fetchAllEquipment(), fetchServiceTypes(), fetchEquipmentTypes(), fetchRefrigerantTypes(), fetchAllReports({ daysBack: 4 })
+            fetchAllEquipment(), fetchServiceTypes(), fetchEquipmentTypes(), fetchRefrigerantTypes()
         ]);
 
         State.setUsers(usersData);
@@ -383,17 +395,27 @@ async function refreshOnlineData(options: { silent?: boolean, hasLocalData: bool
         const settings: AppSettings = {};
         appSettingsData && Object.entries(appSettingsData).forEach(([key, value]) => settings[key] = value);
         State.setAppSettings(settings);
-
-        const allEnrichedOrdersData = await fetchAllEnrichedOrders(usersData, { daysBack: 90, limit: 300 });
-        const allQueuedReportsData = await getAllFromStore('reports_queue');
-
-        const combinedReports = [...allQueuedReportsData, ...allReportsData];
-        const reportMap = new Map(combinedReports.map(r => [r.id, r]));
-        State.setReports(Array.from(reportMap.values()));
-        State.setAllServiceOrders(allEnrichedOrdersData);
         populateLoginWorkerSelect();
 
-        // 🔹 Cachea todo localmente
+        // Datos pesados: solo descargar para admin.
+        // Para técnicos, handlePostLogin() se encarga de cargar sus reportes y órdenes específicas.
+        if (!isWorker) {
+            const allReportsData = await fetchAllReports({ daysBack: 4 });
+            const allEnrichedOrdersData = await fetchAllEnrichedOrders(usersData, { daysBack: 90, limit: 300 });
+            const allQueuedReportsData = await getAllFromStore('reports_queue');
+
+            const combinedReports = [...allQueuedReportsData, ...allReportsData];
+            const reportMap = new Map(combinedReports.map(r => [r.id, r]));
+            State.setReports(Array.from(reportMap.values()));
+            State.setAllServiceOrders(allEnrichedOrdersData);
+
+            await Promise.all([
+                cacheAllData('reports', allReportsData),
+                cacheAllData('orders', allEnrichedOrdersData)
+            ]);
+        }
+
+        // 🔹 Cachea catálogos base localmente
         await Promise.all([
             cacheAllData('users', usersData),
             cacheAllData('cities', citiesData),
@@ -404,12 +426,10 @@ async function refreshOnlineData(options: { silent?: boolean, hasLocalData: bool
             cacheAllData('equipment_types', equipmentTypesData),
             cacheAllData('refrigerant_types', refrigerantTypesData),
             cacheAllData('app_settings', Object.entries(settings).map(([key, value]) => ({ key, value }))),
-            cacheAllData('reports', allReportsData),
-            cacheAllData('orders', allEnrichedOrdersData)
         ]);
 
         await seedInitialUsers(usersData);
-        console.log("✅ Datos iniciales descargados y guardados correctamente.");
+        console.log(`✅ Datos iniciales descargados y guardados correctamente (rol persistido: ${persistedRole || 'ninguno'}).`);
 
     } catch (error: any) {
         console.error("Error al sincronizar datos:", error);
@@ -481,30 +501,7 @@ export async function main() {
             console.error('Error al registrar el Service Worker:', error);
         }
     }
-    // -------------------------------------------------------
-    // 🔥 Registrar BackgroundRunner SOLO en Android
-    // -------------------------------------------------------
-    if (Capacitor.getPlatform() === 'android') {
-        try {
-            await BackgroundRunner.registerTask({
-                name: 'backgroundSync',
-                description: 'Sincroniza reportes automáticamente incluso con la app cerrada',
-                path: 'background/sync-job'
-            });
 
-            await BackgroundRunner.start({
-                title: 'Sincronización activa',
-                description: 'La app continúa subiendo reportes automáticamente.',
-                icon: 'ic_launcher'
-            });
-
-            console.log('[BackgroundRunner] Registrado correctamente.');
-        } catch (err) {
-            console.error('[BackgroundRunner] Error al registrar:', err);
-        }
-    } else {
-        console.log('[BackgroundRunner] No disponible en esta plataforma:', Capacitor.getPlatform());
-    }
 
 
     // 2. Continuar con el resto de la inicialización de la app

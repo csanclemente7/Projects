@@ -374,21 +374,3 @@ export async function synchronizeQueue(): Promise<void> {
     }
 }
 
-
-// --- Listener para detectar reconexión y sincronizar automáticamente ---
-// Se ejecuta una vez al cargar el módulo
-Network.addListener('networkStatusChange', async (status) => {
-  console.log('[Network] Estado de red cambiado:', status);
-  if (status.connected) {
-    console.log('[Network] Conexión detectada. Iniciando sincronización automática...');
-    await synchronizeQueue();
-  }
-});
-
-// También intentamos sincronizar al iniciar la app si ya hay internet
-Network.getStatus().then(status => {
-  if (status.connected) {
-    console.log('[Network] Conectado al iniciar la app. Lanzando sincronización inicial...');
-    synchronizeQueue();
-  }
-});

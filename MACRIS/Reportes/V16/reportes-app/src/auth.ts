@@ -30,8 +30,9 @@ let orderRefreshIntervalId: number | null = null;
 let masterDataRefreshIntervalId: number | null = null;
 let isMasterDataRefreshRunning = false;
 let isRefreshingReportsInBackground = false;
-const ORDER_POLL_INTERVAL = 8000; // ms
-const MASTER_DATA_REFRESH_INTERVAL = 120000; // 2 minutos
+const ORDER_POLL_INTERVAL = 45000; // ms — Reducido para ahorrar red y batería en celulares de gama baja
+const MASTER_DATA_REFRESH_INTERVAL_ADMIN = 120000; // 2 minutos para admin
+const MASTER_DATA_REFRESH_INTERVAL_WORKER = 600000; // 10 minutos para técnicos — los catálogos rara vez cambian en campo
 const ORDER_ERROR_COOLDOWN_MS = 45000; // Evita spamear avisos cuando no hay red
 let lastOrderErrorNotificationTs = 0;
 let visibilityOrderHandler: (() => void) | null = null;
@@ -279,7 +280,9 @@ async function refreshMasterDataInBackground() {
 function startMasterDataAutoRefresh() {
     stopMasterDataAutoRefresh();
     refreshMasterDataInBackground();
-    masterDataRefreshIntervalId = window.setInterval(refreshMasterDataInBackground, MASTER_DATA_REFRESH_INTERVAL);
+    const masterInterval = State.currentUser?.role === 'worker' ? MASTER_DATA_REFRESH_INTERVAL_WORKER : MASTER_DATA_REFRESH_INTERVAL_ADMIN;
+    masterDataRefreshIntervalId = window.setInterval(refreshMasterDataInBackground, masterInterval);
+    console.log(`[Auth] Master data auto-refresh cada ${masterInterval / 1000}s (rol: ${State.currentUser?.role}).`);
 }
 
 function stopMasterDataAutoRefresh() {
@@ -687,8 +690,8 @@ async function handlePostLogin(user: User) {
             clearInterval(reportRefreshIntervalId);
         }
 
-        const REFRESH_INTERVAL = 45000; // Reducido frecuencia para bajar egress (45s)
-        console.log(`[Auth] Iniciando actualización automática de reportes cada ${REFRESH_INTERVAL / 1000}s.`);
+        const REFRESH_INTERVAL = user.role === 'worker' ? 90000 : 45000; // 90s técnico, 45s admin
+        console.log(`[Auth] Iniciando actualización automática de reportes cada ${REFRESH_INTERVAL / 1000}s (rol: ${user.role}).`);
         reportRefreshIntervalId = window.setInterval(refreshReportsInBackground, REFRESH_INTERVAL);
         startMasterDataAutoRefresh();
 
