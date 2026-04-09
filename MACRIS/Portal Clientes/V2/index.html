@@ -1,0 +1,323 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal de Reportes - Clientes Macris</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+  <div id="loading-overlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Cargando portal...</p>
+  </div>
+
+  <div id="login-screen" class="screen">
+    <div class="login-shell">
+      <div class="login-brand">
+        <img src="Macris-horizontal.png" alt="Macris Ingenieria" class="brand-logo">
+        <h1>Portal de Reportes</h1>
+        <p>Acceso exclusivo para clientes con link directo o código.</p>
+      </div>
+      <div class="login-panel">
+        <h2><i class="fas fa-lock"></i> Acceso de Clientes</h2>
+        <form id="client-login-form" class="stack">
+          <label for="client-access-code">Código o link de acceso</label>
+          <input id="client-access-code" type="text" placeholder="Ej: macris-abc123" autocomplete="one-time-code" required>
+          <button type="submit" class="btn btn-primary">
+            <i class="fas fa-arrow-right"></i> Ver reportes
+          </button>
+          <p id="client-login-error" class="form-error"></p>
+        </form>
+        <div class="login-hint">
+          <i class="fas fa-info-circle"></i>
+          Si recibiste un link, abrelo directamente y entraras sin código.
+        </div>
+        <button id="open-admin-portal" type="button" class="btn-link">
+          <i class="fas fa-user-shield"></i> Administracion
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-screen" class="screen" style="display:none;">
+    <header class="app-header">
+      <div class="header-brand">
+        <img src="Macris-horizontal.png" alt="Macris Ingenieria" class="header-logo">
+        <div>
+          <p class="eyebrow">Portal Cliente</p>
+          <h2 id="current-company-name">Empresa</h2>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="logout-button" class="btn btn-secondary">
+          <i class="fas fa-sign-out-alt"></i> Salir
+        </button>
+      </div>
+    </header>
+
+    <main class="app-main">
+      <div class="tab-bar" role="tablist">
+        <button class="tab-button active" type="button" data-client-tab="reports"><i class="fas fa-file-alt"></i> Reportes</button>
+        <button class="tab-button" type="button" data-client-tab="equipment"><i class="fas fa-snowflake"></i> Equipos</button>
+      </div>
+      <section id="reports-section" class="card">
+        <div class="card-header">
+          <div>
+            <h3><i class="fas fa-file-alt"></i> Reportes realizados</h3>
+            <p>Busca por ID de equipo, reporte, técnico o servicio. Escanea el QR del equipo para filtrar.</p>
+            <div id="reports-count" class="report-count" role="status" aria-live="polite">0 reportes</div>
+          </div>
+          <div class="card-actions">
+            <button id="scan-qr-camera-button" class="btn btn-primary btn-compact">
+              <i class="fas fa-qrcode"></i> Escanear QR
+            </button>
+            <button id="scan-qr-file-button" class="btn btn-secondary btn-compact">
+              <i class="fas fa-file-image"></i> QR desde archivo
+            </button>
+            <input type="file" id="qr-file-input" accept="image/*" style="display:none;" aria-hidden="true">
+          </div>
+        </div>
+        <div class="search-controls">
+          <input type="search" id="reports-search" class="search-input" placeholder="Buscar por ID, equipo, técnico..." aria-label="Buscar reportes">
+          <button id="reports-search-clear" class="btn btn-secondary btn-icon-only" title="Limpiar">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="filter-bar">
+          <div class="filter-row">
+            <div class="filter-group">
+              <span class="filter-label">Rango de fechas</span>
+              <div class="date-range">
+                <label class="date-field" for="reports-date-start">
+                  <span>Desde</span>
+                  <input type="date" id="reports-date-start" lang="es-CO" aria-label="Fecha desde">
+                </label>
+                <label class="date-field" for="reports-date-end">
+                  <span>Hasta</span>
+                  <input type="date" id="reports-date-end" lang="es-CO" aria-label="Fecha hasta">
+                </label>
+              </div>
+              <span class="filter-hint">Hora Colombia (GMT-5)</span>
+            </div>
+            <div class="filter-download">
+              <button id="download-reports-pdf" class="btn btn-primary btn-compact" type="button">
+                <i class="fas fa-file-pdf"></i> Descargar PDF
+              </button>
+            </div>
+          </div>
+          <div class="filter-row filter-actions">
+            <button id="reports-date-today" class="btn btn-secondary btn-compact" type="button">Hoy</button>
+            <button id="reports-date-week" class="btn btn-secondary btn-compact" type="button">Últimos 7 días</button>
+            <button id="reports-date-month" class="btn btn-secondary btn-compact" type="button">Este mes</button>
+            <button id="reports-date-clear" class="btn btn-secondary btn-compact" type="button">Limpiar</button>
+          </div>
+        </div>
+        <div id="reports-empty-state" class="empty-state"></div>
+        <div class="table-container">
+          <table id="reports-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>ID Reporte</th>
+                <th>ID Equipo</th>
+                <th>Equipo</th>
+                <th>Servicio</th>
+                <th>Dependencia</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="reports-pagination" class="pagination-controls"></div>
+      </section>
+
+      <section id="equipment-section" class="card" style="display:none;">
+        <div class="card-header">
+          <div>
+            <h3><i class="fas fa-snowflake"></i> Equipos registrados</h3>
+            <p>Listado de equipos de la empresa. Usa el ID para filtrar reportes.</p>
+          </div>
+          <div class="card-actions">
+            <button id="equipment-scan-qr-camera-button" class="btn btn-primary btn-compact">
+              <i class="fas fa-qrcode"></i> Escanear QR
+            </button>
+            <button id="equipment-scan-qr-file-button" class="btn btn-secondary btn-compact">
+              <i class="fas fa-file-image"></i> QR desde archivo
+            </button>
+          </div>
+          <div class="search-controls compact">
+            <input type="search" id="equipment-search" class="search-input" placeholder="Buscar equipo..." aria-label="Buscar equipo">
+            <button id="equipment-search-clear" class="btn btn-secondary btn-icon-only" title="Limpiar">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table id="equipment-table">
+            <thead>
+              <tr>
+                <th>ID Equipo</th>
+                <th>Equipo</th>
+                <th>Tipo</th>
+                <th>Dependencia</th>
+                <th>Reportes</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="equipment-pagination" class="pagination-controls"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="admin-screen" class="screen" style="display:none;">
+    <header class="app-header">
+      <div class="header-brand">
+        <img src="Macris-horizontal.png" alt="Macris Ingenieria" class="header-logo">
+        <div>
+          <p class="eyebrow">Admin Portal</p>
+          <h2>Gestion de accesos</h2>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button id="admin-back-button" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i> Volver
+        </button>
+        <button id="admin-logout-button" class="btn btn-secondary">
+          <i class="fas fa-sign-out-alt"></i> Cerrar sesion
+        </button>
+      </div>
+    </header>
+
+      <main class="app-main">
+        <section id="admin-login-card" class="card">
+          <h3><i class="fas fa-shield-alt"></i> Ingreso administrador</h3>
+          <form id="admin-login-form" class="stack">
+            <label for="admin-pin-input">PIN de Administracion</label>
+          <input id="admin-pin-input" type="password" autocomplete="current-password" required>
+          <button type="submit" class="btn btn-primary">Ingresar</button>
+          <p id="admin-login-error" class="form-error"></p>
+        </form>
+        <p class="helper-text">Usa el mismo PIN del admin de reportes.</p>
+      </section>
+
+      <div id="admin-content" style="display:none;">
+        <div class="tab-bar" role="tablist">
+          <button class="tab-button active" type="button" data-admin-tab="companies"><i class="fas fa-building"></i> Empresas</button>
+          <button class="tab-button" type="button" data-admin-tab="equipment"><i class="fas fa-snowflake"></i> Equipos</button>
+        </div>
+        <section id="admin-companies-section" class="card">
+          <div class="card-header">
+            <div>
+              <h3><i class="fas fa-building"></i> Empresas y links</h3>
+              <p>Comparte el link directo o el código con cada empresa.</p>
+            </div>
+            <div class="search-controls compact">
+              <input type="search" id="admin-company-search" class="search-input" placeholder="Buscar empresa..." aria-label="Buscar empresa">
+              <button id="admin-company-search-clear" class="btn btn-secondary btn-icon-only" title="Limpiar">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table id="admin-companies-table">
+              <thead>
+                <tr>
+                  <th>Empresa</th>
+                  <th>Ciudad</th>
+                  <th>código</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="admin-equipment-section" class="card" style="display:none;">
+          <div class="card-header">
+            <div>
+              <h3><i class="fas fa-snowflake"></i> Equipos</h3>
+              <p>Busca equipos aunque no tengan mantenimientos registrados.</p>
+            </div>
+            <div class="search-controls compact">
+              <input type="search" id="admin-equipment-search" class="search-input" placeholder="Buscar equipo..." aria-label="Buscar equipo">
+              <button id="admin-equipment-search-clear" class="btn btn-secondary btn-icon-only" title="Limpiar">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          </div>
+          <div class="table-container">
+            <table id="admin-equipment-table">
+              <thead>
+                <tr>
+                  <th>ID Equipo</th>
+                  <th>Equipo</th>
+                  <th>Tipo</th>
+                  <th>Empresa</th>
+                  <th>Dependencia</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div id="admin-equipment-pagination" class="pagination-controls"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="camera-scan-modal" class="modal">
+    <div class="modal-content">
+      <span id="close-camera-scan-modal" class="close-button">&times;</span>
+      <h3><i class="fas fa-qrcode"></i> Escanear QR</h3>
+      <video id="qr-video" class="qr-video" playsinline></video>
+      <canvas id="qr-canvas-hidden" class="visually-hidden"></canvas>
+      <p id="camera-scan-feedback" class="helper-text">Apuntando a la camara...</p>
+      <div class="modal-actions">
+        <button id="cancel-camera-scan" class="btn btn-secondary">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="report-details-modal" class="modal">
+    <div class="modal-content modal-lg">
+      <span id="close-report-details-modal" class="close-button">&times;</span>
+      <h3><i class="fas fa-clipboard-check"></i> Detalle del reporte</h3>
+      <div id="report-details-content" class="report-details"></div>
+      <div class="modal-actions">
+        <button id="download-report-pdf" class="btn btn-primary">
+          <i class="fas fa-file-pdf"></i> Descargar PDF
+        </button>
+        <button id="close-report-details" class="btn btn-secondary">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="reports-download-confirm-modal" class="modal">
+    <div class="modal-content">
+      <span id="close-reports-download-confirm" class="close-button">&times;</span>
+      <h3><i class="fas fa-file-pdf"></i> Descargar reportes</h3>
+      <p id="reports-download-confirm-text" class="helper-text"></p>
+      <div class="modal-actions">
+        <button id="reports-download-cancel" class="btn btn-secondary">Cancelar</button>
+        <button id="reports-download-confirm" class="btn btn-primary">Descargar</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-notification-area" class="notification-area"></div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
+
+

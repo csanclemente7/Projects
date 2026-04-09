@@ -1,0 +1,332 @@
+/* Modals */
+.modal {
+    display: none; /* Hidden by default, 'flex' to show and center content */
+    position: fixed;
+    z-index: 1000; 
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(1, 4, 9, 0.85); 
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    padding: 15px;
+    align-items: center; /* Vertically center content */
+    justify-content: center; /* Horizontally center content */
+}
+
+/* Level 2: Action modals that can open on top of other modals (e.g., camera, signature) */
+#camera-scan-modal,
+#plate-scan-modal,
+#signature-modal,
+#photo-capture-modal,
+#quick-add-city-modal {
+    z-index: 1050;
+}
+
+/* Level 3: Utility modals that must appear above all others (e.g., confirmation dialogs, image previews) */
+#confirmation-modal,
+#image-preview-modal,
+#info-modal {
+    z-index: 1100;
+}
+
+
+.modal-content {
+    background-color: var(--color-bg-medium); 
+    /* margin: 5% auto; Removed for flex centering */
+    padding: 25px;
+    border-radius: var(--border-radius-sharp);
+    width: 95%;
+    max-width: 700px; /* Default max-width for larger modals */
+    box-shadow: var(--shadow-dark), 0 0 35px rgba(0, 223, 255, 0.15); 
+    position: relative;
+    border: 1px solid var(--color-border-medium);
+    max-height: 90vh; /* Allow scrolling within modal if content overflows */
+    overflow-y: auto;
+}
+.modal-content-small { 
+    max-width: 500px;
+}
+
+
+.modal-content h3, .modal-content h4 {
+    margin-top: 0;
+    color: var(--color-text-primary);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+.modal-content h3 {
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+    padding-right: 50px; /* Make space for the absolutely positioned close button */
+}
+.modal-content h3 .fas, .modal-content h3 .far {
+    margin-right: 10px;
+    color: var(--color-accent-primary); 
+}
+.modal-content h4 { /* For sub-sections within a modal */
+    color: var(--color-text-secondary);
+    font-size: 1rem;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--color-border-light);
+    padding-bottom: 8px;
+}
+
+
+.close-button {
+    color: var(--color-text-secondary);
+    float: right; /* Kept for traditional positioning */
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    transition: color 0.3s ease, transform 0.3s ease;
+    z-index: 10;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: var(--color-accent-primary); 
+    text-decoration: none;
+    cursor: pointer;
+    transform: rotate(90deg);
+}
+
+.modal-actions {
+    margin-top: 25px;
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    border-top: 1px solid var(--color-border-light);
+    padding-top: 15px;
+}
+
+
+/* Error and Success Messages */
+.error-message {
+    color: var(--color-danger);
+    font-size: 0.85em;
+    margin-top: 6px;
+    font-weight: 500;
+}
+.success-message {
+    color: var(--color-success);
+    font-size: 0.85em;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+#login-error, #entity-form-error-placeholder /* Add if needed */ {
+    min-height: 1.2em; 
+    text-align: left; 
+    display: block; 
+}
+
+/* Signature Pad specific */
+#signature-canvas {
+    width: 100%;
+    height: 200px; /* Adjust as needed */
+    touch-action: none; /* Important for touch drawing */
+}
+#signature-preview-container img {
+    background-color: #fff; /* Ensure signature is visible if transparent bg */
+}
+
+
+/* Report Details View */
+.report-details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+}
+.report-details-grid div {
+    padding: 8px;
+    background-color: var(--color-bg-light);
+    border-radius: var(--border-radius-sharp);
+    border: 1px solid var(--color-border-light);
+}
+.report-details-grid strong {
+    display: block;
+    color: var(--color-text-primary);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+}
+.report-details-grid span, .report-details-grid img {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    word-wrap: break-word;
+}
+.report-details-grid img#view-report-signature-image {
+    max-width: 100%;
+    max-height: 150px;
+    object-fit: contain;
+    background-color: #fff; /* Make signature visible */
+    border-radius: var(--border-radius-sharp);
+}
+
+
+/* Image Preview Modal Specific Styles */
+#image-preview-modal .modal-content-image-preview {
+    background-color: transparent;
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: auto; 
+    max-width: 95vw;
+    height: auto; 
+    max-height: 95vh;
+    margin: 0;
+    position: relative;
+}
+
+#image-preview-modal #image-preview-content {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; 
+    border-radius: var(--border-radius-sharp);
+    box-shadow: var(--shadow-dark); 
+}
+
+#image-preview-modal .close-button {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    font-size: 35px;
+    font-weight: bold;
+    color: var(--corporate-white);
+    background-color: rgba(13, 17, 23, 0.6); 
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    line-height: 38px; 
+    text-align: center;
+    z-index: 1060;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
+}
+#image-preview-modal .close-button:hover {
+    background-color: rgba(0, 223, 255, 0.8); 
+    color: var(--corporate-bg-dark);
+    transform: rotate(90deg) scale(1.1);
+}
+
+/* Equipment Search in Modal */
+.search-results-container {
+    margin-top: 5px;
+    border: 1px solid var(--color-border-dark);
+    border-radius: var(--border-radius-sharp);
+    max-height: 250px;
+    overflow-y: auto;
+    background-color: var(--color-bg-light);
+}
+.search-results-container:empty {
+    display: none;
+}
+
+
+.search-result-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-border-light);
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+}
+.search-result-item:last-child {
+    border-bottom: none;
+}
+
+.search-result-item:hover {
+    background-color: rgba(0, 223, 255, 0.1);
+    color: var(--color-text-primary);
+}
+.search-result-item .search-result-item-id {
+    font-weight: bold;
+    color: var(--color-accent-primary);
+}
+.search-result-item .search-result-item-location {
+    font-size: 0.8rem;
+    color: var(--color-text-placeholder);
+    display: block;
+}
+
+/* Category Selection Modal */
+.category-selection-actions {
+    display: flex;
+    justify-content: space-around;
+    gap: 20px;
+    margin: 25px 0;
+}
+.category-selection-actions .btn {
+    flex-grow: 1;
+    padding: 15px;
+    font-size: 1.1rem;
+    flex-direction: column;
+    height: auto;
+    line-height: 1.4;
+}
+.category-selection-actions .btn .fas, 
+.category-selection-actions .btn .far {
+    font-size: 2.5rem;
+    margin-bottom: 10px;
+    display: block;
+    width: 100%;
+}
+
+@media (max-width: 600px) {
+    .modal {
+        padding: 10px;
+    }
+    .modal-content {
+        padding: 18px;
+        width: 100%;
+        max-width: 100%;
+    }
+    .modal-content h3 {
+        font-size: 1.1rem;
+        padding-right: 40px;
+    }
+    .close-button {
+        top: 8px;
+        right: 12px;
+        font-size: 24px;
+    }
+    .modal-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    #signature-canvas {
+        height: 160px;
+    }
+    .category-selection-actions {
+        flex-direction: column;
+        gap: 12px;
+    }
+    .category-selection-actions .btn {
+        font-size: 1rem;
+        padding: 12px;
+    }
+    .category-selection-actions .btn .fas,
+    .category-selection-actions .btn .far {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .modal-content {
+        padding: 14px;
+    }
+    .modal-content h3 {
+        font-size: 1rem;
+    }
+}

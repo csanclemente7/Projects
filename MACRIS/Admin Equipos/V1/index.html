@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self'; 
+                   script-src 'self' 'unsafe-inline' https://esm.sh https://cdn.jsdelivr.net data:;
+                   style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; 
+                   img-src 'self' data: blob:; 
+                   font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; 
+                   connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://data.jsdelivr.net;
+                   worker-src 'self' blob:;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administración de Equipos - Macris</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="index.css">
+    <link rel="stylesheet" href="css/base.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/modals.css">
+    <link rel="stylesheet" href="css/utilities.css">
+<script type="importmap">
+{
+  "imports": {
+    "@google/genai": "https://esm.sh/@google/genai@^1.1.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.43.4",
+    "jsqr": "https://esm.sh/jsqr@1.4.0",
+    "jspdf": "https://esm.sh/jspdf@2.5.1",
+    "qrcode": "https://esm.sh/qrcode@1.5.3",
+    "signature_pad": "https://esm.sh/signature_pad@4.2.0",
+    "jszip": "https://esm.sh/jszip@3.10.1"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p>Iniciando administrador...</p>
+    </div>
+
+    <div id="login-screen">
+        <div class="login-container">
+            <div class="login-branding-side">
+                <img src="Macris-horizontal.png" alt="Macris Logo" class="login-logo">
+            </div>
+            <div class="login-form-side">
+                <h2><i class="fas fa-user-shield"></i> Gestión de Activos</h2>
+                <form id="admin-password-form-login">
+                    <div class="form-group">
+                        <label for="admin-pass">Contraseña de Administrador:</label>
+                        <input type="password" id="admin-pass" name="admin_password" required autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-sign-in-alt"></i> Entrar al Panel</button>
+                    <p id="login-error" class="error-message"></p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-screen" style="display: none;">
+        <header>
+            <div class="header-content">
+                 <img src="MacrisLogo.png" alt="Macris Logo" class="header-logo">
+                 <h1><i class="fas fa-cogs"></i> Panel de Equipos</h1>
+            </div>
+            <div class="header-actions">
+                <span id="current-user-display">Administrador</span>
+                <button id="logout-button" class="btn btn-danger"><i class="fas fa-power-off"></i> <span class="btn-text">Salir</span></button>
+            </div>
+        </header>
+
+        <main>
+            <section id="admin-equipment-section" class="data-section">
+                <div class="section-header-container">
+                    <h2><i class="fas fa-list"></i> Inventario de Equipos</h2>
+                    <div class="header-actions-group">
+                        <button id="add-equipment-button" class="btn btn-accent"><i class="fas fa-plus-circle"></i> Nuevo Equipo</button>
+                    </div>
+                </div>
+                
+                <div class="search-controls">
+                    <input type="search" id="admin-equipment-search" placeholder="Buscar por ID, modelo, marca, cliente o empresa..." aria-label="Buscar equipos">
+                    <button id="admin-equipment-search-clear" class="btn btn-secondary btn-icon-only" title="Limpiar búsqueda">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="table-container">
+                    <table id="admin-equipment-table">
+                        <thead>
+                            <tr>
+                                <th>ID Manual</th>
+                                <th>Marca / Modelo</th>
+                                <th>Tipo</th>
+                                <th>Categoría</th>
+                                <th>Ubicación / Propietario</th>
+                                <th>Ciudad</th>
+                                <th>Último Mtto.</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="pagination-controls" id="admin-equipment-pagination"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Entity Form Modal (Exclusive for Equipment) -->
+    <div id="entity-form-modal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <span class="close-button" id="close-entity-form-modal">&times;</span>
+            <h3 id="entity-form-title">Gestionar Equipo</h3>
+            
+            <div class="form-group" style="margin-bottom: 20px;">
+                <button type="button" id="ai-scan-plate-button" class="btn btn-secondary btn-full-width">
+                    <i class="fas fa-brain"></i> Usar IA para capturar datos de placa
+                </button>
+            </div>
+
+            <form id="entity-form">
+                <input type="hidden" id="entity-id" name="id">
+                <input type="hidden" id="entity-type" name="type" value="equipment">
+                
+                <div class="filters-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+                    <!-- SECCIÓN: IDENTIFICACIÓN -->
+                    <div class="form-group">
+                        <label>ID Manual / Placa:</label>
+                        <input type="text" name="manual_id" placeholder="Ej: AC-001">
+                    </div>
+                    <div class="form-group">
+                        <label>Marca:</label>
+                        <input type="text" name="brand" required placeholder="Ej: Samsung">
+                    </div>
+                    <div class="form-group">
+                        <label>Modelo:</label>
+                        <input type="text" name="model" required placeholder="Ej: AR12TRHQ">
+                    </div>
+
+                    <!-- SECCIÓN: TÉCNICA -->
+                    <div class="form-group">
+                        <label>Tipo de Equipo:</label>
+                        <select name="equipment_type_id" id="form-equipment-type" required></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Refrigerante:</label>
+                        <select name="refrigerant_type_id" id="form-refrigerant-type"></select>
+                    </div>
+                    <div class="form-group">
+                        <label>Capacidad:</label>
+                        <input type="text" name="capacity" placeholder="Ej: 12000 BTU">
+                    </div>
+
+                    <!-- SECCIÓN: MANTENIMIENTO -->
+                    <div class="form-group">
+                        <label>Periodicidad (Meses):</label>
+                        <input type="number" name="periodicityMonths" value="6" required min="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Último Mantenimiento:</label>
+                        <input type="date" name="lastMaintenanceDate">
+                    </div>
+
+                    <!-- SECCIÓN: CATEGORÍA -->
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Categoría de Equipo:</label>
+                        <select name="category" id="form-category-selector" required>
+                            <option value="empresa">Empresa / Comercial</option>
+                            <option value="residencial">Residencial / Particular</option>
+                        </select>
+                    </div>
+
+                    <!-- CAMPOS DINÁMICOS EMPRESA -->
+                    <div id="form-empresa-fields" style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                        <div class="form-group">
+                            <label>Empresa:</label>
+                            <div class="input-with-button">
+                                <input type="search" id="form-company-search" placeholder="Buscar empresa..." autocomplete="off">
+                                <button type="button" id="btn-quick-add-company" class="btn-add-inline" title="Agregar Empresa"><i class="fas fa-plus"></i></button>
+                            </div>
+                            <div id="form-company-results" class="search-results-container" role="listbox"></div>
+                            <select name="company_id" id="form-company-id" class="visually-hidden" aria-hidden="true" tabindex="-1"></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Dependencia:</label>
+                            <div class="input-with-button">
+                                <select name="dependency_id" id="form-dependency-id"></select>
+                                <button type="button" id="btn-quick-add-dependency" class="btn-add-inline" title="Agregar Dependencia"><i class="fas fa-plus"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CAMPOS DINÁMICOS RESIDENCIAL -->
+                    <div id="form-residencial-fields" style="grid-column: 1 / -1; display: none; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                        <div class="form-group">
+                            <label>Nombre del Cliente:</label>
+                            <input type="text" name="client_name" placeholder="Nombre completo">
+                        </div>
+                        <div class="form-group">
+                            <label>Dirección:</label>
+                            <input type="text" name="address" placeholder="Ej: Calle 10 #20-30">
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN: UBICACIÓN -->
+                    <div class="form-group">
+                        <label>Ciudad:</label>
+                        <div class="input-with-button">
+                            <select name="city_id" id="form-city-id" required></select>
+                            <button type="button" id="btn-quick-add-city" class="btn-add-inline" title="Agregar Ciudad"><i class="fas fa-plus"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                 <div class="modal-actions">
+                    <button type="button" id="cancel-entity-button" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" id="save-entity-button" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Equipo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Add Modal (City/Company/Dependency) -->
+    <div id="quick-add-modal" class="modal">
+        <div class="modal-content modal-content-small">
+            <span class="close-button" id="close-quick-add-modal">&times;</span>
+            <h3 id="quick-add-title"><i class="fas fa-plus-circle"></i> Agregar</h3>
+            <form id="quick-add-form">
+                <input type="hidden" id="quick-add-type" name="type">
+                <input type="hidden" id="quick-add-parent-id" name="parentId">
+
+                <div class="form-group" id="quick-add-parent-group">
+                    <label id="quick-add-parent-label">Seleccionado</label>
+                    <div class="input-with-button">
+                        <input type="text" id="quick-add-parent-name" readonly>
+                        <select id="quick-add-parent-select" class="visually-hidden"></select>
+                        <button type="button" id="btn-quick-add-parent-city" class="btn-add-inline" title="Agregar Ciudad">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label id="quick-add-name-label">Nombre</label>
+                    <input type="text" id="quick-add-name" name="name" required placeholder="Ej: Medellín">
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" id="cancel-quick-add-button" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Quick Add City Modal (from Company Modal) -->
+    <div id="quick-add-city-modal" class="modal">
+        <div class="modal-content modal-content-small">
+            <span class="close-button" id="close-quick-add-city-modal">&times;</span>
+            <h3><i class="fas fa-plus-circle"></i> Agregar Ciudad</h3>
+            <form id="quick-add-city-form">
+                <div class="form-group">
+                    <label for="quick-add-city-name">Nombre de la ciudad</label>
+                    <input type="text" id="quick-add-city-name" name="name" required placeholder="Ej: Medellin">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" id="cancel-quick-add-city-button" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Plate Scan Modal (IA) -->
+    <div id="plate-scan-modal" class="modal">
+        <div class="modal-content modal-content-small">
+             <span class="close-button" id="close-plate-scan-modal">&times;</span>
+             <h3><i class="fas fa-brain"></i> Escanear Placa con IA</h3>
+             <video id="plate-video" playsinline autoplay muted style="width: 100%; border-radius: var(--border-radius-sharp);"></video>
+             <canvas id="plate-canvas-hidden" style="display:none;"></canvas>
+             <p id="plate-scan-feedback">Apunta a la placa del equipo...</p>
+             <div class="modal-actions">
+                <button type="button" id="cancel-plate-scan-button" class="btn btn-secondary">Cancelar</button>
+                <button type="button" id="take-picture-button" class="btn btn-primary"><i class="fas fa-camera"></i> Capturar</button>
+             </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content modal-content-small">
+            <span class="close-button" id="close-confirmation-modal-button">&times;</span>
+            <h3><i class="fas fa-exclamation-triangle"></i> Confirmar</h3>
+            <p id="confirmation-message">¿Está seguro de esta acción?</p>
+            <div class="modal-actions">
+                <button id="cancel-action-button" class="btn btn-secondary">No</button>
+                <button id="confirm-action-button" class="btn btn-danger">Sí, Proceder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Modal -->
+    <div id="info-modal" class="modal">
+        <div class="modal-content modal-content-small">
+            <span class="close-button" id="close-info-modal-button">&times;</span>
+            <h3 id="info-modal-title"><i class="fas fa-info-circle"></i> Aviso</h3>
+            <p id="info-modal-message"></p>
+            <div class="modal-actions">
+                <button id="info-modal-ok-button" class="btn btn-primary">Entendido</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-notification-area"></div>
+    <script type="module" src="index.tsx"></script>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>

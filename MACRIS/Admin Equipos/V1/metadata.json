@@ -1,0 +1,8 @@
+{
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "name": "Creador y listador de equipos v1",
+  "description": "administrador de equipos",
+  "prompt": ""
+}

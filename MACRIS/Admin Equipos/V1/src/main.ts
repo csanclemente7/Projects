@@ -1,0 +1,61 @@
+
+import { fetchCities, fetchCompanies, fetchDependencies, fetchUsers, fetchEquipmentTypes, fetchRefrigerantTypes, fetchEquipment } from './api';
+import { setupEventListeners } from './events';
+import { hideLoader, showLoader, renderAdminEquipmentTable } from './ui';
+import { checkForPersistedSession } from './auth';
+import * as State from './state';
+
+/**
+ * Carga los datos maestros compartidos.
+ */
+export async function loadSharedLookupData() {
+    const [
+        cities, companies, deps, 
+        eqTypes, refrigTypes
+    ] = await Promise.all([
+        fetchCities(), fetchCompanies(), fetchDependencies(),
+        fetchEquipmentTypes(), fetchRefrigerantTypes()
+    ]);
+
+    State.setCities(cities);
+    State.setCompanies(companies);
+    State.setDependencies(deps);
+    State.setEquipmentTypes(eqTypes);
+    State.setRefrigerantTypes(refrigTypes);
+}
+
+/**
+ * Carga todo el inventario de equipos para el administrador.
+ */
+async function loadAdminData() {
+    showLoader('Cargando inventario...');
+    try {
+        await loadSharedLookupData();
+        
+        const [list, users] = await Promise.all([
+            fetchEquipment(),
+            fetchUsers()
+        ]);
+
+        State.setEquipmentList(list);
+        State.setUsers(users);
+
+        renderAdminEquipmentTable();
+    } catch (err) {
+        console.error("Error al cargar datos administrativos:", err);
+    } finally {
+        hideLoader();
+    }
+}
+
+export async function main() {
+    setupEventListeners();
+    
+    // 1. Verificar si ya estaba logueado
+    checkForPersistedSession();
+    
+    // 2. Cargar los datos de la base de datos
+    await loadAdminData();
+    
+    hideLoader();
+}

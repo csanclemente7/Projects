@@ -1,0 +1,492 @@
+import { createClient, PostgrestError } from '@supabase/supabase-js';
+import { Database, Report, User, Equipment, City, Company, Dependency, Order, OrderItem, ServiceType, AppSettings, ClientsDatabase, EntityType, EquipmentType, RefrigerantType } from './types';
+
+// --- Supabase Configuration ---
+const ORDERS_SUPABASE_URL: string = 'https://fzcalgofrhbqvowazdpk.supabase.co';
+const ORDERS_SUPABASE_ANON_KEY: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ6Y2FsZ29mcmhicXZvd2F6ZHBrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0NjQwNTQsImV4cCI6MjA2NzA0MDA1NH0.yavOv5g0iQElk7X8GHOAQrO9rnvb2mDb-i2PgtGCX-o';
+
+const CLIENTS_SUPABASE_URL: string = 'https://ctitnuadeqdwsgulhpjg.supabase.co';
+const CLIENTS_SUPABASE_ANON_KEY: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0aXRudWFkZXFkd3NndWxocGpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI3NjAxMjQsImV4cCI6MjA2ODMzNjEyNH0.Tmd2X11ukDi3I2h4uDXVABghKyMgcPpUMcGIdZbjOQE';
+
+export const supabaseOrders = createClient<Database>(ORDERS_SUPABASE_URL, ORDERS_SUPABASE_ANON_KEY);
+export const supabaseClients = createClient<ClientsDatabase>(CLIENTS_SUPABASE_URL, CLIENTS_SUPABASE_ANON_KEY);
+
+type OrderWithItems = Database['public']['Tables']['orders']['Row'] & {
+    items: Database['public']['Tables']['order_items']['Row'][];
+};
+
+export async function fetchAppSettings(): Promise<AppSettings> {
+    const { data, error } = await supabaseOrders.from('app_settings').select('*');
+    if (error) throw error;
+    const settings: AppSettings = {};
+    if (data) {
+        (data as any[]).forEach(setting => {
+            settings[setting.key] = setting.value;
+        });
+    }
+    return settings;
+}
+
+export async function fetchServiceTypes(): Promise<ServiceType[]> {
+    const { data, error } = await supabaseOrders.from('service_types').select('*').order('name');
+    if (error) throw error;
+    return (data as any) || [];
+}
+
+export async function fetchEquipmentTypes(): Promise<EquipmentType[]> {
+    const { data, error } = await supabaseOrders.from('maintenance_equipment_types').select('id, name').order('name');
+    if (error) throw error;
+    return data || [];
+}
+
+export async function fetchRefrigerantTypes(): Promise<RefrigerantType[]> {
+    const { data, error } = await supabaseOrders.from('maintenance_refrigerant_types').select('id, name').order('name');
+    if (error) throw error;
+    return data || [];
+}
+
+export async function fetchCities(): Promise<City[]> {
+    const { data, error } = await supabaseOrders.from('maintenance_cities').select('*').order('name');
+    if (error) throw error;
+    return (data as any) || [];
+}
+
+export async function fetchCompanies(): Promise<Company[]> {
+    const { data, error } = await supabaseOrders.from('maintenance_companies').select('*').order('name');
+    if (error) throw error;
+    if (data) {
+        return data.map((dbCompany) => ({
+            id: dbCompany.id,
+            name: dbCompany.name,
+            cityId: dbCompany.city_id,
+        }));
+    }
+    return [];
+}
+
+export async function fetchDependencies(): Promise<Dependency[]> {
+    const { data, error } = await supabaseOrders.from('maintenance_dependencies').select('*').order('name');
+    if (error) throw error;
+    if (data) {
+        return data.map((dbDependency) => ({
+            id: dbDependency.id,
+            name: dbDependency.name,
+            companyId: dbDependency.company_id,
+        }));
+    }
+    return [];
+}
+
+export async function fetchEquipment(): Promise<Equipment[]> {
+    const { data, error } = await supabaseOrders
+      .from('maintenance_equipment')
+      .select('*, equipment_type:maintenance_equipment_types(id, name), refrigerant_type:maintenance_refrigerant_types(id, name)')
+      .order('brand')
+      .order('model');
+
+    if (error) throw error;
+    if (data) {
+        return data.map((dbEquipment: any) => ({
+            id: dbEquipment.id,
+            created_at: dbEquipment.created_at,
+            manualId: dbEquipment.manual_id,
+            model: dbEquipment.model,
+            brand: dbEquipment.brand,
+            type: dbEquipment.type,
+            typeName: dbEquipment.equipment_type?.name || dbEquipment.type || 'N/A',
+            equipment_type_id: dbEquipment.equipment_type_id,
+            refrigerantName: dbEquipment.refrigerant_type?.name || null,
+            refrigerant_type_id: dbEquipment.refrigerant_type_id,
+            capacity: dbEquipment.capacity,
+            periodicityMonths: dbEquipment.periodicity_months,
+            lastMaintenanceDate: dbEquipment.last_maintenance_date,
+            cityId: dbEquipment.city_id,
+            companyId: dbEquipment.company_id,
+            dependencyId: dbEquipment.dependency_id,
+            category: dbEquipment.category || 'empresa',
+            address: dbEquipment.address,
+            client_name: dbEquipment.client_name,
+        }));
+    }
+    return [];
+}
+
+const mapDbReportToReport = (dbReport: any): Report => ({
+    id: dbReport.id,
+    timestamp: dbReport.timestamp,
+    serviceType: dbReport.service_type,
+    observations: dbReport.observations,
+    equipmentSnapshot: dbReport.equipment_snapshot as Report['equipmentSnapshot'],
+    itemsSnapshot: (dbReport.items_snapshot as Report['itemsSnapshot']) || null,
+    cityId: dbReport.city_id,
+    companyId: dbReport.company_id,
+    dependencyId: dbReport.dependency_id,
+    workerId: dbReport.worker_id,
+    workerName: dbReport.worker_name,
+    clientSignature: dbReport.client_signature,
+    pressure: dbReport.pressure,
+    amperage: dbReport.amperage,
+    is_paid: dbReport.is_paid || false,
+    photo_internal_unit_url: dbReport.photo_internal_unit_url,
+    photo_external_unit_url: dbReport.photo_external_unit_url,
+    orderId: dbReport.order_id,
+});
+
+// Lightweight columns for list views (EXCLUDES signatures and photos)
+const REPORT_LIST_COLUMNS = 'id,timestamp,service_type,observations,equipment_snapshot,items_snapshot,city_id,company_id,dependency_id,worker_id,worker_name,pressure,amperage,is_paid,order_id';
+
+export async function fetchAllReports(): Promise<Report[]> {
+    const { data: reportsData, error } = await supabaseOrders
+        .from('maintenance_reports')
+        .select(REPORT_LIST_COLUMNS)
+        .order('timestamp', { ascending: false })
+        .limit(2000);
+
+    if (error) throw error;
+    if (!reportsData || reportsData.length === 0) return [];
+
+    const pendingSigPromise = supabaseOrders
+        .from('maintenance_reports')
+        .select('id')
+        .or('client_signature.is.null,client_signature.eq.PENDING_SIGNATURE');
+        
+    const pendingPhotosPromise = supabaseOrders
+        .from('maintenance_reports')
+        .select('id')
+        .eq('service_type', 'Montaje/Instalación')
+        .or('photo_internal_unit_url.is.null,photo_external_unit_url.is.null,photo_internal_unit_url.eq.PENDING_PHOTO,photo_external_unit_url.eq.PENDING_PHOTO');
+
+    const [sigResult, photoResult] = await Promise.all([pendingSigPromise, pendingPhotosPromise]);
+    
+    const pendingSigIds = new Set(sigResult.data?.map(r => r.id));
+    const pendingPhotoIds = new Set(photoResult.data?.map(r => r.id));
+
+    return reportsData.map(dbReport => {
+        const report = mapDbReportToReport(dbReport);
+        report.isSignaturePending = pendingSigIds.has(report.id);
+        report.arePhotosPending = pendingPhotoIds.has(report.id);
+        return report;
+    });
+}
+
+export async function fetchReportsForWorker(workerId: string): Promise<Report[]> {
+    const { data: reportsData, error } = await supabaseOrders
+        .from('maintenance_reports')
+        .select(REPORT_LIST_COLUMNS)
+        .eq('worker_id', workerId)
+        .order('timestamp', { ascending: false })
+        .limit(1000);
+        
+    if (error) throw error;
+    if (!reportsData || reportsData.length === 0) return [];
+
+    const pendingSigPromise = supabaseOrders
+        .from('maintenance_reports')
+        .select('id')
+        .eq('worker_id', workerId)
+        .or('client_signature.is.null,client_signature.eq.PENDING_SIGNATURE');
+        
+    const pendingPhotosPromise = supabaseOrders
+        .from('maintenance_reports')
+        .select('id')
+        .eq('worker_id', workerId)
+        .eq('service_type', 'Montaje/Instalación')
+        .or('photo_internal_unit_url.is.null,photo_external_unit_url.is.null,photo_internal_unit_url.eq.PENDING_PHOTO,photo_external_unit_url.eq.PENDING_PHOTO');
+
+    const [sigResult, photoResult] = await Promise.all([pendingSigPromise, pendingPhotosPromise]);
+    
+    const pendingSigIds = new Set(sigResult.data?.map(r => r.id));
+    const pendingPhotoIds = new Set(photoResult.data?.map(r => r.id));
+
+    return reportsData.map(dbReport => {
+        const report = mapDbReportToReport(dbReport);
+        report.isSignaturePending = pendingSigIds.has(report.id);
+        report.arePhotosPending = pendingPhotoIds.has(report.id);
+        return report;
+    });
+}
+
+export async function fetchReportDetails(reportId: string): Promise<any> {
+    const { data, error } = await supabaseOrders
+        .from('maintenance_reports')
+        .select('client_signature, photo_internal_unit_url, photo_external_unit_url')
+        .eq('id', reportId)
+        .single();
+    
+    if (error) throw error;
+    return data;
+}
+
+export async function fetchUsers(): Promise<User[]> {
+    const { data, error } = await supabaseOrders.from('maintenance_users').select('*');
+    if (error) throw error;
+    if (data) {
+        return data.map((dbUser) => ({
+            id: dbUser.id,
+            username: dbUser.username,
+            password: dbUser.password,
+            role: dbUser.role,
+            name: dbUser.name,
+            cedula: dbUser.cedula,
+            isActive: dbUser.is_active !== false,
+            points: dbUser.points || 0,
+        }));
+    }
+    return [];
+}
+
+const enrichOrders = async (baseOrders: OrderWithItems[], allUsers: User[]): Promise<Order[]> => {
+    if (!baseOrders || baseOrders.length === 0) return [];
+    const orderIds = baseOrders.map(o => o.id);
+    const { data: allOrderTechnicians, error: otError } = await supabaseOrders
+        .from('order_technicians')
+        .select('order_id, technician_id')
+        .in('order_id', orderIds);
+
+    if (otError) throw otError;
+    const uniqueClientIds = [...new Set(baseOrders.map(order => order.clientId).filter(id => !!id))];
+    
+    let clients: any[] = [];
+    if (uniqueClientIds.length > 0) {
+        const { data, error: clientsError } = await supabaseClients
+            .from('clients')
+            .select('*')
+            .in('id', uniqueClientIds as string[]);
+        if (clientsError) throw clientsError;
+        clients = data || [];
+    }
+
+    const clientsMap = new Map(clients.map(client => [client.id, client]));
+    const techniciansMap = new Map((allUsers || []).map(u => [u.id, u]));
+    const techniciansByOrderId = new Map<string, User[]>();
+    ((allOrderTechnicians as any[]) || []).forEach(ot => {
+        const technician = techniciansMap.get(ot.technician_id);
+        if (technician) {
+            if (!techniciansByOrderId.has(ot.order_id)) techniciansByOrderId.set(ot.order_id, []);
+            techniciansByOrderId.get(ot.order_id)!.push(technician);
+        }
+    });
+
+    return baseOrders.map((dbOrder): Order => {
+        const items: OrderItem[] = (dbOrder.items || []).map((item: any): OrderItem => ({
+            id: item.id,
+            orderId: item.orderId,
+            itemId: item.itemId,
+            manualId: item.manualId,
+            description: item.description,
+            quantity: item.quantity,
+            price: item.price,
+            created_at: item.created_at,
+        }));
+        
+        return {
+            id: dbOrder.id,
+            created_at: dbOrder.created_at ?? undefined,
+            manualId: dbOrder.manualId,
+            quoteId: dbOrder.quoteId,
+            clientId: dbOrder.clientId,
+            status: dbOrder.status,
+            service_date: dbOrder.service_date,
+            service_time: dbOrder.service_time,
+            order_type: dbOrder.order_type,
+            notes: dbOrder.notes,
+            estimated_duration: dbOrder.estimated_duration,
+            items: items,
+            clientDetails: clientsMap.get(dbOrder.clientId) || null,
+            assignedTechnicians: techniciansByOrderId.get(dbOrder.id) || [],
+        };
+    });
+};
+
+export async function fetchAssignedOrders(technicianId: string, allUsers: User[]): Promise<Order[]> {
+    const { data: technicianOrders, error: technicianOrdersError } = await supabaseOrders
+        .from('order_technicians')
+        .select('order_id')
+        .eq('technician_id', technicianId);
+
+    if (technicianOrdersError) throw technicianOrdersError;
+    if (!technicianOrders || technicianOrders.length === 0) return [];
+    const assignedOrderIds = (technicianOrders as any[]).map(to => to.order_id);
+    const { data: baseOrders, error: ordersError } = await supabaseOrders
+        .from('orders')
+        .select('*, items:order_items(*)')
+        .in('id', assignedOrderIds);
+
+    if (ordersError) throw ordersError;
+    return await enrichOrders((baseOrders as any) || [], allUsers);
+}
+
+export async function fetchAllOrdersAndTechnicians(allUsers: User[]): Promise<Order[]> {
+    const { data: baseOrders, error: ordersError } = await supabaseOrders
+        .from('orders')
+        .select('*, items:order_items(*)');
+    if (ordersError) throw ordersError;
+    return await enrichOrders((baseOrders as any) || [], allUsers);
+}
+
+export async function updateAppSetting(key: string, value: boolean) {
+    const { error } = await supabaseOrders.from('app_settings').update({ value }).eq('key', key);
+    if (error) throw error;
+}
+
+export async function saveEntity(type: EntityType, id: string, formData: FormData): Promise<{ data: any; error: PostgrestError | null; }> {
+    const isEditing = !!id;
+    let result: { data: any; error: PostgrestError | null; };
+    const newValue = formData.get('new_value') as string;
+
+    switch (type) {
+        case 'city':
+            const cityName = (formData.get('name') as string).trim();
+            if (!cityName) throw new Error('Nombre requerido.');
+
+            const { data: existingCity, error: cityCheckError } = await supabaseOrders
+                .from('maintenance_cities')
+                .select('id, name')
+                .ilike('name', cityName);
+            if (cityCheckError) throw cityCheckError;
+            if (existingCity && existingCity.length > 0 && (!isEditing || existingCity[0].id !== id)) {
+                throw new Error(`La ciudad "${existingCity[0].name}" ya existe. Selecciónela del listado.`);
+            }
+
+            const cityData = { name: cityName };
+            result = isEditing
+                ? await supabaseOrders.from('maintenance_cities').update(cityData).eq('id', id).select().single()
+                : await supabaseOrders.from('maintenance_cities').insert(cityData).select().single();
+            break;
+
+        case 'company':
+            const companyName = (formData.get('name') as string).trim();
+            const cityId = formData.get('city_id') as string;
+            
+            // VALIDACIÓN: Evitar duplicados exactos en la misma ciudad
+            const { data: existing, error: checkError } = await supabaseOrders
+                .from('maintenance_companies')
+                .select('id, name, city:maintenance_cities(name)')
+                .eq('city_id', cityId)
+                .ilike('name', companyName);
+            
+            if (existing && existing.length > 0 && (!isEditing || (isEditing && existing[0].id !== id))) {
+                const existingComp = existing[0];
+                const cityObj = existingComp.city as any;
+                const cityName = cityObj?.name || 'la ciudad seleccionada';
+                throw new Error(`La empresa "${existingComp.name}" ya existe en "${cityName}". Por favor, cancéle la creación y selecciónela del listado existente.`);
+            }
+
+            const companyData = { name: companyName, city_id: cityId };
+            result = isEditing
+                ? await supabaseOrders.from('maintenance_companies').update(companyData).eq('id', id).select().single()
+                : await supabaseOrders.from('maintenance_companies').insert(companyData).select().single();
+            break;
+
+        case 'dependency':
+            const dependencyData = { name: formData.get('name') as string, company_id: formData.get('company_id') as string };
+            result = isEditing
+                ? await supabaseOrders.from('maintenance_dependencies').update(dependencyData).eq('id', id).select().single()
+                : await supabaseOrders.from('maintenance_dependencies').insert(dependencyData).select().single();
+            break;
+
+        case 'employee':
+            const cedula = formData.get('cedula') as string;
+            const password = formData.get('password') as string;
+            if (isEditing) {
+                const updateData: any = { name: formData.get('name') as string, cedula, username: cedula, role: 'worker' };
+                if (password) updateData.password = password;
+                result = await supabaseOrders.from('maintenance_users').update(updateData).eq('id', id).select().single();
+            } else {
+                if (!cedula) throw new Error("Cédula es requerida.");
+                const insertData = { name: formData.get('name') as string, cedula, username: cedula, role: 'worker', password: password || cedula };
+                result = await supabaseOrders.from('maintenance_users').insert(insertData).select().single();
+            }
+            break;
+            
+        case 'equipmentType':
+            if (!newValue) throw new Error("Nombre requerido.");
+            result = await supabaseOrders.from('maintenance_equipment_types').insert({ name: newValue }).select().single();
+            break;
+            
+        case 'refrigerant':
+            if (!newValue) throw new Error("Nombre requerido.");
+            result = await supabaseOrders.from('maintenance_refrigerant_types').insert({ name: newValue }).select().single();
+            break;
+
+        case 'equipment':
+            const equipData = {
+                manual_id: (formData.get('manual_id') as string) || null,
+                brand: formData.get('brand') as string,
+                model: formData.get('model') as string,
+                type: formData.get('type') as string,
+                equipment_type_id: formData.get('equipment_type_id') as string,
+                refrigerant_type_id: (formData.get('refrigerant_type_id') as string) || null,
+                capacity: (formData.get('capacity') as string) || null,
+                periodicity_months: Number(formData.get('periodicityMonths')),
+                last_maintenance_date: (formData.get('lastMaintenanceDate') as string) || null,
+                category: formData.get('category') as string,
+                city_id: formData.get('city_id') as string,
+                company_id: formData.get('category') === 'empresa' ? (formData.get('company_id') as string) : null,
+                dependency_id: formData.get('category') === 'empresa' ? (formData.get('dependency_id') as string) : null,
+                client_name: formData.get('category') === 'residencial' ? (formData.get('client_name') as string) : null,
+                address: formData.get('category') === 'residencial' ? (formData.get('address') as string) : null,
+            };
+            result = isEditing
+                ? await supabaseOrders.from('maintenance_equipment').update(equipData).eq('id', id).select().single()
+                : await supabaseOrders.from('maintenance_equipment').insert(equipData).select().single();
+            break;
+        default: throw new Error(`Tipo desconocido: ${type}`);
+    }
+    return result;
+}
+
+export async function deleteEntity(type: 'city'|'company'|'dependency'|'equipment', id: string) {
+    let table = type === 'city' ? 'maintenance_cities' : type === 'company' ? 'maintenance_companies' : type === 'dependency' ? 'maintenance_dependencies' : 'maintenance_equipment';
+    return await supabaseOrders.from(table).delete().eq('id', id);
+}
+
+export async function deleteReport(id: string) {
+    const { error } = await supabaseOrders.from('maintenance_reports').delete().eq('id', id);
+    if (error) throw error;
+}
+
+export async function deleteAllReports() {
+    const { error } = await supabaseOrders.from('maintenance_reports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) throw error;
+}
+
+export async function toggleEmployeeStatus(userId: string, currentStatus: boolean) {
+    const { error } = await supabaseOrders.from('maintenance_users').update({ is_active: !currentStatus }).eq('id', userId);
+    if (error) throw error;
+}
+
+export async function saveMaintenanceReport(reportData: any) {
+    const { error } = await supabaseOrders.from('maintenance_reports').insert(reportData);
+    if (error) throw error;
+}
+
+export async function updateMaintenanceReport(reportId: string, reportData: any) {
+    const { error } = await supabaseOrders.from('maintenance_reports').update(reportData).eq('id', reportId);
+    if (error) throw error;
+}
+
+export async function toggleReportPaidStatus(reportId: string, currentStatus: boolean) {
+    const { error } = await supabaseOrders.from('maintenance_reports').update({ is_paid: !currentStatus }).eq('id', reportId);
+    if (error) throw error;
+}
+
+export async function updateOrderItemQuantity(orderItemId: string, quantity: number) {
+    const { error } = await supabaseOrders.from('order_items').update({ quantity }).eq('id', orderItemId);
+    if (error) throw error;
+}
+
+export async function updateOrderStatus(orderId: string, status: Order['status']) {
+    const { error } = await supabaseOrders.from('orders').update({ status }).eq('id', orderId);
+    if (error) throw error;
+}
+
+export async function awardPointToTechnician(userId: string) {
+    const { error } = await supabaseOrders.rpc('increment_user_points', { user_id_to_update: userId, points_to_add: 1 });
+    return { error };
+}
+
+export async function updateUserPoints(userId: string, newTotalPoints: number) {
+    const { error } = await supabaseOrders.from('maintenance_users').update({ points: newTotalPoints }).eq('id', userId);
+    if (error) throw error;
+}
