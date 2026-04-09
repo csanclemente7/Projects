@@ -805,6 +805,12 @@ body.dark-theme .status-badge.cancelled {
     background-color: var(--color-table-stripe);
 }
 
+.search-result-item.search-active {
+    background-color: #e3f2fd; /* Azul claro muy visible */
+    color: #0366d6;            /* Texto azul oscuro */
+    font-weight: 500;
+}
+
 .search-result-item .item-code,
 .search-result-item .client-id {
     font-weight: bold;
@@ -3681,11 +3687,11 @@ body.dark-theme .custom-select-container {
 }
 
 /* Drag and Drop Styles */
-.draggable-row { cursor: grab; }
-.draggable-row:active { cursor: grabbing; }
+/* Drag and Drop Styles */
 .draggable-row.is-dragging { opacity: 0.5; background: #f0f8ff; box-shadow: inset 0 0 10px rgba(0,0,0,0.1); }
 .col-desc { position: relative; padding-left: 26px !important; }
-.drag-handle-wrapper { position: absolute; left: 4px; top: 10px; bottom: 10px; width: 16px; display: flex; align-items: center; justify-content: center; opacity: 0.8; z-index: 2; }
+.drag-handle-wrapper { position: absolute; left: 4px; top: 10px; bottom: 10px; width: 16px; display: flex; align-items: center; justify-content: center; opacity: 0.8; z-index: 2; cursor: grab; }
+.drag-handle-wrapper:active { cursor: grabbing; }
 .drag-handle-wrapper:hover { opacity: 1; }
 .drag-handle-icon { color: #5a5a5a; font-size: 14px; }
 

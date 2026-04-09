@@ -703,7 +703,9 @@ export async function handleDuplicateQuote(quoteId: string, openAfter: boolean =
 
 // --- Search UIs (Generic) ---
 export function setupItemSearch(input: HTMLInputElement, results: HTMLDivElement, context: 'quote' | 'order') {
+    let currentFocus = -1;
     input.addEventListener('input', () => {
+        currentFocus = -1;
         const term = input.value.toLowerCase();
         results.style.display = 'none';
         if (term.length < 1) return;
@@ -713,6 +715,44 @@ export function setupItemSearch(input: HTMLInputElement, results: HTMLDivElement
             results.style.display = 'block';
         }
     });
+
+    input.addEventListener('keydown', (e) => {
+        let x = results.querySelectorAll('.search-result-item');
+        if (!x || x.length === 0 || results.style.display === 'none') return;
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            currentFocus++;
+            addActive(x);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            currentFocus--;
+            addActive(x);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (currentFocus > -1) {
+                (x[currentFocus] as HTMLElement).click();
+            } else if (x.length > 0) {
+                (x[0] as HTMLElement).click();
+            }
+        }
+    });
+
+    function addActive(x: NodeListOf<Element>) {
+        if (!x) return false;
+        removeActive(x);
+        if (currentFocus >= x.length) currentFocus = 0;
+        if (currentFocus < 0) currentFocus = (x.length - 1);
+        x[currentFocus].classList.add('search-active');
+        (x[currentFocus] as HTMLElement).scrollIntoView({ block: "nearest" });
+    }
+
+    function removeActive(x: NodeListOf<Element>) {
+        for (let i = 0; i < x.length; i++) {
+            x[i].classList.remove('search-active');
+        }
+    }
+
     results.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
         const itemDiv = target.closest('.search-result-item');
@@ -723,6 +763,7 @@ export function setupItemSearch(input: HTMLInputElement, results: HTMLDivElement
             context === 'quote' ? addItemToQuote(item) : addItemToOrder(item);
             input.value = '';
             results.style.display = 'none';
+            currentFocus = -1;
         }
     });
     document.addEventListener('click', (e) => {
@@ -731,7 +772,9 @@ export function setupItemSearch(input: HTMLInputElement, results: HTMLDivElement
 }
 
 export function setupClientSearch(input: HTMLInputElement, results: HTMLDivElement, context: 'quote' | 'order') {
+    let currentFocus = -1;
     input.addEventListener('input', () => {
+        currentFocus = -1;
         const term = input.value.toLowerCase();
         results.style.display = 'none';
         if (term.length < 1) return;
@@ -741,6 +784,44 @@ export function setupClientSearch(input: HTMLInputElement, results: HTMLDivEleme
             results.style.display = 'block';
         }
     });
+
+    input.addEventListener('keydown', (e) => {
+        let x = results.querySelectorAll('.search-result-item');
+        if (!x || x.length === 0 || results.style.display === 'none') return;
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            currentFocus++;
+            addActive(x);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            currentFocus--;
+            addActive(x);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (currentFocus > -1) {
+                (x[currentFocus] as HTMLElement).click();
+            } else if (x.length > 0) {
+                (x[0] as HTMLElement).click();
+            }
+        }
+    });
+
+    function addActive(x: NodeListOf<Element>) {
+        if (!x) return false;
+        removeActive(x);
+        if (currentFocus >= x.length) currentFocus = 0;
+        if (currentFocus < 0) currentFocus = (x.length - 1);
+        x[currentFocus].classList.add('search-active');
+        (x[currentFocus] as HTMLElement).scrollIntoView({ block: "nearest" });
+    }
+
+    function removeActive(x: NodeListOf<Element>) {
+        for (let i = 0; i < x.length; i++) {
+            x[i].classList.remove('search-active');
+        }
+    }
+
     results.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
         const clientDiv = target.closest('.search-result-item');
@@ -766,6 +847,7 @@ export function setupClientSearch(input: HTMLInputElement, results: HTMLDivEleme
                 }
             }
             results.style.display = 'none';
+            currentFocus = -1;
         }
     });
     document.addEventListener('click', (e) => {
@@ -893,6 +975,7 @@ function setupDragAndDropEvents(tr: HTMLTableRowElement, context: 'quote' | 'ord
         draggedRow = null;
         reorderingContext = null;
         tr.classList.remove('is-dragging');
+        tr.draggable = false; // Disable dragging after drop
 
         // Al terminar de arrastrar debemos sincronizar el nuevo orden contra el State
         syncItemsOrderFromDOM(context === 'order-service' ? 'order' : context);
@@ -950,8 +1033,8 @@ function syncItemsOrderFromDOM(context: 'quote' | 'order') {
 function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' | 'order-service' = 'quote'): HTMLTableRowElement {
     const tr = document.createElement('tr');
     tr.dataset.itemId = item.id;
-    // Se habilita el attribute para Web Drag&Drop
-    tr.draggable = true;
+    // Se habilita el attribute de arrastre solo cuando se interactúa con el ícono (ver abajo)
+    // tr.draggable = true;
     tr.classList.add('item-row', 'draggable-row');
     setupDragAndDropEvents(tr, context);
 
@@ -993,6 +1076,17 @@ function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' |
     if (context === 'quote') {
         const priceInput = tr.querySelector('.item-price') as HTMLInputElement;
         priceInput.addEventListener('input', () => { priceInput.value = formatCurrency(parseFloat(priceInput.value.replace(/[^0-9]+/g, "")) || 0); });
+    }
+
+    const dragHandle = tr.querySelector('.drag-handle-wrapper') as HTMLElement;
+    if (dragHandle) {
+        const enableDrag = () => { tr.draggable = true; };
+        const disableDrag = () => { tr.draggable = false; };
+        dragHandle.addEventListener('mousedown', enableDrag);
+        dragHandle.addEventListener('touchstart', enableDrag, { passive: true });
+        dragHandle.addEventListener('mouseup', disableDrag);
+        dragHandle.addEventListener('mouseleave', disableDrag);
+        dragHandle.addEventListener('touchend', disableDrag);
     }
     
     // Auto-expand textarea for both quote and order contexts

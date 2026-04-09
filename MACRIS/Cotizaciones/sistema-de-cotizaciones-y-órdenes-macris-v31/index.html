@@ -164,22 +164,7 @@
                         </div>
 
                         <div class="quote-items card">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                                <h3 style="margin: 0;">Ítems de la Cotización</h3>
-                            </div>
-                            
-                            <div class="add-item-form-container" style="margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 15px;">
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="item-search">Agregar Ítem</label>
-                                    <div class="input-with-button">
-                                        <input type="text" id="item-search" placeholder="Buscar por código o nombre..." autocomplete="off" data-lpignore="true" data-1p-ignore>
-                                        <button id="add-new-item-quote-page-btn" class="btn btn-add-inline"
-                                            title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
-                                    </div>
-                                    <div id="item-search-results"></div>
-                                </div>
-                            </div>
-
+                            <h3>Ítems de la Cotización</h3>
                             <div class="table-container">
                                 <table id="quote-items-table">
                                     <thead>
@@ -195,6 +180,17 @@
                                         <!-- Items will be added here -->
                                     </tbody>
                                 </table>
+                            </div>
+                            <div class="add-item-form-container">
+                                <div class="form-group">
+                                    <label for="item-search">Agregar Ítem</label>
+                                    <div class="input-with-button">
+                                        <input type="text" id="item-search" placeholder="Buscar por código o nombre..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                                        <button id="add-new-item-quote-page-btn" class="btn btn-add-inline"
+                                            title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div id="item-search-results"></div>
+                                </div>
                             </div>
                         </div>
 
@@ -398,23 +394,7 @@
 
                         <!-- Order Materials (Insumos) -->
                         <div class="quote-items card">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                                <h3 style="margin: 0;">Materiales e Insumos <span>(Opcional)</span></h3>
-                            </div>
-                            
-                            <div class="add-item-form-container" style="margin-top: 0; padding-top: 0; border-top: none; margin-bottom: 15px;">
-                                <div class="form-group" style="margin-bottom: 0;">
-                                    <label for="order-item-search">Agregar Servicio o Material</label>
-                                    <div class="input-with-button">
-                                        <input type="text" id="order-item-search"
-                                            placeholder="Buscar por código o nombre..." autocomplete="off" data-lpignore="true" data-1p-ignore>
-                                        <button id="order-add-new-item-btn" class="btn btn-add-inline"
-                                            title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
-                                    </div>
-                                    <div id="order-item-search-results"></div>
-                                </div>
-                            </div>
-
+                            <h3>Materiales e Insumos <span>(Opcional)</span></h3>
                             <div class="table-container">
                                 <table id="order-materials-table">
                                     <thead>
@@ -426,6 +406,18 @@
                                     </thead>
                                     <tbody id="order-materials-tbody"></tbody>
                                 </table>
+                            </div>
+                            <div class="add-item-form-container">
+                                <div class="form-group">
+                                    <label for="order-item-search">Agregar Servicio o Material</label>
+                                    <div class="input-with-button">
+                                        <input type="text" id="order-item-search"
+                                            placeholder="Buscar por código o nombre..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                                        <button id="order-add-new-item-btn" class="btn btn-add-inline"
+                                            title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div id="order-item-search-results"></div>
+                                </div>
                             </div>
                         </div>
 

@@ -33,15 +33,6 @@ function setupNavigationEventListeners() {
 
 function setupQuoteEventListeners() {
     UI.setupQuoteAnnexUpload();
-    D.itemSearchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            const firstResult = D.itemSearchResultsContainer.querySelector('.search-result-item');
-            if (firstResult) {
-                (firstResult as HTMLElement).click();
-            }
-        }
-    });
 
     D.quoteItemsTableBody.addEventListener('input', (e) => {
         const target = e.target as HTMLInputElement | HTMLTextAreaElement;
