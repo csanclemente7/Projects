@@ -23,3 +23,5 @@ dist-ssr
 *.sln
 *.sw?
 src/config.ts
+Copias de seguridad/
+macris_backup_*.json

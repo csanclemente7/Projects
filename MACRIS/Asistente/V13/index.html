@@ -96,6 +96,7 @@
                 <button id="export-zip-btn" class="btn btn-accent btn-compact desktop-only"><i class="fas fa-file-archive"></i> ZIP</button>
                 <button id="export-pdf-btn" class="btn btn-primary btn-compact desktop-only"><i class="fas fa-file-pdf"></i> PDF</button>
                 <button id="company-merge-btn" class="btn btn-secondary btn-compact desktop-only"><i class="fas fa-code-branch"></i> Unificar</button>
+                <button id="db-backup-btn" class="btn btn-accent btn-compact desktop-only" style="background:var(--secondary); color:#fff"><i class="fas fa-database"></i> Copias</button>
                 <button id="toggle-chat-mobile" class="btn-drawer-toggle mobile-only">
                     <i class="fas fa-robot"></i>
                 </button>
@@ -309,16 +310,18 @@
 
     <!-- Modal: Unificador Inteligente de Empresas -->
     <div id="company-merge-modal" class="modal">
-        <div class="modal-content" style="max-width: 900px;">
+        <div class="modal-content" style="max-width: 1200px; width: 95vw;">
             <span id="close-company-merge-modal" class="close-button">&times;</span>
-            <div class="chat-header" style="padding: 0 0 15px 0; border-bottom: 1px solid var(--border);">
-                <i class="fas fa-code-branch"></i>
-                <span>Unificador Inteligente de Empresas</span>
+            <div class="chat-header" style="padding: 0 0 15px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <i class="fas fa-layer-group"></i>
+                    <span>Dashboard de Unificación Masiva</span>
+                </div>
             </div>
-            <div id="company-merge-flow" class="chat-flow" style="max-height: 55vh;">
-                <div class="message ai">
-                    Haz clic en "Buscar duplicadas" para detectar empresas similares.
-                    <br>Luego confirma la sugerencia de Macris AI para unificar.
+            <div id="company-merge-dashboard-container" style="max-height: 70vh; overflow-y: auto; overflow-x: hidden; padding: 20px 0; display: grid; gap: 30px;">
+                <div style="text-align: center; color: var(--text-dim); padding: 40px; font-size: 0.95rem;">
+                    <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 15px; opacity: 0.5;"></i><br>
+                    Haz clic en "Buscar duplicadas" para analizar toda la base de datos.<br>El algoritmo detectará aglomeraciones de empresas similares.
                 </div>
             </div>
             <div id="company-merge-progress" style="display:none; padding: 0 20px 12px 20px;">
@@ -364,6 +367,49 @@
         </div>
     </div>
     </div>
+
+    <!-- Modal Copias de Seguridad -->
+    <dialog id="backup-restore-modal" class="custom-dialog">
+        <div class="dialog-header">
+            <h3><i class="fas fa-shield-alt"></i> Gestión de Base de Datos</h3>
+            <button class="btn-close-dialog" id="close-backup-modal"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="dialog-body" style="display: flex; flex-direction: column; gap: 1rem; max-width: 450px; padding: 1.5rem;">
+            
+            <div id="backup-stats-container" style="background: rgba(var(--primary-rgb), 0.05); border: 1px solid rgba(var(--primary-rgb), 0.2); border-radius: 8px; padding: 1rem;">
+                <h4 style="margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--primary); text-align: center;"><i class="fas fa-chart-pie"></i> Información en la Nube</h4>
+                <div id="backup-stats-loading" style="text-align: center; color: var(--text-dim); font-size: 0.85rem;">Calculando volúmenes de datos... <i class="fas fa-spinner fa-spin"></i></div>
+                <ul id="backup-stats-list" style="display: none; list-style: none; padding: 0; margin: 0; font-size: 0.85rem; color: var(--text); display: grid; gap: 4px;">
+                    <!-- Llenado dinámicamente -->
+                </ul>
+            </div>
+
+            <p style="text-align: center; font-size: 0.9rem; color: var(--text-muted); margin: 0.5rem 0;">
+                Descarga una copia de todo el ecosistema MACRIS en un archivo único.
+            </p>
+            <button id="btn-download-backup" class="btn btn-primary" style="padding: 1rem;" disabled>
+                <i class="fas fa-cloud-download-alt"></i> Descargar Respaldo Total
+            </button>
+            <hr style="border:none; border-top: 1px solid var(--border); margin: 1rem 0;">
+            <div style="background: rgba(239, 68, 68, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2);">
+                <h4 style="color: #ef4444; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem;"><i class="fas fa-exclamation-triangle"></i> Restaurar Información</h4>
+                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; text-align: left;">
+                    Subir un archivo sobrescribirá los datos. Requiere clave de seguridad.
+                </p>
+                <input type="password" id="restore-password-input" placeholder="Clave especial" class="custom-input" style="width: 100%; margin-bottom: 0.5rem; box-sizing: border-box;">
+                <input type="file" id="restore-file-input" accept=".json" style="display: none;">
+                <button id="btn-upload-backup" class="btn btn-secondary" style="width: 100%; color: #ef4444; border-color: #ef4444;">
+                    <i class="fas fa-cloud-upload-alt"></i> Seleccionar y Restaurar
+                </button>
+            </div>
+            <div id="backup-progress-container" style="display: none; flex-direction: column; gap: 0.5rem;">
+                <p id="backup-status-text" style="font-size: 0.85rem; font-weight: bold; text-align: center; color: var(--text);">Procesando...</p>
+                <div class="progress-bar-bg" style="width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;">
+                    <div id="backup-progress-fill" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s ease;"></div>
+                </div>
+            </div>
+        </div>
+    </dialog>
 
     <!-- Required Libraries for Dashboard -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>

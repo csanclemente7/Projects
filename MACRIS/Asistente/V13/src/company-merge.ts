@@ -60,7 +60,7 @@ export function initCompanyMerge() {
     });
 
     scanBtn?.addEventListener('click', async () => {
-        await handleUserMessage('Buscar duplicadas');
+        await scanForDuplicates();
     });
 
 }
@@ -71,87 +71,16 @@ function setBusyState(next: boolean) {
     if (scanBtn) scanBtn.disabled = next;
 }
 
-function clearChat() {
-    const chatFlow = document.getElementById('company-merge-flow');
-    if (!chatFlow) return;
-    chatFlow.innerHTML = `
-        <div class="message ai">
-            Haz clic en "Buscar duplicadas" para detectar empresas similares.
-            <br>Luego confirma la sugerencia de Macris AI para unificar.
-        </div>
-    `;
-    duplicateGroups = [];
-    duplicateGroupIndex = 0;
-    statsByCompany = new Map<string, CompanyStats>();
-    clearGroupContainer();
-    setProgressVisible(false);
-}
 
-async function handleUserMessage(text: string) {
-    const command = text.toLowerCase();
-    appendMessage(text, 'user');
 
-    if (isBusy) {
-        appendMessage('Estoy procesando una solicitud. Espera un momento...', 'ai');
-        return;
+function clearDashboard() {
+    const container = document.getElementById('company-merge-dashboard-container');
+    if (container) {
+        container.innerHTML = '';
     }
-
-    if (command.includes('como funciona') || command.includes('explica')) {
-        appendHtmlMessage(EXPLANATION_HTML, 'ai');
-        return;
-    }
-
-    if (command.includes('duplicad') || command.includes('buscar') || command.includes('unificar')) {
-        await scanForDuplicates();
-        return;
-    }
-
-    appendMessage('Para iniciar, haz clic en "Buscar duplicadas".', 'ai');
 }
 
-function appendMessage(text: string, role: 'user' | 'ai' | 'thinking') {
-    const chatFlow = document.getElementById('company-merge-flow');
-    if (!chatFlow) return;
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `message ${role}`;
-    msgDiv.textContent = text;
-    chatFlow.appendChild(msgDiv);
-    chatFlow.scrollTop = chatFlow.scrollHeight;
-}
 
-function appendHtmlMessage(html: string, role: 'user' | 'ai' | 'thinking') {
-    const chatFlow = document.getElementById('company-merge-flow');
-    if (!chatFlow) return;
-    const msgDiv = document.createElement('div');
-    msgDiv.className = `message ${role}`;
-    msgDiv.innerHTML = html;
-    chatFlow.appendChild(msgDiv);
-    chatFlow.scrollTop = chatFlow.scrollHeight;
-}
-
-function appendNode(node: HTMLElement) {
-    const chatFlow = document.getElementById('company-merge-flow');
-    if (!chatFlow) return;
-    chatFlow.appendChild(node);
-    chatFlow.scrollTop = chatFlow.scrollHeight;
-}
-
-function ensureGroupContainer(): HTMLElement | null {
-    const chatFlow = document.getElementById('company-merge-flow');
-    if (!chatFlow) return null;
-    let container = document.getElementById('company-merge-group-container');
-    if (!container) {
-        container = document.createElement('div');
-        container.id = 'company-merge-group-container';
-        chatFlow.appendChild(container);
-    }
-    return container;
-}
-
-function clearGroupContainer() {
-    const container = document.getElementById('company-merge-group-container');
-    if (container) container.remove();
-}
 
 function setProgressVisible(visible: boolean) {
     const progress = document.getElementById('company-merge-progress');
@@ -220,9 +149,8 @@ async function scanForDuplicates() {
     setProgressVisible(true);
 
     try {
-        clearGroupContainer();
+        clearDashboard();
         duplicateGroups = [];
-        duplicateGroupIndex = 0;
         let companies = State.companies;
         if (!companies || companies.length === 0) {
             companies = await fetchCompanies();
@@ -230,7 +158,7 @@ async function scanForDuplicates() {
         }
 
         if (companies.length < 2) {
-            appendMessage('No hay suficientes empresas para comparar.', 'ai');
+            UI.showAppNotification('No hay suficientes empresas para comparar.', 'info');
             setProgressVisible(false);
             setBusyState(false);
             return;
@@ -274,13 +202,15 @@ async function scanForDuplicates() {
         await sleepFrame();
 
         if (candidates.length === 0) {
-            appendMessage('No encontré empresas duplicadas con similitud superior al 80%.', 'ai');
+            clearDashboard();
+            const container = document.getElementById('company-merge-dashboard-container');
+            if(container) container.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 40px; font-size: 0.95rem;"><i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 15px; opacity: 0.5; color: var(--success);"></i><br>No se encontraron duplicados en la base de datos. ¡Todo limpio!</div>`;
             setProgressVisible(false);
             setBusyState(false);
             return;
         }
 
-        appendMessage(`Detecté ${candidates.length} posibles duplicados. Calculando peso de datos...`, 'ai');
+        updateProgress(totalPairs, totalPairs, `Calculando peso de datos...`);
 
         const companyIds = Array.from(new Set(
             candidates.flatMap(c => [c.companyA.id, c.companyB.id])
@@ -298,15 +228,15 @@ async function scanForDuplicates() {
         duplicateGroupIndex = 0;
 
         if (duplicateGroups.length === 0) {
-            appendMessage('No encontré grupos claros de duplicados. Revisa manualmente.', 'ai');
+            UI.showAppNotification('No encontré grupos claros de duplicados. Revisa manualmente.', 'info');
             return;
         }
 
         renderDuplicateGroup(duplicateGroupIndex);
-        appendMessage('Listo. Navega por fases con Anterior / Siguiente.', 'ai');
+        UI.showAppNotification(`Búsqueda completa. Mostrando 1 de ${duplicateGroups.length} grupos.`, 'success');
     } catch (error: any) {
         console.error('Scan error:', error);
-        appendMessage('Ocurrió un error al analizar duplicados.', 'ai');
+        UI.showAppNotification('Ocurrió un error al analizar duplicados.', 'error');
     } finally {
         setProgressVisible(false);
         setBusyState(false);
@@ -502,8 +432,9 @@ async function refreshGroupsAfterMerge() {
     try {
         syncGroupsWithState();
         if (duplicateGroups.length === 0) {
-            clearGroupContainer();
-            appendMessage('No quedan grupos pendientes de unificación.', 'ai');
+            clearDashboard();
+            const container = document.getElementById('company-merge-dashboard-container');
+            if(container) container.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 40px; font-size: 0.95rem;"><i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 15px; opacity: 0.5; color: var(--success);"></i><br>No quedan grupos pendientes de unificación. Base de datos depurada.</div>`;
             return;
         }
         const ids = collectGroupCompanyIds(duplicateGroups);
@@ -512,125 +443,148 @@ async function refreshGroupsAfterMerge() {
         renderDuplicateGroup(duplicateGroupIndex);
     } catch (error: any) {
         console.error('Refresh groups error:', error);
-        appendMessage('No se pudieron actualizar los grupos. Puedes reintentar.', 'ai');
+        UI.showAppNotification('Error actualizando el dashboard. Escanea nuevamente.', 'error');
     } finally {
         setProgressVisible(false);
         setBusyState(false);
     }
 }
 
-function renderDuplicateGroup(index: number) {
+function renderDuplicateGroup(index: number, keepSearchQuery?: string) {
     if (duplicateGroups.length === 0) return;
-    const container = ensureGroupContainer();
+    const container = document.getElementById('company-merge-dashboard-container');
     if (!container) return;
 
     duplicateGroupIndex = Math.max(0, Math.min(index, duplicateGroups.length - 1));
     const group = duplicateGroups[duplicateGroupIndex];
     const companyMap = new Map(State.companies.map(c => [c.id, c]));
-    const cityMap = new Map(State.cities.map(city => [city.id, city.name]));
     const companies = group.ids.map(id => companyMap.get(id)).filter(Boolean) as Company[];
 
     if (companies.length < 2) {
         syncGroupsWithState();
         if (duplicateGroups.length === 0) {
-            clearGroupContainer();
-            appendMessage('No quedan grupos pendientes de unificación.', 'ai');
+            clearDashboard();
+            if(container) container.innerHTML = `<div style="text-align: center; color: var(--text-dim); padding: 40px; font-size: 0.95rem;"><i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 15px; opacity: 0.5; color: var(--success);"></i><br>No quedan grupos pendientes de unificación.</div>`;
             return;
         }
         renderDuplicateGroup(duplicateGroupIndex);
         return;
     }
 
+    container.innerHTML = '';
+    
+    // Header Navigation
+    const headerDiv = document.createElement('div');
+    headerDiv.innerHTML = `
+        <div style="background: var(--bg-card); padding: 15px; border-radius: 8px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <div>
+                <span style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">Fase ${duplicateGroupIndex + 1} de ${duplicateGroups.length}</span>
+                <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 5px;">Revisa las empresas y elige cuál conservar.</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-secondary merge-prev-btn" ${duplicateGroupIndex === 0 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i> Anterior</button>
+                <button class="btn btn-secondary merge-next-btn" ${duplicateGroupIndex === duplicateGroups.length - 1 ? 'disabled' : ''}>Siguiente <i class="fas fa-chevron-right"></i></button>
+            </div>
+        </div>
+    `;
+    container.appendChild(headerDiv);
+
+    const getCityName = (cityId?: string | null) => {
+        if (!cityId) return '';
+        const c = State.cities.find(city => city.id === cityId);
+        return c ? ` - <span style="opacity: 0.7;">${c.name}</span>` : '';
+    };
+
     const preferredTarget = group.preferredTargetId ? companyMap.get(group.preferredTargetId) : undefined;
     const target = preferredTarget || pickTargetFromGroup(companies, statsByCompany);
     group.preferredTargetId = target.id;
-    const targetName = resolveTargetName(group, target);
+    const targetName = group.preferredTargetName || target.name;
     group.preferredTargetName = targetName;
-    const targetOptions = companies.map(c => `<option value="${c.id}" ${c.id === target.id ? 'selected' : ''}>${c.name}</option>`).join('');
-    const companyRows = companies.map(c => {
+    const targetOptions = companies.map(c => `<option value="${c.id}" ${c.id === target.id ? 'selected' : ''}>${c.name}${c.cityId ? ` - ${State.cities.find(city => city.id === c.cityId)?.name || ''}` : ''}</option>`).join('');
+    
+    const sourceCompanies = companies.filter(c => c.id !== target.id);
+    const sourceRows = sourceCompanies.map(c => {
         const stats = statsByCompany.get(c.id) || { reports: 0, equipment: 0, dependencies: 0 };
         return `
-            <div style="background: var(--bg-input); border: 1px solid var(--border); padding: 8px; border-radius: 8px;">
-                <div style="font-weight: 600;">${c.name}</div>
-                <div style="font-size: 0.75rem; color: var(--text-dim);">
-                    Reportes: ${stats.reports} · Equipos: ${stats.equipment} · Dependencias: ${stats.dependencies}
+            <div style="background: rgba(255,165,0,0.05); border: 1px solid rgba(255,165,0,0.3); padding: 12px; border-radius: 8px; position: relative;">
+                <div style="position: absolute; top: -10px; right: 10px; background: var(--bg-body); padding: 0 5px; font-size: 0.65rem; color: #ff9800; border: 1px solid rgba(255,165,0,0.3); border-radius: 4px;">Se descartará</div>
+                <div style="font-weight: 600; font-size: 0.95rem; color: #ffad33;">${c.name}${getCityName(c.cityId)}</div>
+                <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 4px;">
+                    <i class="fas fa-file-alt"></i> ${stats.reports} Rep · <i class="fas fa-tools"></i> ${stats.equipment} Eq · <i class="fas fa-building"></i> ${stats.dependencies} Dep
                 </div>
             </div>
         `;
     }).join('');
 
-    const mergeRows = companies
-        .filter(c => c.id !== target.id)
-        .map(c => `
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--bg-input); border: 1px solid var(--border); padding: 8px; border-radius: 8px;">
-                <div style="font-size: 0.8rem;">
-                    Unificar <strong>${c.name}</strong> <span style="color: var(--text-dim);">(${cityMap.get(c.cityId) || 'N/A'})</span> -> <span data-role="merge-target-label">${targetName}</span>
-                </div>
-                <button class="btn btn-success btn-compact merge-company-btn" data-source-id="${c.id}" data-target-id="${target.id}">Unificar</button>
-            </div>
-        `).join('');
+    const canMergeAll = sourceCompanies.length > 0;
 
-    const canMergeAll = companies.some(c => c.id !== target.id);
+    const groupWrapper = document.createElement('div');
+    groupWrapper.className = 'dashboard-merge-group';
+    groupWrapper.style.cssText = 'background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;';
+    
+    groupWrapper.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px dashed var(--border); padding-bottom: 15px; margin-bottom: 20px;">
+            <div style="font-weight: 700; color: var(--primary); text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px;">
+                <i class="fas fa-random"></i> GRUPO ACTUAL &mdash; ${companies.length} Empresas Emparejadas
+            </div>
+            <button class="btn btn-success btn-compact merge-all-btn" ${canMergeAll ? '' : 'disabled'} style="font-weight: bold; background: var(--primary); border:none; padding: 8px 15px;"><i class="fas fa-layer-group"></i> Unificar todas -> Principal</button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <!-- SECCIÓN IZQUIERDA: TARJETA PRINCIPAL (TARGET) -->
+            <div>
+                <div style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: var(--primary); margin-bottom: 10px;"><i class="fas fa-check-circle"></i> Destino Oficial</div>
+                <div style="background: rgba(var(--color-primary-rgb, 10,199,212), 0.05); border: 2px solid var(--primary); padding: 15px; border-radius: 8px; position: relative; height: 100%;">
+                    <div style="margin-top: 5px;">
+                        <label style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Empresa Base Conservada</label>
+                        <select class="merge-target-select" style="margin-top: 5px; width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 0.85rem;">
+                            ${targetOptions}
+                        </select>
+                    </div>
+                    <div style="margin-top: 15px;">
+                        <label style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">Nombre Unificado Refinado</label>
+                        <input class="merge-target-name-input" type="text" value="${targetName}" style="margin-top: 5px; width: 100%; background: var(--bg-input); border: 1px solid var(--border); padding: 10px; border-radius: 6px; font-weight: bold; color: var(--primary); font-size: 0.85rem;" />
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
+                        <i class="fas fa-info-circle"></i> Las dependencias similares (>82%) de los carteles derechos pasarán orgánicamente a este destino.
+                    </div>
+                </div>
+            </div>
 
-    container.innerHTML = `
-        <div class="message ai">
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-                <div style="font-weight: 700; color: var(--primary); text-transform: uppercase; font-size: 0.7rem; letter-spacing: 0.8px;">
-                    Fase ${duplicateGroupIndex + 1}/${duplicateGroups.length}
+            <!-- SECCIÓN DERECHA: EMPRESAS FUENTE (SE DESCARTAN) -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <span style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: #ffad33;"><i class="fas fa-arrow-down"></i> Empresas Analizadas a Destruir</span>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    <button class="btn btn-success btn-compact merge-all-btn" ${canMergeAll ? '' : 'disabled'}>Unificar todas</button>
-                    <button class="btn btn-secondary btn-compact merge-prev-btn" ${duplicateGroupIndex === 0 ? 'disabled' : ''}>Anterior</button>
-                    <button class="btn btn-secondary btn-compact merge-next-btn" ${duplicateGroupIndex === duplicateGroups.length - 1 ? 'disabled' : ''}>Siguiente</button>
+                
+                <div style="margin-bottom: 15px; position: relative;">
+                    <div style="display: flex; gap: 8px;">
+                        <span style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; display:flex; align-items: center; color: var(--text-dim);"><i class="fas fa-search"></i></span>
+                        <input type="text" class="manual-add-search" value="${keepSearchQuery || ''}" placeholder="Buscar y agregar otra empresa repetida manualmente..." style="flex:1; font-size:0.85rem; background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 8px 12px; border-radius: 6px;" />
+                    </div>
+                    <div class="manual-add-results" style="display:none; position: absolute; top: 100%; left: 0; width: 100%; background: var(--bg-card); border: 1px solid var(--border); max-height: 200px; overflow-y: auto; overflow-x: hidden; border-radius: 6px; margin-top: 5px; z-index: 10; box-shadow: 0 5px 15px rgba(0,0,0,0.3);"></div>
                 </div>
-            </div>
-            <div style="margin-top: 10px; font-size: 0.75rem; color: var(--text-dim);">
-                Empresas detectadas en este grupo: ${companies.length}
-            </div>
-            <div style="margin-top: 12px; display: grid; gap: 8px;">
-                ${companyRows}
-            </div>
-            <div style="margin-top: 12px;">
-                <label style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.6px;">Target</label>
-                <select class="merge-target-select" style="margin-top: 6px; width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 10px 12px; border-radius: 6px; font-family: inherit; font-size: 0.85rem;">
-                    ${targetOptions}
-                </select>
-            </div>
-            <div style="margin-top: 12px;">
-                <label style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 0.6px;">Nombre principal (sin tildes)</label>
-                <input class="merge-target-name-input" type="text" value="${targetName}" style="margin-top: 6px; width: 100%; background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 10px 12px; border-radius: 6px; font-family: inherit; font-size: 0.85rem;" />
-            </div>
-            <div style="margin-top: 12px; display: grid; gap: 8px;">
-                ${mergeRows || '<div style="font-size: 0.8rem; color: var(--text-dim);">No hay otras empresas para unificar en este grupo.</div>'}
+
+                <div style="display: grid; gap: 12px;">
+                    ${sourceRows || '<div style="font-size: 0.8rem; color: var(--text-dim); text-align: center; padding: 20px; border: 1px dashed var(--border); border-radius: 8px;">No hay otras empresas para unificar.</div>'}
+                </div>
             </div>
         </div>
     `;
 
-    const prevBtn = container.querySelector('.merge-prev-btn') as HTMLButtonElement | null;
-    const nextBtn = container.querySelector('.merge-next-btn') as HTMLButtonElement | null;
-    const targetSelect = container.querySelector('.merge-target-select') as HTMLSelectElement | null;
-    const targetNameInput = container.querySelector('.merge-target-name-input') as HTMLInputElement | null;
-    const mergeButtons = Array.from(container.querySelectorAll('.merge-company-btn')) as HTMLButtonElement[];
-    const mergeAllBtn = container.querySelector('.merge-all-btn') as HTMLButtonElement | null;
+    // Event Listeners for this group
+    const targetSelect = groupWrapper.querySelector('.merge-target-select') as HTMLSelectElement | null;
+    const targetNameInput = groupWrapper.querySelector('.merge-target-name-input') as HTMLInputElement | null;
+    const mergeAllBtn = groupWrapper.querySelector('.merge-all-btn') as HTMLButtonElement | null;
 
-    const setTargetName = (nextName: string) => {
+    const setTargetName = (nextName: string, forceUpdateUi: boolean = false) => {
         const cleaned = sanitizeCompanyName(nextName);
         const resolved = cleaned || sanitizeCompanyName(target.name);
         group.preferredTargetName = resolved;
-        if (targetNameInput && targetNameInput.value !== resolved) {
+        if (forceUpdateUi && targetNameInput && targetNameInput.value !== resolved) {
             targetNameInput.value = resolved;
         }
-        updateMergeTargetLabels(container, resolved);
     };
-
-    prevBtn?.addEventListener('click', () => {
-        if (isBusy) return;
-        renderDuplicateGroup(duplicateGroupIndex - 1);
-    });
-    nextBtn?.addEventListener('click', () => {
-        if (isBusy) return;
-        renderDuplicateGroup(duplicateGroupIndex + 1);
-    });
 
     targetSelect?.addEventListener('change', () => {
         if (!targetSelect || isBusy) return;
@@ -642,32 +596,101 @@ function renderDuplicateGroup(index: number) {
 
     targetNameInput?.addEventListener('input', () => {
         if (!targetNameInput || isBusy) return;
-        setTargetName(targetNameInput.value);
+        setTargetName(targetNameInput.value, false);
+    });
+    
+    targetNameInput?.addEventListener('blur', () => {
+        if (!targetNameInput || isBusy) return;
+        setTargetName(targetNameInput.value, true);
+    });
+
+    // Lógica para agregar manualmente
+    const searchInput = groupWrapper.querySelector('.manual-add-search') as HTMLInputElement | null;
+    const resultsDiv = groupWrapper.querySelector('.manual-add-results') as HTMLDivElement | null;
+
+    searchInput?.addEventListener('input', () => {
+        if (!searchInput || !resultsDiv || isBusy) return;
+        const q = searchInput.value.toLowerCase().trim();
+        if (q.length < 3) {
+            resultsDiv.style.display = 'none';
+            return;
+        }
+
+        const matches = State.companies.filter(c => 
+            !group.ids.includes(c.id) && c.name.toLowerCase().includes(q)
+        ).slice(0, 10); // Límite de 10 sugerencias
+
+        if (matches.length === 0) {
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<div style="padding: 12px; font-size: 0.8rem; color: var(--text-dim); text-align: center;">No hay coincidencias en la base de datos</div>';
+            return;
+        }
+
+        resultsDiv.style.display = 'block';
+        resultsDiv.innerHTML = matches.map(c => `
+            <div class="manual-add-item" data-id="${c.id}" style="padding: 10px 15px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.05); cursor: pointer; color: var(--text); display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;">
+                <span style="font-weight: 500;">${c.name}${getCityName(c.cityId)}</span>
+                <span style="color: var(--success); font-size: 0.75rem; background: rgba(46, 213, 115, 0.1); padding: 3px 8px; border-radius: 10px;"><i class="fas fa-plus"></i> Añadir</span>
+            </div>
+        `).join('');
+
+        resultsDiv.querySelectorAll('.manual-add-item').forEach(item => {
+            // Efecto Hover simple
+            (item as HTMLElement).onmouseover = () => { (item as HTMLElement).style.background = 'rgba(255,255,255,0.05)'; };
+            (item as HTMLElement).onmouseout = () => { (item as HTMLElement).style.background = 'transparent'; };
+
+            item.addEventListener('click', async (e) => {
+                const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+                if (id && !group.ids.includes(id)) {
+                    setBusyState(true);
+                    try {
+                        const newStats = await buildCompanyStatsMap([id]);
+                        statsByCompany.set(id, newStats.get(id) || { reports: 0, equipment: 0, dependencies: 0 });
+                        group.ids.push(id);
+                        
+                        // Guardar query actual y re-renderizar
+                        const currentQ = searchInput ? searchInput.value : undefined;
+                        renderDuplicateGroup(duplicateGroupIndex, currentQ);
+                    } catch (err) {
+                        UI.showAppNotification('Error obteniendo datos de empresa.', 'error');
+                    } finally {
+                        setBusyState(false);
+                    }
+                }
+            });
+        });
+    });
+
+    // Cerrar buscador manual al hacer clic afuera
+    document.addEventListener('click', (e) => {
+        if (!groupWrapper.contains(e.target as Node) && resultsDiv) {
+            resultsDiv.style.display = 'none';
+            if (searchInput) searchInput.value = '';
+        }
     });
 
     mergeAllBtn?.addEventListener('click', async () => {
         if (isBusy) return;
-        const targetName = resolveTargetName(group, target);
+        const currentTargetName = resolveTargetName(group, target);
         const sources = companies.filter(c => c.id !== target.id);
         if (sources.length === 0) {
-            UI.showAppNotification('No hay empresas para unificar en este grupo.', 'info');
+            UI.showAppNotification('No hay empresas descartables en este grupo.', 'info');
             return;
         }
         const confirmed = await UI.showConfirmationModal(
-            `¿Desea unificar ${sources.length} empresas dentro de "${targetName}"? Esta acción es irreversible.`,
-            'Unificar todas'
+            `¿Desea absorber ${sources.length} empresas repetidas y convertirlas en 1 sola empresa llamada: "${currentTargetName}"? Esta acción es irreversible.`,
+            'Proceder con la Fusión'
         );
         if (!confirmed) return;
 
         try {
-            const finalTargetName = await ensureTargetName(target, targetName);
+            const finalTargetName = await ensureTargetName(target, currentTargetName);
             setBusyState(true);
             setProgressVisible(true);
             updateProgress(0, sources.length, 'Unificando empresas');
-            appendMessage(`Iniciando fusión masiva: ${sources.length} empresas -> ${finalTargetName}.`, 'ai');
 
             for (let i = 0; i < sources.length; i++) {
-                updateProgress(i + 1, sources.length, `Unificando ${sources[i].name}`);
+                updateProgress(i + 1, sources.length, `Unificando ${sources[i].name}...`);
                 await mergeCompanies(target, sources[i], {
                     manageBusy: false,
                     manageProgress: false,
@@ -678,47 +701,56 @@ function renderDuplicateGroup(index: number) {
             }
 
             await refreshLocalState();
+            
+            // ÉXITO VISUAL TEMPORAL
+            if (container) {
+                container.innerHTML = `
+                    <div style="text-align: center; color: var(--success); padding: 60px 20px;">
+                        <i class="fas fa-check-circle" style="font-size: 4rem; margin-bottom: 20px; animation: popIn 0.5s ease;"></i>
+                        <h2 style="margin-bottom: 10px; color: var(--success);">¡Unificación Exitosa!</h2>
+                        <p style="color: var(--text-dim); font-size: 0.95rem;">Las empresas han sido fusionadas exitosamente bajo <strong>${finalTargetName}</strong>.</p>
+                        <p style="color: var(--text-dim); font-size: 0.8rem; margin-top:15px; opacity: 0.7;">Pasando a la siguiente fase...</p>
+                    </div>
+                `;
+            }
+            
+            UI.showAppNotification(`Grupo fusionado correctamente en ${finalTargetName}.`, 'success');
+            
+            // Pausa de 1.5 segundos para apreciar el mensaje
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
             await refreshGroupsAfterMerge();
-            appendMessage(`Fusión masiva completada: ${sources.length} empresas -> ${finalTargetName}.`, 'ai');
-            UI.showAppNotification('Empresas unificadas con éxito.', 'success');
         } catch (error: any) {
-            console.error('Merge all error:', error);
-            UI.showAppNotification(`Error al unificar todas: ${error.message}`, 'error');
+            console.error('Merge error:', error);
+            UI.showAppNotification(`Error al procesar el grupo: ${error.message}`, 'error');
         } finally {
             setProgressVisible(false);
             setBusyState(false);
         }
     });
 
-    mergeButtons.forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const sourceId = btn.dataset.sourceId;
-            const targetId = btn.dataset.targetId;
-            if (!sourceId || !targetId || sourceId === targetId) return;
-            if (isBusy) return;
-            const targetCompany = companyMap.get(targetId);
-            const sourceCompany = companyMap.get(sourceId);
-            if (!targetCompany || !sourceCompany) {
-                UI.showAppNotification('No se encontró la empresa seleccionada.', 'warning');
-                return;
-            }
-            const targetName = resolveTargetName(group, targetCompany);
-            const confirmed = await UI.showConfirmationModal(
-                `¿Desea unificar "${sourceCompany.name}" dentro de "${targetName}"? Esta acción es irreversible.`,
-                'Unificar'
-            );
-            if (!confirmed) return;
-            try {
-                const finalTargetName = await ensureTargetName(targetCompany, targetName);
-                await mergeCompanies(targetCompany, sourceCompany);
-                appendMessage(`Fusión completada: ${sourceCompany.name} -> ${finalTargetName}.`, 'ai');
-                await refreshGroupsAfterMerge();
-            } catch (error: any) {
-                console.error('Merge error:', error);
-                UI.showAppNotification(`Error al unificar: ${error.message}`, 'error');
-            }
-        });
+    container.appendChild(groupWrapper);
+
+    const prevBtn = headerDiv.querySelector('.merge-prev-btn') as HTMLButtonElement | null;
+    const nextBtn = headerDiv.querySelector('.merge-next-btn') as HTMLButtonElement | null;
+
+    prevBtn?.addEventListener('click', () => {
+        if (isBusy) return;
+        renderDuplicateGroup(duplicateGroupIndex - 1);
     });
+    nextBtn?.addEventListener('click', () => {
+        if (isBusy) return;
+        renderDuplicateGroup(duplicateGroupIndex + 1);
+    });
+
+    // Auto-focus y reactivación del search si hay query persistida
+    if (keepSearchQuery && searchInput) {
+        searchInput.focus();
+        // Disparamos el evento input para abrir la lista
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        // Ponemos el cursor al final del texto
+        setTimeout(() => { searchInput.selectionStart = searchInput.selectionEnd = searchInput.value.length; }, 10);
+    }
 }
 
 type MergeOptions = {
@@ -758,16 +790,45 @@ async function mergeCompanies(
         const dependencyIdMap = new Map<string, string>();
         const dependencyNameMap = new Map<string, string>();
 
-        const { data: sourceReports, error: reportsError } = await supabaseOrders
-            .from('maintenance_reports')
-            .select('id, equipment_snapshot, dependency_id')
-            .eq('company_id', source.id);
-        if (reportsError) throw reportsError;
+        // Recolectar ALL reports (manejo de más de 1000 en caso de empresas gigantes)
+        let allSourceReports: any[] = [];
+        let from = 0;
+        const pageSize = 1000;
+        while (true) {
+            const { data: pageResp, error: repErr } = await supabaseOrders
+                .from('maintenance_reports')
+                .select('id, equipment_snapshot, dependency_id')
+                .eq('company_id', source.id)
+                .range(from, from + pageSize - 1);
+            if (repErr) throw repErr;
+            if (!pageResp || pageResp.length === 0) break;
+            allSourceReports = allSourceReports.concat(pageResp);
+            if (pageResp.length < pageSize) break;
+            from += pageSize;
+        }
 
         progress(2, totalSteps, 'Transferencia de dependencias');
         for (const dep of sourceDeps) {
-            const normalizedName = normalizeString(dep.name);
-            const match = dependencyMap.get(normalizedName);
+            const normalizedSource = normalizeString(dep.name);
+            let match = dependencyMap.get(normalizedSource);
+
+            // Búsqueda difusa para dependencias similares
+            if (!match) {
+                let bestSim = 0;
+                let bestDep: Dependency | null = null;
+                for (const tDep of targetDeps) {
+                    const sim = calcSimilarity(normalizedSource, normalizeString(tDep.name));
+                    if (sim > bestSim) {
+                        bestSim = sim;
+                        bestDep = tDep;
+                    }
+                }
+                // Si la coincidencia es superior al 82%, asumimos que es un typo de la misma área
+                if (bestSim >= 0.82) {
+                    match = bestDep || undefined;
+                }
+            }
+
             if (match) {
                 await assertSupabase(
                     supabaseOrders.from('maintenance_equipment')
@@ -808,7 +869,7 @@ async function mergeCompanies(
         );
 
         progress(4, totalSteps, 'Reasignando reportes');
-        const reportsList = (sourceReports || []) as any[];
+        const reportsList = allSourceReports;
         if (reportsList.length > 0) {
             progress(0, reportsList.length, 'Actualizando snapshots');
             for (let i = 0; i < reportsList.length; i++) {
@@ -850,6 +911,14 @@ async function mergeCompanies(
         );
 
         progress(6, totalSteps, 'Limpieza final');
+        // Un último empuje a cualquier dependency/equipment/report rezagado (fallback agresivo)
+        await supabaseOrders.from('maintenance_equipment').update({ company_id: target.id }).eq('company_id', source.id);
+        await supabaseOrders.from('maintenance_dependencies').update({ company_id: target.id }).eq('company_id', source.id);
+        await supabaseOrders.from('maintenance_reports').update({ company_id: target.id }).eq('company_id', source.id);
+        
+        // Esperamos 1.5s para que supabase termine commits
+        await new Promise(r => setTimeout(r, 1500));
+
         const cleanupStats = await getCompanyStats(source.id, new Map());
         if (cleanupStats.reports === 0 && cleanupStats.equipment === 0 && cleanupStats.dependencies === 0) {
             await assertSupabase(
@@ -858,10 +927,10 @@ async function mergeCompanies(
                     .eq('id', source.id)
             );
         } else {
-            UI.showAppNotification(
-                `No se eliminó "${source.name}" porque aún tiene registros asociados.`,
-                'warning'
-            );
+            // Intento secundario asíncrono
+            const errorMsg = `No se logró eliminar "${source.name}". Quedan atados: ${cleanupStats.reports} Reportes, ${cleanupStats.equipment} Equipos, ${cleanupStats.dependencies} Deps. Refresca y escanea de nuevo.`;
+            console.error(errorMsg);
+            throw new Error(errorMsg);
         }
 
         if (refreshAfter) {

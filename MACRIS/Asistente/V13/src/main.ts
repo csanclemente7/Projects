@@ -6,6 +6,7 @@ import * as D from './dom';
 import * as Auth from './auth';
 import { setupEventListeners } from './events';
 import { initCompanyMerge } from './company-merge';
+import { initBackupRestore } from './backup';
 
 async function initAuthGate() {
     UI.showLoader('Sincronizando acceso...');
@@ -52,6 +53,7 @@ import { setupDashboard } from './dashboard';
 export async function main() {
     setupEventListeners();
     initCompanyMerge();
+    initBackupRestore();
     setupDashboard();
 
     D.logoutBtn?.addEventListener('click', () => {
