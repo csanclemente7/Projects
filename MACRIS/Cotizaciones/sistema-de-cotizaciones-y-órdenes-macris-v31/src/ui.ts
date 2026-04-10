@@ -917,7 +917,7 @@ export function renderClientsList() {
     const clients = State.getClients().filter(c => c.name?.toLowerCase().includes(term) || c.contactPerson?.toLowerCase().includes(term) || c.manualId?.toLowerCase().includes(term));
     let html = `<table class="management-table"><thead><tr><th>Nombre</th><th>Contacto</th><th>Teléfono</th><th>Email</th><th class="actions">Acciones</th></tr></thead><tbody>`;
     if (clients.length > 0) {
-        html += clients.sort((a, b) => (parseInt(b.manualId) || 0) - (parseInt(a.manualId) || 0)).map(c => `<tr><td><strong>${c.name}</strong><br><small>ID: ${c.manualId}</small></td><td>${c.contactPerson || '-'}</td><td>${c.phone || '-'}</td><td>${c.email || '-'}</td><td class="actions"><button class="btn btn-icon-only btn-secondary edit-btn" data-id="${c.id}" title="Editar"><i class="fas fa-edit"></i></button><button class="btn btn-icon-only btn-danger delete-btn" data-id="${c.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        html += clients.sort((a, b) => (parseInt(b.manualId) || 0) - (parseInt(a.manualId) || 0)).map(c => `<tr><td><strong>${c.name}</strong><br><small>ID: ${c.manualId}</small></td><td>${c.contactPerson || '-'}</td><td>${c.phone || '-'}</td><td>${c.email || '-'}</td><td class="actions"><button class="btn btn-icon-only btn-secondary edit-btn" data-id="${c.id}" title="Editar"><i class="fas fa-edit"></i></button>${c.category === 'empresa' ? `<button class="btn btn-icon-only add-sede-client-btn" data-id="${c.id}" title="Añadir Sede" style="background-color: #f1f8ff; border: 1px solid #c8e1ff; color: #0366d6; margin: 0 4px;"><i class="fas fa-building"></i></button>` : ''}<button class="btn btn-icon-only btn-danger delete-btn" data-id="${c.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     } else {
         html += `<tr><td colspan="5" style="text-align: center; padding: 20px;">No hay clientes.</td></tr>`;
     }
@@ -1271,7 +1271,7 @@ export function handleValueEditFormSubmit(e: Event) {
     closeAllModals();
 }
 
-export async function openEntityModal(type: 'client' | 'item' | 'technician', id: string | null = null) {
+export async function openEntityModal(type: 'client' | 'item' | 'technician' | 'sede', id: string | null = null) {
     D.modalForm.dataset.type = type;
     D.modalForm.dataset.id = id || '';
     let fieldsHtml = '', title = '';
@@ -1280,12 +1280,30 @@ export async function openEntityModal(type: 'client' | 'item' | 'technician', id
         const client = id ? State.getClients().find(c => c.id === id) : null;
         title = client ? 'Editar Cliente' : 'Nuevo Cliente';
         const manualId = client ? client.manualId : await getNextClientManualIdForUI();
-        fieldsHtml = `<div class="form-group"><label>Categoría</label><select name="category" required class="form-control"><option value="residencial" ${client && client.category === 'residencial' ? 'selected' : ''}>Residencial</option><option value="empresa" ${client && client.category === 'empresa' ? 'selected' : ''}>Empresa</option></select></div><div class="form-group"><label>ID</label><input name="manualId" value="${manualId}" readonly></div><div class="form-group"><label>Nombre</label><input name="name" value="${client?.name || ''}" required></div><div class="form-group"><label>Encargado</label><input name="contactPerson" value="${client?.contactPerson || ''}"></div><div class="form-group"><label>Dirección</label><input name="address" value="${client?.address || ''}"></div><div class="form-group"><label>Ciudad</label><input name="city" value="${client?.city || ''}"></div><div class="form-group"><label>Teléfono</label><input name="phone" value="${client?.phone || ''}"></div><div class="form-group"><label>Email</label><input name="email" type="email" value="${client?.email || ''}"></div>`;
+        fieldsHtml = `<div class="form-group"><label>Categoría</label><select name="category" required class="form-control" ><option value="residencial" ${client && client.category === 'residencial' ? 'selected' : ''}>Residencial</option><option value="empresa" ${client && client.category === 'empresa' ? 'selected' : ''}>Empresa</option></select></div>
+        
+        <div class="form-group"><label>ID</label><input name="manualId" value="${manualId}" readonly></div><div class="form-group"><label>Nombre</label><input name="name" value="${client?.name || ''}" required></div><div class="form-group"><label>Encargado</label><input name="contactPerson" value="${client?.contactPerson || ''}"></div><div class="form-group"><label>Dirección</label><input name="address" value="${client?.address || ''}"></div><div class="form-group"><label>Ciudad</label><input name="city" value="${client?.city || ''}"></div><div class="form-group"><label>Teléfono</label><input name="phone" value="${client?.phone || ''}"></div><div class="form-group"><label>Email</label><input name="email" type="email" value="${client?.email || ''}"></div>`;
     } else if (type === 'item') {
         const item = id ? State.getItems().find(i => i.id === id) : null;
         title = item ? 'Editar Insumo' : 'Nuevo Insumo';
         const manualId = item ? item.manualId : await getNextItemManualIdForUI();
         fieldsHtml = `<div class="form-group"><label>Código</label><input name="manualId" value="${manualId}" readonly></div><div class="form-group"><label>Nombre</label><input name="name" value="${item?.name || ''}" required></div><div class="form-group"><label>Precio</label><input name="price" type="number" step="any" value="${item?.price || 0}" required></div>`;
+    } else if (type === 'sede') {
+        title = 'Nueva Sede';
+        let companySelectHtml;
+        if (id) {
+            companySelectHtml = `<input type="hidden" name="companyId" value="${id}">`;
+        } else {
+            const empresas = State.getClients().filter(c => c.category === 'empresa');
+            const options = empresas.map(c => `<option value="${c.id}">${c.name} (ID: ${c.manualId})</option>`).join('');
+            companySelectHtml = `<div class="form-group"><label>Empresa a la que pertenece</label><select name="companyId" required class="form-control">${options}</select></div>`;
+        }
+        fieldsHtml = `${companySelectHtml}
+        <div class="form-group"><label>Nombre de Sede</label><input name="name" value="" required placeholder="Ej. Principal, Sucursal Norte..."></div>
+        <div class="form-group"><label>Encargado</label><input name="contactPerson" value=""></div>
+        <div class="form-group"><label>Dirección</label><input name="address" value=""></div>
+        <div class="form-group"><label>Ciudad</label><input name="city" value=""></div>
+        <div class="form-group"><label>Teléfono</label><input name="phone" value=""></div>`;
     } else { // technician
         const tech = id ? State.getTechnicians().find(t => t.id === id) : null;
         title = tech ? 'Editar Técnico' : 'Nuevo Técnico';
@@ -1293,13 +1311,35 @@ export async function openEntityModal(type: 'client' | 'item' | 'technician', id
     }
     D.modalTitle.textContent = title;
     D.modalFieldsContainer.innerHTML = fieldsHtml;
+    
+    // Add color logic for category select
+    if (type === 'client') {
+        setTimeout(() => {
+            const selectCat = document.querySelector('select[name="category"]') as HTMLSelectElement;
+            if (selectCat) {
+                const updateColor = () => {
+                    if (selectCat.value === 'empresa') {
+                        selectCat.style.backgroundColor = '#e0f2fe';
+                        selectCat.style.color = '#0369a1';
+                    } else {
+                        selectCat.style.backgroundColor = '#dcfce7';
+                        selectCat.style.color = '#15803d';
+                    }
+                    selectCat.style.fontWeight = 'bold';
+                };
+                selectCat.addEventListener('change', updateColor);
+                updateColor();
+            }
+        }, 50);
+    }
+
     D.entityModal.classList.add('active');
 }
 
 export async function handleModalFormSubmit(e: Event) {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
-    const type = form.dataset.type as 'client' | 'item' | 'technician';
+    const type = form.dataset.type as 'client' | 'item' | 'technician' | 'sede';
     const id = form.dataset.id;
     const data = new FormData(form);
 
@@ -1311,8 +1351,8 @@ export async function handleModalFormSubmit(e: Event) {
     try {
         if (type === 'client') {
             const clientData: ClientInsert = { id: id || generateId(), category: data.get('category') as 'empresa' | 'residencial', manualId: data.get('manualId') as string, name: data.get('name') as string, contactPerson: data.get('contactPerson') as string || null, address: data.get('address') as string || null, city: data.get('city') as string || null, phone: data.get('phone') as string || null, email: data.get('email') as string || null };
-            const saved = await API.upsertClient(clientData);
-            State.setClients([...State.getClients().filter(c => c.id !== saved.id), saved]);
+            const saved = await API.upsertClient(clientData); State.setClients([...State.getClients().filter(c => c.id !== saved.id), saved]);
+
             renderClientsList();
 
             if (!id) { // This was a "create new" action, so link it
@@ -1338,12 +1378,25 @@ export async function handleModalFormSubmit(e: Event) {
                 renderQuote(State.getActiveQuote());
             }
 
+        } else if (type === 'sede') {
+            const companyId = data.get('companyId') as string;
+            const saved = await API.upsertSedeFull(id || generateId(), data.get('name') as string, companyId, data.get('address') as string, null, data.get('phone') as string, data.get('contactPerson') as string);
+            State.setSedes([...State.getSedes().filter(s => s.id !== saved.id), saved]);
+            if (D.orderWorkspacePage.classList.contains('active')) {
+                renderOrderWorkspace(State.getCurrentOrder());
+            } else if (document.getElementById('page-quotes')?.classList.contains('active')) {
+                renderQuote(State.getActiveQuote());
+            }
         } else if (type === 'item') {
-            const itemData: ItemInsert = { id: id || generateId(), manualId: data.get('manualId') as string, name: data.get('name') as string, price: Number(data.get('price')) || 0 };
-            const saved = await API.upsertItem(itemData);
-            State.setItems([...State.getItems().filter(i => i.id !== saved.id), saved]);
+            const itemData: ItemInsert = { id: id || generateId(), manualId: data.get('manualId') as string, name: data.get('name') as string, price: parseFloat(data.get('price') as string) };
+            const saved = await API.upsertItem(itemData); State.setItems([...State.getItems().filter(i => i.id !== saved.id), saved]);
             renderCatalogItemsList();
-        } else { // technician
+            if (D.orderWorkspacePage.classList.contains('active')) {
+                renderOrderWorkspace(State.getCurrentOrder());
+            } else if (document.getElementById('page-quotes')?.classList.contains('active')) {
+                renderQuote(State.getActiveQuote());
+            }
+        } else if (type === 'technician') {
             const cedulaValue = data.get('cedula') as string;
             const techData: TechnicianInsert = {
                 id: id || generateId(),
@@ -3429,40 +3482,15 @@ export function compressImage(file: File): Promise<Blob> {
 }
 
 export async function handleAddSedeClick(context: 'quote' | 'order', companyId: string) {
-    const name = prompt("Nombre de la sede (Ej: Principal, Sucursal Norte):");
-    if (!name) return;
-    const city = prompt("Ciudad (Opcional):") || "";
-    const address = prompt("Dirección (Opcional):") || "";
-    
-    const newSede = {
-        id: generateId(),
-        company_id: companyId,
-        name,
-        city,
-        address,
-        code: generateId().substring(0, 8).toUpperCase()
-    };
-    
-    try {
-        const saved = await API.upsertSede(newSede);
-        State.setSedes([...State.getSedes(), saved]);
-        
-        if (context === 'quote') {
-            const quote = State.getActiveQuote();
-            if (quote) {
-                quote.sede_id = saved.id;
-                State.updateActiveQuote(quote);
-            }
-        } else {
-            const order = State.getCurrentOrder();
-            if (order) {
-                order.sede_id = saved.id;
-                handleOrderDetailsChange();
-            }
-        }
-        renderClientDetails(companyId, context); 
-        showNotification("Sede creada exitosamente", "success");
-    } catch(err: any) {
-        showNotification("Error creando sede: " + err.message, "error");
+    if (!companyId) {
+        showNotification('Debe seleccionar primero un cliente tipo Empresa', 'error');
+        return;
     }
+    openEntityModal('sede', companyId);
 }
+
+
+
+
+
+

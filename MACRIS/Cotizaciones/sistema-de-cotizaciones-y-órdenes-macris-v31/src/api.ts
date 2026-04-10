@@ -1,6 +1,6 @@
 import { supabaseQuotes, supabaseOrders } from './supabase';
 import type { 
-    Item, Client, Quote, QuoteItem, Setting, Technician, Order, OrderItem, ServiceType,
+    Item, Client, Quote, QuoteItem, Setting, Technician, Order, OrderItem, ServiceType, Sede,
     ClientInsert, ItemInsert, QuoteInsert, QuoteItemInsert, OrderInsert, OrderItemInsert, TechnicianInsert, OrderTechnicianInsert, SettingInsert, DatabaseQuotes 
 } from './types';
 import { generateId } from './utils';
@@ -67,8 +67,10 @@ export async function fetchSedes(): Promise<Sede[]> {
         id: dbSede.id,
         name: dbSede.name,
         address: dbSede.address || null,
-        companyId: dbSede.company_id || null,
-        cityId: dbSede.city_id || null,
+        company_id: dbSede.company_id || null,
+        city_id: dbSede.city_id || null,
+        phone: dbSede.phone || null,
+        contact_person: dbSede.contact_person || null,
     }));
 }
 export async function getTechniciansFromSupabase(): Promise<Technician[]> {
@@ -154,11 +156,15 @@ export async function deleteItem(itemId: string): Promise<void> {
     const { error } = await supabaseQuotes.from('items').delete().eq('id', itemId);
     if (error) throw error;
 }
-export async function upsertSede(sedeName: string, companyId: string): Promise<Sede> {
+export async function upsertSedeFull(sedeId: string, sedeName: string, companyId: string, address?: string | null, cityId?: string | null, phone?: string | null, contactPerson?: string | null): Promise<Sede> {
     const newSede = {
-        id: crypto.randomUUID(),
+        id: sedeId,
         name: sedeName,
-        company_id: companyId
+        company_id: companyId,
+        address: address || null,
+        city_id: cityId || null,
+        phone: phone || null,
+        contact_person: contactPerson || null
     };
     const { data, error } = await supabaseOrders.from('maintenance_sede').upsert([newSede], { onConflict: 'id' }).select().single();
     if (error) throw error;
@@ -167,8 +173,10 @@ export async function upsertSede(sedeName: string, companyId: string): Promise<S
         id: data.id,
         name: data.name,
         address: data.address || null,
-        companyId: data.company_id || null,
-        cityId: data.city_id || null,
+        company_id: data.company_id || null,
+        city_id: data.city_id || null,
+        phone: data.phone || null,
+        contact_person: data.contact_person || null,
     };
 }
 export async function upsertTechnician(technician: TechnicianInsert): Promise<Technician> {
@@ -233,25 +241,25 @@ export async function saveOrder(order: Order): Promise<Order> {
     if (orderError) throw orderError;
     if (!savedOrder) throw new Error('Failed to save order');
 
-    await supabaseOrders.from('order_items').delete().eq('orderId', savedOrder.id);
+    await supabaseOrders.from('order_items').delete().eq('orderId', (savedOrder as any).id);
     if (items.length > 0) {
         const itemsToInsert: OrderItemInsert[] = items.map(i => {
             const { created_at, ...itemInsert } = i;
-            return { ...itemInsert, orderId: savedOrder.id };
+            return { ...itemInsert, orderId: (savedOrder as any).id };
         });
         const { error: itemsError } = await supabaseOrders.from('order_items').insert(itemsToInsert as any);
         if (itemsError) throw itemsError;
     }
 
-    await supabaseOrders.from('order_technicians').delete().eq('order_id', savedOrder.id);
+    await supabaseOrders.from('order_technicians').delete().eq('order_id', (savedOrder as any).id);
     if (technicianIds.length > 0) {
-        const techsToInsert: OrderTechnicianInsert[] = technicianIds.map(techId => ({ order_id: savedOrder.id, technician_id: techId }));
+        const techsToInsert: OrderTechnicianInsert[] = technicianIds.map(techId => ({ order_id: (savedOrder as any).id, technician_id: techId }));
         const { error: techsError } = await supabaseOrders.from('order_technicians').insert(techsToInsert as any);
         if (techsError) throw techsError;
     }
     
     // Re-fetch the complete order to return it
-    const { data: finalOrderData, error: fetchError } = await supabaseOrders.from('orders').select('*, items:order_items(*), technicians:order_technicians(technician_id)').eq('id', savedOrder.id).single();
+    const { data: finalOrderData, error: fetchError } = await supabaseOrders.from('orders').select('*, items:order_items(*), technicians:order_technicians(technician_id)').eq('id', (savedOrder as any).id).single();
     if(fetchError || !finalOrderData) throw new Error("Could not re-fetch saved order.");
     
     // Reconstruct the Order object correctly, removing the 'technicians' property

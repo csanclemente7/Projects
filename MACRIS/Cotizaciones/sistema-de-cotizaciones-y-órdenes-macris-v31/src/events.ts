@@ -149,14 +149,18 @@ function setupManagementEventListeners() {
     // Clients
     D.clientListSearchInput.addEventListener('input', () => UI.renderClientsList());
     D.addNewClientPageBtn.addEventListener('click', () => UI.openEntityModal('client'));
+    D.addNewSedePageBtn.addEventListener('click', () => UI.openEntityModal('sede', null));
     D.deleteAllClientsBtn.addEventListener('click', UI.handleDeleteAllClients);
     D.clientsListContainer.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
         const editBtn = target.closest('.edit-btn') as HTMLElement | null;
         const deleteBtn = target.closest('.delete-btn') as HTMLElement | null;
+        const addSedeBtn = target.closest('.add-sede-client-btn') as HTMLElement | null;
 
         if (editBtn && editBtn.dataset.id) {
             UI.openEntityModal('client', editBtn.dataset.id);
+        } else if (addSedeBtn && addSedeBtn.dataset.id) {
+            UI.openEntityModal('sede', addSedeBtn.dataset.id);
         } else if (deleteBtn && deleteBtn.dataset.id) {
             UI.handleDeleteClient(deleteBtn.dataset.id);
         }

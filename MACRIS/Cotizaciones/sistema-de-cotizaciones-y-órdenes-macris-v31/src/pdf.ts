@@ -24,7 +24,8 @@ const dummyClient: Client = {
     city: 'Springfield',
     phone: '300-123-4567',
     email: 'contacto@cliente.com',
-    contactPerson: 'Juan Muestra'
+    contactPerson: 'Juan Muestra',
+    category: 'empresa'
 };
 const dummyQuote: Quote = {
     id: 'dummy-quote-id',

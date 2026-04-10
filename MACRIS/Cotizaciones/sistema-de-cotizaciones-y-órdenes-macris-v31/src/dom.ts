@@ -116,6 +116,7 @@ export const savedQuotesCountBadge = document.getElementById('saved-quotes-count
 export const clientsListContainer = document.getElementById('clients-list-container') as HTMLDivElement;
 export const clientListSearchInput = document.getElementById('client-list-search') as HTMLInputElement;
 export const addNewClientPageBtn = document.getElementById('add-new-client-page-btn') as HTMLButtonElement;
+export const addNewSedePageBtn = document.getElementById('add-new-sede-page-btn') as HTMLButtonElement;
 export const deleteAllClientsBtn = document.getElementById('delete-all-clients-btn') as HTMLButtonElement;
 export const clientCountBadge = document.getElementById('client-count-badge') as HTMLSpanElement;
 
