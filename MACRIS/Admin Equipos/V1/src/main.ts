@@ -1,6 +1,7 @@
 
-import { fetchCities, fetchCompanies, fetchDependencies, fetchUsers, fetchEquipmentTypes, fetchRefrigerantTypes, fetchEquipment } from './api';
+import { fetchCities, fetchCompanies, fetchSedes, fetchDependencies, fetchUsers, fetchEquipmentTypes, fetchRefrigerantTypes, fetchEquipment } from './api';
 import { setupEventListeners } from './events';
+import * as D from './dom';
 import { hideLoader, showLoader, renderAdminEquipmentTable } from './ui';
 import { checkForPersistedSession } from './auth';
 import * as State from './state';
@@ -10,15 +11,16 @@ import * as State from './state';
  */
 export async function loadSharedLookupData() {
     const [
-        cities, companies, deps, 
+        cities, companies, sedesList, deps, 
         eqTypes, refrigTypes
     ] = await Promise.all([
-        fetchCities(), fetchCompanies(), fetchDependencies(),
+        fetchCities(), fetchCompanies(), fetchSedes(), fetchDependencies(),
         fetchEquipmentTypes(), fetchRefrigerantTypes()
     ]);
 
     State.setCities(cities);
     State.setCompanies(companies);
+    State.setSedes(sedesList);
     State.setDependencies(deps);
     State.setEquipmentTypes(eqTypes);
     State.setRefrigerantTypes(refrigTypes);

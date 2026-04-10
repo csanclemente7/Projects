@@ -1,4 +1,4 @@
-import type { User, City, Company, Dependency, Equipment, Report, PaginationState, MaintenanceTableKey, EntityType, Order, ServiceType, AppSettings, EquipmentType, RefrigerantType } from './types';
+import type { User, City, Company, Sede, Dependency, Equipment, Report, PaginationState, MaintenanceTableKey, EntityType, Order, ServiceType, AppSettings, EquipmentType, RefrigerantType } from './types';
 
 // --- App State ---
 export let currentUser: User | null = null;
@@ -6,6 +6,7 @@ export let users: User[] = [];
 export let equipmentList: Equipment[] = [];
 export let cities: City[] = [];
 export let companies: Company[] = [];
+export let sedes: Sede[] = [];
 export let dependencies: Dependency[] = [];
 export let reports: Report[] = [];
 export let serviceTypes: ServiceType[] = [];
@@ -55,6 +56,7 @@ export const tablePaginationStates: Record<MaintenanceTableKey, PaginationState>
     adminEquipment: { currentPage: 1, itemsPerPage: 10 },
     adminCities: { currentPage: 1, itemsPerPage: 10 },
     adminCompanies: { currentPage: 1, itemsPerPage: 10 },
+    adminSedes: { currentPage: 1, itemsPerPage: 10 },
     adminDependencies: { currentPage: 1, itemsPerPage: 10 },
     adminEmployees: { currentPage: 1, itemsPerPage: 10 },
     adminOrders: { currentPage: 1, itemsPerPage: 6 },
@@ -67,6 +69,7 @@ export const tableSearchTerms: Record<MaintenanceTableKey, string> = {
     adminEquipment: '',
     adminCities: '',
     adminCompanies: '',
+    adminSedes: '',
     adminDependencies: '',
     adminEmployees: '',
     adminOrders: '',
@@ -91,6 +94,9 @@ export function setCities(newCities: City[]) {
 }
 export function setCompanies(newCompanies: Company[]) {
     companies = newCompanies;
+}
+export function setSedes(newSedes: Sede[]) {
+    sedes = newSedes;
 }
 export function setDependencies(newDependencies: Dependency[]) {
     dependencies = newDependencies;

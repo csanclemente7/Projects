@@ -1,5 +1,5 @@
 import { createClient, PostgrestError } from '@supabase/supabase-js';
-import { Database, Report, User, Equipment, City, Company, Dependency, Order, OrderItem, ServiceType, AppSettings, ClientsDatabase, EntityType, EquipmentType, RefrigerantType } from './types';
+import { Database, Report, User, Equipment, City, Company, Sede, Dependency, Order, OrderItem, ServiceType, AppSettings, ClientsDatabase, EntityType, EquipmentType, RefrigerantType } from './types';
 
 // --- Supabase Configuration ---
 const ORDERS_SUPABASE_URL: string = 'https://fzcalgofrhbqvowazdpk.supabase.co';
@@ -64,6 +64,21 @@ export async function fetchCompanies(): Promise<Company[]> {
     return [];
 }
 
+export async function fetchSedes(): Promise<Sede[]> {
+    const { data, error } = await supabaseOrders.from('maintenance_sede').select('*').order('name');
+    if (error) throw error;
+    if (data) {
+        return data.map((dbSede) => ({
+            id: dbSede.id,
+            name: dbSede.name,
+            companyId: dbSede.company_id,
+            cityId: dbSede.city_id,
+            address: dbSede.address
+        }));
+    }
+    return [];
+}
+
 export async function fetchDependencies(): Promise<Dependency[]> {
     const { data, error } = await supabaseOrders.from('maintenance_dependencies').select('*').order('name');
     if (error) throw error;
@@ -72,6 +87,7 @@ export async function fetchDependencies(): Promise<Dependency[]> {
             id: dbDependency.id,
             name: dbDependency.name,
             companyId: dbDependency.company_id,
+            sedeId: dbDependency.sede_id,
         }));
     }
     return [];
@@ -102,6 +118,7 @@ export async function fetchEquipment(): Promise<Equipment[]> {
             lastMaintenanceDate: dbEquipment.last_maintenance_date,
             cityId: dbEquipment.city_id,
             companyId: dbEquipment.company_id,
+            sedeId: dbEquipment.sede_id,
             dependencyId: dbEquipment.dependency_id,
             category: dbEquipment.category || 'empresa',
             address: dbEquipment.address,
@@ -120,6 +137,7 @@ const mapDbReportToReport = (dbReport: any): Report => ({
     itemsSnapshot: (dbReport.items_snapshot as Report['itemsSnapshot']) || null,
     cityId: dbReport.city_id,
     companyId: dbReport.company_id,
+    sedeId: dbReport.sede_id,
     dependencyId: dbReport.dependency_id,
     workerId: dbReport.worker_id,
     workerName: dbReport.worker_name,
@@ -133,7 +151,7 @@ const mapDbReportToReport = (dbReport: any): Report => ({
 });
 
 // Lightweight columns for list views (EXCLUDES signatures and photos)
-const REPORT_LIST_COLUMNS = 'id,timestamp,service_type,observations,equipment_snapshot,items_snapshot,city_id,company_id,dependency_id,worker_id,worker_name,pressure,amperage,is_paid,order_id';
+const REPORT_LIST_COLUMNS = 'id,timestamp,service_type,observations,equipment_snapshot,items_snapshot,city_id,company_id,sede_id,dependency_id,worker_id,worker_name,pressure,amperage,is_paid,order_id';
 
 export async function fetchAllReports(): Promise<Report[]> {
     const { data: reportsData, error } = await supabaseOrders
@@ -378,8 +396,24 @@ export async function saveEntity(type: EntityType, id: string, formData: FormDat
                 : await supabaseOrders.from('maintenance_companies').insert(companyData).select().single();
             break;
 
+        case 'sede':
+            const sedeData = {
+                name: formData.get('name') as string,
+                company_id: formData.get('company_id') as string,
+                city_id: (formData.get('city_id') as string) || null,
+                address: (formData.get('address') as string) || null
+            };
+            result = isEditing
+                ? await supabaseOrders.from('maintenance_sede').update(sedeData).eq('id', id).select().single()
+                : await supabaseOrders.from('maintenance_sede').insert(sedeData).select().single();
+            break;
+
         case 'dependency':
-            const dependencyData = { name: formData.get('name') as string, company_id: formData.get('company_id') as string };
+            const dependencyData = { 
+                name: formData.get('name') as string, 
+                company_id: (formData.get('company_id') as string) || null,
+                sede_id: (formData.get('sede_id') as string) || null
+            };
             result = isEditing
                 ? await supabaseOrders.from('maintenance_dependencies').update(dependencyData).eq('id', id).select().single()
                 : await supabaseOrders.from('maintenance_dependencies').insert(dependencyData).select().single();
@@ -423,6 +457,7 @@ export async function saveEntity(type: EntityType, id: string, formData: FormDat
                 category: formData.get('category') as string,
                 city_id: formData.get('city_id') as string,
                 company_id: formData.get('category') === 'empresa' ? (formData.get('company_id') as string) : null,
+                sede_id: formData.get('category') === 'empresa' ? (formData.get('sede_id') as string) : null,
                 dependency_id: formData.get('category') === 'empresa' ? (formData.get('dependency_id') as string) : null,
                 client_name: formData.get('category') === 'residencial' ? (formData.get('client_name') as string) : null,
                 address: formData.get('category') === 'residencial' ? (formData.get('address') as string) : null,
@@ -436,8 +471,37 @@ export async function saveEntity(type: EntityType, id: string, formData: FormDat
     return result;
 }
 
-export async function deleteEntity(type: 'city'|'company'|'dependency'|'equipment', id: string) {
-    let table = type === 'city' ? 'maintenance_cities' : type === 'company' ? 'maintenance_companies' : type === 'dependency' ? 'maintenance_dependencies' : 'maintenance_equipment';
+export async function saveMultipleEquipments(equipments: any[]): Promise<{ data: any, error: any }> {
+    // Insert array of objects into maintenance_equipment
+    // Equipments param objects must map directly to DB columns
+    const mappedEquipments = equipments.map(eq => ({
+        manual_id: eq.manualId,
+        brand: eq.brand,
+        model: eq.model,
+        type: eq.typeName,
+        capacity: eq.capacity,
+        periodicity_months: eq.periodicityMonths,
+        equipment_type_id: eq.equipment_type_id,
+        refrigerant_type_id: eq.refrigerant_type_id,
+        category: eq.category,
+        city_id: eq.cityId,
+        company_id: eq.companyId,
+        sede_id: eq.sedeId,
+        dependency_id: eq.dependencyId,
+        client_name: eq.client_name,
+        address: eq.address
+    }));
+
+    const { data, error } = await supabaseOrders
+        .from('maintenance_equipment')
+        .insert(mappedEquipments)
+        .select();
+
+    return { data, error };
+}
+
+export async function deleteEntity(type: EntityType, id: string) {
+    let table = type === 'city' ? 'maintenance_cities' : type === 'company' ? 'maintenance_companies' : type === 'sede' ? 'maintenance_sede' : type === 'dependency' ? 'maintenance_dependencies' : 'maintenance_equipment';
     return await supabaseOrders.from(table).delete().eq('id', id);
 }
 

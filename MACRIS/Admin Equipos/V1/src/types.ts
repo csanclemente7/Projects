@@ -85,9 +85,9 @@ export type Database = {
         Relationships: [];
       };
       maintenance_dependencies: {
-        Row: { id: string; name: string; company_id: string; created_at?: string; };
-        Insert: { id?: string; name: string; company_id: string; created_at?: string; };
-        Update: { id?: string; name?: string; company_id?: string; created_at?: string; };
+        Row: { id: string; name: string; company_id: string; sede_id: string | null; created_at?: string; };
+        Insert: { id?: string; name: string; company_id?: string; sede_id?: string; created_at?: string; };
+        Update: { id?: string; name?: string; company_id?: string; sede_id?: string; created_at?: string; };
         Relationships: [];
       };
       maintenance_equipment: {
@@ -103,6 +103,7 @@ export type Database = {
           capacity: string | null;
           city_id: string;
           company_id: string | null;
+          sede_id: string | null;
           dependency_id: string | null;
           periodicity_months: number;
           last_maintenance_date: string | null;
@@ -122,6 +123,7 @@ export type Database = {
           capacity?: string | null;
           city_id: string;
           company_id?: string | null;
+          sede_id?: string | null;
           dependency_id?: string | null;
           periodicity_months: number;
           last_maintenance_date?: string | null;
@@ -141,6 +143,7 @@ export type Database = {
           capacity?: string | null;
           city_id?: string;
           company_id?: string | null;
+          sede_id?: string | null;
           dependency_id?: string | null;
           periodicity_months?: number;
           last_maintenance_date?: string | null;
@@ -173,6 +176,7 @@ export type Database = {
           items_snapshot: Json | null;
           city_id: string;
           company_id: string | null;
+          sede_id: string | null;
           dependency_id: string | null;
           worker_id: string;
           worker_name: string;
@@ -193,6 +197,7 @@ export type Database = {
           items_snapshot?: Json | null;
           city_id: string;
           company_id?: string | null;
+          sede_id?: string | null;
           dependency_id?: string | null;
           worker_id: string;
           worker_name: string;
@@ -213,6 +218,7 @@ export type Database = {
           items_snapshot?: Json | null;
           city_id?: string;
           company_id?: string | null;
+          sede_id?: string | null;
           dependency_id?: string | null;
           worker_id?: string;
           worker_name?: string;
@@ -263,6 +269,12 @@ export type Database = {
         Row: { id: string; name: string; created_at?: string; };
         Insert: { id?: string; name: string; created_at?: string; };
         Update: { id?: string; name?: string; created_at?: string; };
+        Relationships: [];
+      };
+      maintenance_sede: {
+        Row: { id: string; name: string; company_id: string; city_id: string | null; address: string | null; created_at?: string; };
+        Insert: { id?: string; name: string; company_id: string; city_id?: string | null; address?: string | null; created_at?: string; };
+        Update: { id?: string; name?: string; company_id?: string; city_id?: string | null; address?: string | null; created_at?: string; };
         Relationships: [];
       };
       maintenance_refrigerant_types: {
@@ -398,10 +410,19 @@ export interface Company {
     cityId: string;
 }
 
+export interface Sede {
+    id: string;
+    name: string;
+    companyId: string;
+    cityId?: string | null;
+    address?: string | null;
+}
+
 export interface Dependency {
     id: string;
     name: string;
     companyId: string;
+    sedeId?: string | null;
 }
 
 export interface ServiceType {
@@ -434,6 +455,7 @@ export interface Equipment {
     capacity?: string;
     cityId: string;
     companyId?: string | null;
+    sedeId?: string | null;
     dependencyId?: string | null;
     periodicityMonths: number;
     lastMaintenanceDate?: string;
@@ -459,11 +481,13 @@ export interface Report {
         address?: string | null;
         client_name?: string | null;
         companyName?: string; // Denormalized for display
+        sedeName?: string; // Denormalized for display
         dependencyName?: string; // Denormalized for display
     };
     itemsSnapshot: { description: string; quantity: number }[] | null;
     cityId: string;
     companyId: string | null;
+    sedeId: string | null;
     dependencyId: string | null;
     workerId: string; // User ID of the worker
     workerName: string; // Name of the worker
@@ -544,8 +568,9 @@ export type MaintenanceTableKey =
     'adminEquipment' | 
     'adminCities' | 
     'adminCompanies' | 
+    'adminSedes' |
     'adminDependencies' | 
     'adminEmployees' |
     'adminOrders';
 
-export type EntityType = 'city'|'company'|'dependency'|'equipment'|'employee' | 'equipmentType' | 'refrigerant';
+export type EntityType = 'city'|'company'|'sede'|'dependency'|'equipment'|'employee' | 'equipmentType' | 'refrigerant';

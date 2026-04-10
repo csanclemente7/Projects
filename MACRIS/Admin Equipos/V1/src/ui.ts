@@ -150,28 +150,89 @@ export const populateDropdown = (
     });
 };
 
+export function updateAdminEquipmentFilters() {
+    if (!D.adminEquipmentCompanyFilter || !D.adminEquipmentSedeFilter) return;
+
+    const equipments = State.equipmentList;
+    const currentCompanyId = D.adminEquipmentCompanyFilter.value;
+    const currentSedeId = D.adminEquipmentSedeFilter.value;
+
+    const uniqueCompanyIds = new Set(equipments.map(e => e.companyId).filter(id => !!id));
+    const activeCompanies = State.companies.filter(c => uniqueCompanyIds.has(c.id)).sort((a,b) => a.name.localeCompare(b.name));
+    
+    D.adminEquipmentCompanyFilter.innerHTML = '<option value="">Todas las empresas</option>';
+    activeCompanies.forEach(c => {
+        const option = new Option(c.name, c.id);
+        if (c.id === currentCompanyId) option.selected = true;
+        D.adminEquipmentCompanyFilter.appendChild(option);
+    });
+
+    const effectiveCompanyId = D.adminEquipmentCompanyFilter.value;
+    const equipmentsForSede = effectiveCompanyId ? equipments.filter(e => e.companyId === effectiveCompanyId) : equipments;
+    const uniqueSedeIds = new Set(equipmentsForSede.map(e => e.sedeId).filter(id => !!id));
+    const activeSedes = State.sedes.filter(s => uniqueSedeIds.has(s.id)).sort((a,b) => a.name.localeCompare(b.name));
+
+    let sedeFound = false;
+    D.adminEquipmentSedeFilter.innerHTML = '<option value="">Todas las sedes</option>';
+    
+    // Si no hay empresa seleccionada, deshabilitar selector de sedes
+    if (!effectiveCompanyId) {
+        D.adminEquipmentSedeFilter.disabled = true;
+    } else {
+        D.adminEquipmentSedeFilter.disabled = false;
+        activeSedes.forEach(s => {
+            const option = new Option(s.name, s.id);
+            if (s.id === currentSedeId) {
+                option.selected = true;
+                sedeFound = true;
+            }
+            D.adminEquipmentSedeFilter.appendChild(option);
+        });
+    }
+
+    // Si la sede actual ya no es válida para la nueva empresa seleccionada, la limpiamos a "Todas"
+    if (!sedeFound && currentSedeId) {
+        D.adminEquipmentSedeFilter.value = '';
+    }
+}
+
 export function renderAdminEquipmentTable() {
     if (!D.adminEquipmentTableBody) return;
+    
+    updateAdminEquipmentFilters();
+
     const term = State.tableSearchTerms.adminEquipment.toLowerCase();
+    const companyFilterId = D.adminEquipmentCompanyFilter?.value;
+    const sedeFilterId = D.adminEquipmentSedeFilter?.value;
     
     const filtered = State.equipmentList.filter(e => {
         const company = State.companies.find(c => c.id === e.companyId)?.name || '';
+        const matchesCompany = !companyFilterId || e.companyId === companyFilterId;
+        const matchesSede = !sedeFilterId || e.sedeId === sedeFilterId;
         const searchStr = `${e.manualId} ${e.brand} ${e.model} ${e.client_name} ${company}`.toLowerCase();
-        return searchStr.includes(term);
+        return matchesCompany && matchesSede && searchStr.includes(term);
     });
+
+    if (D.adminEquipmentCount) {
+        D.adminEquipmentCount.textContent = filtered.length.toString();
+    }
 
     D.adminEquipmentTableBody.innerHTML = filtered.map(e => {
         const city = State.cities.find(c => c.id === e.cityId)?.name || 'N/A';
         const owner = e.category === 'residencial' 
             ? `<span class="text-accent">${e.client_name || 'Sin nombre'}</span>` 
             : `<strong>${State.companies.find(c => c.id === e.companyId)?.name || 'Empresa'}</strong>`;
+        const sedeName = State.sedes.find(s => s.id === e.sedeId)?.name || '<span class="text-muted">N/A</span>';
+        const depName = State.dependencies.find(d => d.id === e.dependencyId)?.name || '<span class="text-muted">N/A</span>';
         
         return `<tr>
             <td data-label="ID Manual"><code>${e.manualId || 'N/A'}</code></td>
             <td data-label="Marca / Modelo">${e.brand} - ${e.model}</td>
             <td data-label="Tipo">${e.typeName}</td>
             <td data-label="Categoría"><span class="badge-${e.category}">${e.category}</span></td>
-            <td data-label="Ubicación / Propietario">${owner}</td>
+            <td data-label="Propietario / Empresa">${owner}</td>
+            <td data-label="Sede">${sedeName}</td>
+            <td data-label="Dependencia">${depName}</td>
             <td data-label="Ciudad">${city}</td>
             <td data-label="Último Mtto.">${formatDate(e.lastMaintenanceDate, false)}</td>
             <td data-label="Acciones">
@@ -208,8 +269,19 @@ export function openEquipmentForm(id?: string) {
         }
     };
 
-    const updateDependencies = (companyId: string, selectedDepId?: string) => {
-        const filtered = State.dependencies.filter(d => d.companyId === companyId);
+    const updateSedes = (companyId: string, selectedSedeId?: string) => {
+        if (!D.formSedeId) return;
+        const filtered = State.sedes.filter(s => s.companyId === companyId);
+        populateDropdown(D.formSedeId, filtered, selectedSedeId, 'Seleccione sede...');
+    };
+
+    const updateDependencies = (sedeId: string, companyId: string, selectedDepId?: string) => {
+        // Fallback: If sede is selected, filter by sede. If no sede is selected, filter by company (if supported or show all for company)
+        // Note: Our types now support sedeId on Dependency. If dependency.sedeId is null, it might just belong to the company globally.
+        let filtered = State.dependencies.filter(d => d.companyId === companyId);
+        if (sedeId) {
+             filtered = filtered.filter(d => d.sedeId === sedeId || !d.sedeId); // allow global dependencies
+        }
         populateDropdown(D.formDependencyId, filtered, selectedDepId, 'Seleccione dependencia...');
     };
 
@@ -256,16 +328,24 @@ export function openEquipmentForm(id?: string) {
 
     D.formCategorySelector.onchange = updateUIForCategory;
     D.formCompanyId.onchange = () => {
-        updateDependencies(D.formCompanyId.value);
+        updateSedes(D.formCompanyId.value);
+        updateDependencies(D.formSedeId?.value || '', D.formCompanyId.value);
         syncCompanySearchInput();
         syncCityForCompany(D.formCompanyId.value);
     };
+
+    if (D.formSedeId) {
+        D.formSedeId.onchange = () => {
+            updateDependencies(D.formSedeId.value, D.formCompanyId.value);
+        };
+    }
 
     if (D.formCompanySearchInput && D.formCompanyResults) {
         D.formCompanySearchInput.oninput = () => {
             if (D.formCompanyId.value) {
                 D.formCompanyId.value = '';
-                updateDependencies('');
+                updateSedes('');
+                updateDependencies('', '');
             }
             if (D.formCategorySelector.value === 'empresa' && D.formCityId) {
                 D.formCityId.value = '';
@@ -284,13 +364,15 @@ export function openEquipmentForm(id?: string) {
             const companyId = target?.dataset.id;
             if (!companyId) return;
             D.formCompanyId.value = companyId;
-            updateDependencies(companyId);
+            updateSedes(companyId);
+            updateDependencies('', companyId);
             syncCityForCompany(companyId);
             syncCompanySearchInput();
             clearCompanyResults();
         };
     }
 
+    let preselectedSedeId: string | undefined;
     let preselectedDependencyId: string | undefined;
 
     if (id) {
@@ -312,12 +394,14 @@ export function openEquipmentForm(id?: string) {
             
             if (eq.category === 'empresa') {
                 D.formCompanyId.value = eq.companyId || '';
+                preselectedSedeId = eq.sedeId || undefined;
                 preselectedDependencyId = eq.dependencyId || undefined;
             }
         }
     }
 
-    updateDependencies(D.formCompanyId.value, preselectedDependencyId);
+    updateSedes(D.formCompanyId.value, preselectedSedeId);
+    updateDependencies(D.formSedeId?.value || '', D.formCompanyId.value, preselectedDependencyId);
     syncCompanySearchInput();
     syncCityForCompany(D.formCompanyId.value);
     updateUIForCategory();

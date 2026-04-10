@@ -15,6 +15,9 @@ export const adminEquipmentSection = document.getElementById('admin-equipment-se
 export const addEquipmentButton = document.getElementById('add-equipment-button') as HTMLButtonElement;
 export const adminEquipmentSearchInput = document.getElementById('admin-equipment-search') as HTMLInputElement;
 export const adminEquipmentSearchClearButton = document.getElementById('admin-equipment-search-clear') as HTMLButtonElement;
+export const adminEquipmentCompanyFilter = document.getElementById('admin-equipment-company-filter') as HTMLSelectElement;
+export const adminEquipmentSedeFilter = document.getElementById('admin-equipment-sede-filter') as HTMLSelectElement;
+export const adminEquipmentCount = document.getElementById('admin-equipment-count') as HTMLSpanElement;
 export const adminEquipmentTableBody = document.getElementById('admin-equipment-table')?.getElementsByTagName('tbody')[0] as HTMLTableSectionElement;
 export const adminEquipmentPaginationContainer = document.getElementById('admin-equipment-pagination') as HTMLDivElement;
 
@@ -38,12 +41,14 @@ export const formEmpresaFields = document.getElementById('form-empresa-fields') 
 export const formCompanySearchInput = document.getElementById('form-company-search') as HTMLInputElement;
 export const formCompanyResults = document.getElementById('form-company-results') as HTMLDivElement;
 export const formCompanyId = document.getElementById('form-company-id') as HTMLSelectElement;
+export const formSedeId = document.getElementById('form-sede-id') as HTMLSelectElement;
 export const formDependencyId = document.getElementById('form-dependency-id') as HTMLSelectElement;
 export const formResidencialFields = document.getElementById('form-residencial-fields') as HTMLDivElement;
 
 // Quick Add Buttons
 export const btnQuickAddCity = document.getElementById('btn-quick-add-city') as HTMLButtonElement;
 export const btnQuickAddCompany = document.getElementById('btn-quick-add-company') as HTMLButtonElement;
+export const btnQuickAddSede = document.getElementById('btn-quick-add-sede') as HTMLButtonElement;
 export const btnQuickAddDependency = document.getElementById('btn-quick-add-dependency') as HTMLButtonElement;
 
 // Quick Add Modal (City/Company/Dependency)
@@ -96,6 +101,21 @@ export const infoModalMessage = document.getElementById('info-modal-message') as
 export const infoModalOkButton = document.getElementById('info-modal-ok-button') as HTMLButtonElement;
 
 export const notificationArea = document.getElementById('app-notification-area') as HTMLDivElement;
+
+// Excel Import Modal items
+export const excelFileInput = document.getElementById('excel-file-input') as HTMLInputElement;
+export const importExcelButton = document.getElementById('import-excel-button') as HTMLButtonElement;
+export const excelInfoModal = document.getElementById('excel-info-modal') as HTMLDivElement;
+export const closeExcelInfoModal = document.getElementById('close-excel-info-modal') as HTMLSpanElement;
+export const cancelExcelInfoButton = document.getElementById('cancel-excel-info-button') as HTMLButtonElement;
+export const continueExcelImportButton = document.getElementById('continue-excel-import-button') as HTMLButtonElement;
+export const excelPreviewModal = document.getElementById('excel-preview-modal') as HTMLDivElement;
+export const closeExcelPreviewModal = document.getElementById('close-excel-preview-modal') as HTMLSpanElement;
+export const excelValidCount = document.getElementById('excel-valid-count') as HTMLSpanElement;
+export const excelErrorCount = document.getElementById('excel-error-count') as HTMLSpanElement;
+export const excelPreviewTableBody = document.querySelector('#excel-preview-table tbody') as HTMLTableSectionElement;
+export const cancelExcelActionButton = document.getElementById('cancel-excel-action-button') as HTMLButtonElement;
+export const confirmExcelActionButton = document.getElementById('confirm-excel-action-button') as HTMLButtonElement;
 
 // Legacy / Compatibility exports
 export const usernameInput = null as any;

@@ -10,16 +10,16 @@
   },
   "dependencies": {
     "@google/genai": "^1.1.0",
-    "@supabase/supabase-js": "2.43.4",
+    "@supabase/supabase-js": "^2.103.0",
+    "jspdf": "^4.2.1",
     "jsqr": "1.4.0",
-    "jspdf": "2.5.1",
+    "jszip": "3.10.1",
     "qrcode": "1.5.3",
     "signature_pad": "4.2.0",
-    "jszip": "3.10.1"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
-    
     "typescript": "~5.8.2",
     "vite": "^6.2.0"
   }
