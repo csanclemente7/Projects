@@ -15,7 +15,8 @@ const REPORT_LIST_COLUMNS = [
     'pressure',
     'amperage',
     'is_paid',
-    'order_id'
+    'order_id',
+    'sede_id'
 ].join(', ');
 
 // Lazy load de campos pesados
@@ -29,7 +30,7 @@ export async function fetchReportDetails(reportId: string): Promise<any> {
     return data;
 }
 import { createClient, PostgrestError } from '@supabase/supabase-js';
-import { Database, Report, User, Equipment, City, Company, Dependency, Order, OrderItem, ServiceType, AppSettings, ClientsDatabase, EntityType, EquipmentType, RefrigerantType } from './types';
+import { Database, Report, User, Equipment, City, Company, Sede, Dependency, Order, OrderItem, ServiceType, AppSettings, ClientsDatabase, EntityType, EquipmentType, RefrigerantType } from './types';
 import { addEntityToQueue } from './lib/local-db';
 
 // --- Supabase Configuration ---
@@ -195,6 +196,21 @@ export async function fetchDependencies(): Promise<Dependency[]> {
         id: dbDependency.id,
         name: dbDependency.name,
         companyId: dbDependency.company_id,
+        sedeId: dbDependency.sede_id || null,
+    }));
+}
+
+export async function fetchSedes(): Promise<Sede[]> {
+    const sedeRows = await fetchAllRows<any>(
+        () => supabaseOrders.from('maintenance_sede').select('*').order('name'),
+        'sedes'
+    );
+    return sedeRows.map((dbSede) => ({
+        id: dbSede.id,
+        name: dbSede.name,
+        address: dbSede.address || null,
+        companyId: dbSede.company_id || null,
+        cityId: dbSede.city_id || null,
     }));
 }
 
@@ -230,6 +246,7 @@ export async function fetchAllEquipment(): Promise<Equipment[]> {
         category: dbEquipment.category || 'empresa',
         address: dbEquipment.address,
         client_name: dbEquipment.client_name,
+        sedeId: dbEquipment.sede_id || null,
     }));
 }
 
@@ -252,6 +269,7 @@ const mapDbReportToReport = (dbReport: any): Report => ({
     photo_internal_unit_url: dbReport.photo_internal_unit_url,
     photo_external_unit_url: dbReport.photo_external_unit_url,
     orderId: dbReport.order_id,
+    sedeId: dbReport.sede_id || null,
 });
 
 

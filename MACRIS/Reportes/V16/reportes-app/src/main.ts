@@ -185,13 +185,13 @@ async function synchronizeAndLoadData() {
         localUsers, localCities, localCompanies, localDependencies,
         localEquipment, localServiceTypes, localEquipmentTypes,
         localRefrigerantTypes, localAppSettings, localReports, localOrders,
-        localQueuedReports
+        localQueuedReports, localSedes
     ] = await Promise.all([
         getAllFromStore('users'), getAllFromStore('cities'), getAllFromStore('companies'),
         getAllFromStore('dependencies'), getAllFromStore('equipment'), getAllFromStore('service_types'),
         getAllFromStore('equipment_types'), getAllFromStore('refrigerant_types'), getAllFromStore('app_settings'),
         getAllFromStore('reports'), getAllFromStore('orders'),
-        getAllFromStore('reports_queue'),
+        getAllFromStore('reports_queue'), getAllFromStore('sedes'),
     ]);
 
     const hasLocalData = localUsers.length > 0 && localCities.length > 0;
@@ -202,6 +202,7 @@ async function synchronizeAndLoadData() {
         State.setCities(localCities);
         State.setCompanies(localCompanies);
         State.setDependencies(localDependencies);
+        State.setSedes(localSedes || []);
         State.setEquipmentList(localEquipment);
         State.setServiceTypes(localServiceTypes);
         State.setEquipmentTypes(localEquipmentTypes);
@@ -227,10 +228,10 @@ async function synchronizeAndLoadData() {
             // 🔹 Intentamos descargar todos los datos desde el servidor
             const [
                 usersData, appSettingsData, citiesData, companiesData, dependenciesData,
-                equipmentData, serviceTypesData, equipmentTypesData, refrigerantTypesData, allReportsData
+                equipmentData, serviceTypesData, equipmentTypesData, refrigerantTypesData, allReportsData, sedesData 
             ] = await Promise.all([
                 fetchUsers(), fetchAppSettings(), fetchCities(), fetchCompanies(), fetchDependencies(),
-                fetchAllEquipment(), fetchServiceTypes(), fetchEquipmentTypes(), fetchRefrigerantTypes(), fetchAllReports({ daysBack: 4 })
+                fetchAllEquipment(), fetchServiceTypes(), fetchEquipmentTypes(), fetchRefrigerantTypes(), fetchAllReports({ daysBack: 4 }), fetchSedes()
             ]);
 
             // Si llega aquí, todo bien:
@@ -238,6 +239,7 @@ async function synchronizeAndLoadData() {
             State.setCities(citiesData);
             State.setCompanies(companiesData);
             State.setDependencies(dependenciesData);
+            State.setSedes(sedesData);
             State.setEquipmentList(equipmentData);
             State.setServiceTypes(serviceTypesData);
             State.setEquipmentTypes(equipmentTypesData);
@@ -260,6 +262,7 @@ async function synchronizeAndLoadData() {
                 cacheAllData('cities', citiesData),
                 cacheAllData('companies', companiesData),
                 cacheAllData('dependencies', dependenciesData),
+                cacheAllData('sedes', sedesData),
                 cacheAllData('equipment', equipmentData),
                 cacheAllData('service_types', serviceTypesData),
                 cacheAllData('equipment_types', equipmentTypesData),

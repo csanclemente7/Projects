@@ -1,4 +1,4 @@
-import type { User, City, Company, Dependency, Equipment, Report, PaginationState, MaintenanceTableKey, EntityType, Order, ServiceType, AppSettings, EquipmentType, RefrigerantType } from './types';
+import type { User, City, Company, Sede, Dependency, Equipment, Report, PaginationState, MaintenanceTableKey, EntityType, Order, ServiceType, AppSettings, EquipmentType, RefrigerantType } from './types';
 
 // --- App State ---
 export let currentUser: User | null = null;
@@ -6,6 +6,7 @@ export let users: User[] = [];
 export let equipmentList: Equipment[] = [];
 export let cities: City[] = [];
 export let companies: Company[] = [];
+export let sedes: Sede[] = [];
 export let dependencies: Dependency[] = [];
 export let reports: Report[] = [];
 export let serviceTypes: ServiceType[] = [];
@@ -106,6 +107,9 @@ export function setCompanies(newCompanies: Company[]) {
 }
 export function setDependencies(newDependencies: Dependency[]) {
     dependencies = newDependencies;
+}
+export function setSedes(newSedes: Sede[]) {
+    sedes = newSedes;
 }
 export function setReports(newReports: Report[]) {
     reports = newReports;

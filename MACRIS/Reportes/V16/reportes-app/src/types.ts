@@ -83,10 +83,16 @@ export type Database = {
         Update: { id?: string; name?: string; city_id?: string; created_at?: string; };
         Relationships: [];
       };
+      maintenance_sede: {
+        Row: { id: string; name: string; address: string | null; company_id: string | null; city_id: string | null; created_at?: string; };
+        Insert: { id?: string; name: string; address?: string | null; company_id?: string | null; city_id?: string | null; created_at?: string; };
+        Update: { id?: string; name?: string; address?: string | null; company_id?: string | null; city_id?: string | null; created_at?: string; };
+        Relationships: [];
+      };
       maintenance_dependencies: {
-        Row: { id: string; name: string; company_id: string; created_at?: string; };
-        Insert: { id?: string; name: string; company_id: string; created_at?: string; };
-        Update: { id?: string; name?: string; company_id?: string; created_at?: string; };
+        Row: { id: string; name: string; company_id: string; sede_id: string | null; created_at?: string; };
+        Insert: { id?: string; name: string; company_id: string; sede_id?: string | null; created_at?: string; };
+        Update: { id?: string; name?: string; company_id?: string; sede_id?: string | null; created_at?: string; };
         Relationships: [];
       };
       maintenance_equipment: {
@@ -108,6 +114,7 @@ export type Database = {
           category: string;
           address: string | null;
           client_name: string | null;
+          sede_id: string | null;
         };
         Insert: {
           id?: string;
@@ -127,6 +134,7 @@ export type Database = {
           category?: string;
           address?: string | null;
           client_name?: string | null;
+          sede_id?: string | null;
         };
         Update: {
           id?: string;
@@ -146,6 +154,7 @@ export type Database = {
           category?: string;
           address?: string | null;
           client_name?: string | null;
+          sede_id?: string | null;
         };
         Relationships: [
           {
@@ -182,6 +191,7 @@ export type Database = {
           photo_internal_unit_url: string | null;
           photo_external_unit_url: string | null;
           order_id: string | null;
+          sede_id: string | null;
         };
         Insert: {
           id?: string;
@@ -202,6 +212,7 @@ export type Database = {
           photo_internal_unit_url?: string | null;
           photo_external_unit_url?: string | null;
           order_id?: string | null;
+          sede_id?: string | null;
         };
         Update: {
           id?: string;
@@ -222,6 +233,7 @@ export type Database = {
           photo_internal_unit_url?: string | null;
           photo_external_unit_url?: string | null;
           order_id?: string | null;
+          sede_id?: string | null;
         };
         Relationships: [];
       };
@@ -290,6 +302,7 @@ export type Database = {
           notes: string | null;
           estimated_duration: number | null;
           image_urls: string[] | null;
+          sede_id: string | null;
         };
         Insert: {
           id?: string;
@@ -304,6 +317,7 @@ export type Database = {
           notes?: string | null;
           estimated_duration?: number | null;
           image_urls?: string[] | null;
+          sede_id?: string | null;
         };
         Update: {
           id?: string;
@@ -318,6 +332,7 @@ export type Database = {
           notes?: string | null;
           estimated_duration?: number | null;
           image_urls?: string[] | null;
+          sede_id?: string | null;
         };
         Relationships: [];
       };
@@ -412,10 +427,19 @@ export interface Company {
     cityId: string;
 }
 
+export interface Sede {
+    id: string;
+    name: string;
+    address?: string | null;
+    companyId: string | null;
+    cityId: string | null;
+}
+
 export interface Dependency {
     id: string;
     name: string;
     companyId: string;
+    sedeId?: string | null;
 }
 
 export interface ServiceType {
@@ -454,6 +478,7 @@ export interface Equipment {
     category: 'empresa' | 'residencial' | string;
     address?: string | null;
     client_name?: string | null;
+    sedeId?: string | null;
 }
 
 export interface Report {
@@ -474,6 +499,7 @@ export interface Report {
         client_name?: string | null;
         companyName?: string; // Denormalized for display
         dependencyName?: string; // Denormalized for display
+        sedeName?: string; // Denormalized for display
     };
     itemsSnapshot: { description: string; quantity: number }[] | null;
     cityId: string;
@@ -488,6 +514,7 @@ export interface Report {
     photo_internal_unit_url?: string | null;
     photo_external_unit_url?: string | null;
     orderId?: string | null;
+    sedeId?: string | null;
     // Banderas de estado para optimización UI
     isSignaturePending?: boolean; // true si falta firma (sin descargar imagen)
     arePhotosPending?: boolean;   // true si faltan fotos (sin descargar imágenes)

@@ -692,6 +692,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
                     address: selectedCategory === 'residencial' ? D.reportAddressInput.value : null,
                     client_name: selectedCategory === 'residencial' ? D.reportClientNameInput.value : null,
                     companyName: selectedCategory === 'empresa' ? State.companies.find(c => c.id === D.reportCompanySelect.value)?.name : undefined,
+                    sedeName: selectedCategory === 'empresa' ? State.sedes.find(s => s.id === (D.reportSedeSelect as HTMLSelectElement).value)?.name : undefined,
                     dependencyName: selectedCategory === 'empresa' ? State.dependencies.find(d => d.id === D.reportDependencySelect.value)?.name : undefined,
                 };
             }
@@ -720,6 +721,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             itemsSnapshot: itemsSnapshot,
             cityId: cityId,
             companyId: selectedCategory === 'empresa' ? D.reportCompanySelect.value : null,
+            sedeId: selectedCategory === 'empresa' ? (D.reportSedeSelect as HTMLSelectElement).value : null,
             dependencyId: selectedCategory === 'empresa' ? D.reportDependencySelect.value : null,
             workerId: State.currentUser.id,
             workerName: State.currentUser.name || State.currentUser.username,
@@ -794,6 +796,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             items_snapshot: reportForState.itemsSnapshot,
             city_id: reportForState.cityId,
             company_id: reportForState.companyId,
+            sede_id: reportForState.sedeId || null,
             dependency_id: reportForState.dependencyId,
             worker_id: reportForState.workerId,
             worker_name: reportForState.workerName,
@@ -1266,6 +1269,7 @@ if (!networkListenerActive) {
     // --- Report Form Dynamics ---
     D.reportServiceTypeSelect?.addEventListener('change', (e) => UI.toggleReportFormFields((e.target as HTMLSelectElement).value));
     D.reportCompanySelect?.addEventListener('change', (e) => UI.updateLocationDropdownsFromCompany((e.target as HTMLSelectElement).value));
+    D.reportSedeSelect?.addEventListener('change', (e) => UI.handleSedeSelectionChange((e.target as HTMLSelectElement).value));
     D.reportCompanySearchInput?.addEventListener('input', UI.renderCompanySearchResults);
     D.reportCompanySearchInput?.addEventListener('focus', UI.renderCompanySearchResults);
     D.reportCompanySearchResults?.addEventListener('click', (e) => {

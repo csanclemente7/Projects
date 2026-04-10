@@ -9,6 +9,7 @@ type BackupData = {
         clients: any[];
         maintenance_companies: any[];
         maintenance_cities: any[];
+        maintenance_sede: any[];
         maintenance_dependencies: any[];
         maintenance_equipment: any[];
         maintenance_reports: any[];
@@ -72,30 +73,32 @@ export async function exportFullDatabase(updateProgress: (msg: string, percent: 
         updateProgress("Recopilando Cotizaciones (clientes)...", 10);
         const clients = await fetchAllRows(supabaseClients, 'clients');
         
-        updateProgress("Recopilando Entidades (ciudades y empresas)...", 20);
+        updateProgress("Recopilando Entidades (ciudades y empresas)...", 15);
         const cities = await fetchAllRows(supabaseOrders, 'maintenance_cities');
         const companies = await fetchAllRows(supabaseOrders, 'maintenance_companies');
         
-        updateProgress("Recopilando Sedes y Equipos...", 40);
+        updateProgress("Recopilando Sedes...", 30);
+        const sedes = await fetchAllRows(supabaseOrders, 'maintenance_sede');
         const dependencies = await fetchAllRows(supabaseOrders, 'maintenance_dependencies');
         const equipment = await fetchAllRows(supabaseOrders, 'maintenance_equipment');
         
-        updateProgress("Recopilando Órdenes de Servicio...", 60);
+        updateProgress("Recopilando Órdenes de Servicio...", 55);
         const orders = await fetchAllRows(supabaseOrders, 'orders');
         const order_items = await fetchAllRows(supabaseOrders, 'order_items');
         
-        updateProgress("Recopilando Reportes Técnicos...", 80);
+        updateProgress("Recopilando Reportes Técnicos...", 75);
         const reports = await fetchAllRows(supabaseOrders, 'maintenance_reports');
 
         updateProgress("Generando archivo maestro...", 95);
 
         const backup: BackupData = {
-            version: "1.0",
+            version: "2.0",
             timestamp: new Date().toISOString(),
             tables: {
                 clients,
                 maintenance_cities: cities,
                 maintenance_companies: companies,
+                maintenance_sede: sedes,
                 maintenance_dependencies: dependencies,
                 maintenance_equipment: equipment,
                 orders,
@@ -150,12 +153,17 @@ export async function importFullDatabase(file: File, passwordProvided: string, u
                 await upsertInBatches(supabaseClients, 'clients', backup.tables.clients, (m) => updateProgress(m, 30));
                 
                 // 2. Ciudades y Empresas
-                await upsertInBatches(supabaseOrders, 'maintenance_cities', backup.tables.maintenance_cities, (m) => updateProgress(m, 40));
-                await upsertInBatches(supabaseOrders, 'maintenance_companies', backup.tables.maintenance_companies, (m) => updateProgress(m, 50));
+                await upsertInBatches(supabaseOrders, 'maintenance_cities', backup.tables.maintenance_cities, (m) => updateProgress(m, 35));
+                await upsertInBatches(supabaseOrders, 'maintenance_companies', backup.tables.maintenance_companies, (m) => updateProgress(m, 45));
                 
-                // 3. Órdenes y Dependencias
-                await upsertInBatches(supabaseOrders, 'orders', backup.tables.orders, (m) => updateProgress(m, 60));
-                await upsertInBatches(supabaseOrders, 'maintenance_dependencies', backup.tables.maintenance_dependencies, (m) => updateProgress(m, 70));
+                // 3. Sedes (dependen de companies y cities)
+                if (backup.tables.maintenance_sede) {
+                    await upsertInBatches(supabaseOrders, 'maintenance_sede', backup.tables.maintenance_sede, (m) => updateProgress(m, 55));
+                }
+                
+                // 4. Órdenes y Dependencias
+                await upsertInBatches(supabaseOrders, 'orders', backup.tables.orders, (m) => updateProgress(m, 65));
+                await upsertInBatches(supabaseOrders, 'maintenance_dependencies', backup.tables.maintenance_dependencies, (m) => updateProgress(m, 72));
                 
                 // 4. Equipos e items de órdenes
                 await upsertInBatches(supabaseOrders, 'order_items', backup.tables.order_items, (m) => updateProgress(m, 80));
@@ -210,9 +218,10 @@ export function initBackupRestore() {
                     return count || 0;
                 };
 
-                const [clients, companies, deps, equip, orders, items, reports, cities] = await Promise.all([
+                const [clients, companies, sedes, deps, equip, orders, items, reports, cities] = await Promise.all([
                     getCount(supabaseClients, 'clients'),
                     getCount(supabaseOrders, 'maintenance_companies'),
+                    getCount(supabaseOrders, 'maintenance_sede'),
                     getCount(supabaseOrders, 'maintenance_dependencies'),
                     getCount(supabaseOrders, 'maintenance_equipment'),
                     getCount(supabaseOrders, 'orders'),
@@ -222,14 +231,15 @@ export function initBackupRestore() {
                 ]);
 
                 const itemsHtml = `
-                    <li><strong style="color:var(--primary)">${clients}</strong> Cotizaciones (Clientes de Venta)</li>
-                    <li><strong style="color:var(--primary)">${companies}</strong> Empresas de Mantenimiento</li>
-                    <li><strong style="color:var(--primary)">${deps}</strong> Sedes (Dependencias)</li>
-                    <li><strong style="color:var(--primary)">${reports}</strong> Reportes Generados</li>
+                    <li><strong style="color:var(--primary)">${clients}</strong> Cotizaciones (Clientes)</li>
+                    <li><strong style="color:var(--primary)">${companies}</strong> Empresas</li>
+                    <li><strong style="color:var(--primary)">${sedes}</strong> Sedes</li>
+                    <li><strong style="color:var(--primary)">${deps}</strong> Dependencias</li>
+                    <li><strong style="color:var(--primary)">${reports}</strong> Reportes</li>
                     <li><strong style="color:var(--primary)">${orders}</strong> Órdenes de Servicio</li>
-                    <li><strong style="color:var(--primary)">${equip}</strong> Equipos Mantenidos</li>
+                    <li><strong style="color:var(--primary)">${equip}</strong> Equipos</li>
                     <li><strong style="color:var(--primary)">${items}</strong> Ítems en Órdenes</li>
-                    <li><strong style="color:var(--primary)">${cities}</strong> Ciudades Configuradas</li>
+                    <li><strong style="color:var(--primary)">${cities}</strong> Ciudades</li>
                 `;
                 
                 statsList.innerHTML = itemsHtml;

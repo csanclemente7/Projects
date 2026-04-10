@@ -110,6 +110,7 @@ async function refreshMasterDataInBackground() {
             serviceTypes,
             equipmentTypes,
             refrigerantTypes,
+            sedes,
         ] = await Promise.all([
             fetchUsers(),
             fetchAppSettings(),
@@ -120,6 +121,7 @@ async function refreshMasterDataInBackground() {
             fetchServiceTypes(),
             fetchEquipmentTypes(),
             fetchRefrigerantTypes(),
+            fetchSedes()
         ]);
 
         const normalizedSettings: AppSettings = {};
@@ -133,6 +135,7 @@ async function refreshMasterDataInBackground() {
         const serviceTypesChanged = haveArraysChanged(State.serviceTypes, serviceTypes);
         const equipmentTypesChanged = haveArraysChanged(State.equipmentTypes, equipmentTypes);
         const refrigerantTypesChanged = haveArraysChanged(State.refrigerantTypes, refrigerantTypes);
+        const sedesChanged = haveArraysChanged(State.sedes, sedes);
         const appSettingsChanged = haveSettingsChanged(State.appSettings, normalizedSettings);
 
         const cachePromises: Promise<void>[] = [];
@@ -165,6 +168,10 @@ async function refreshMasterDataInBackground() {
         if (companiesChanged) {
             State.setCompanies(companies);
             cachePromises.push(cacheAllData('companies', companies));
+        }
+        if (sedesChanged) {
+            State.setSedes(sedes);
+            cachePromises.push(cacheAllData('sedes', sedes));
         }
         if (dependenciesChanged) {
             State.setDependencies(dependencies);

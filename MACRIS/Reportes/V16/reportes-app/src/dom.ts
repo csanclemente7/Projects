@@ -113,6 +113,7 @@ export const reportCompanySearchResults = document.getElementById('report-compan
 export const reportCompanySelectedBadge = document.getElementById('report-company-selected-badge') as HTMLDivElement;
 export const reportCompanyBadgeName = document.querySelector('#report-company-selected-badge .company-badge-name') as HTMLSpanElement;
 export const reportCompanyBadgeClearButton = document.getElementById('report-company-badge-clear') as HTMLButtonElement;
+export const reportSedeSelect = document.getElementById('report-sede') as HTMLSelectElement;
 export let reportDependencySelect = document.getElementById('report-dependency') as HTMLSelectElement;
 export const reportEquipmentModelInput = document.getElementById('report-equipment-model') as HTMLInputElement;
 export const reportEquipmentBrandInput = document.getElementById('report-equipment-brand') as HTMLInputElement;

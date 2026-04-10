@@ -190,8 +190,7 @@ export const populateStringDropdown = (selectElement: HTMLSelectElement, items: 
 };
 
 /**
- * Updates the City and Dependency dropdowns based on the selected Company.
- * This function is central to the new report creation flow.
+ * Updates the City and Sede dropdowns based on the selected Company.
  * @param selectedCompanyId The ID of the currently selected company.
  */
 export function updateLocationDropdownsFromCompany(selectedCompanyId: string) {
@@ -201,15 +200,37 @@ export function updateLocationDropdownsFromCompany(selectedCompanyId: string) {
         // Set city automatically
         D.reportCitySelectEmpresa.value = company.cityId;
 
-        // Filter and populate dependencies
-        const filteredDependencies = State.dependencies.filter(d => d.companyId === selectedCompanyId);
-        populateDropdown(D.reportDependencySelect, filteredDependencies);
-        D.reportDependencySelect.disabled = false;
+        // Filter and populate sedes
+        const filteredSedes = State.sedes.filter(s => s.companyId === selectedCompanyId);
+        populateDropdown(D.reportSedeSelect, filteredSedes);
+        D.reportSedeSelect.disabled = false;
+        
+        // Reset and disable dependency select until sede is chosen
+        D.reportDependencySelect.innerHTML = '<option value="">Seleccione una sede primero...</option>';
+        D.reportDependencySelect.disabled = true;
 
     } else {
         // Reset if no company is selected
         D.reportCitySelectEmpresa.value = '';
-        D.reportDependencySelect.innerHTML = '<option value="">Seleccione una empresa...</option>';
+        D.reportSedeSelect.innerHTML = '<option value="">Seleccione una empresa...</option>';
+        D.reportSedeSelect.disabled = true;
+        D.reportDependencySelect.innerHTML = '<option value="">Seleccione una sede...</option>';
+        D.reportDependencySelect.disabled = true;
+    }
+}
+
+/**
+ * Updates the Dependency dropdown based on the selected Sede.
+ * @param selectedSedeId The ID of the currently selected sede.
+ */
+export function handleSedeSelectionChange(selectedSedeId: string) {
+    if (selectedSedeId) {
+        // Filter and populate dependencies based on Sede
+        const filteredDependencies = State.dependencies.filter(d => d.sedeId === selectedSedeId);
+        populateDropdown(D.reportDependencySelect, filteredDependencies);
+        D.reportDependencySelect.disabled = false;
+    } else {
+        D.reportDependencySelect.innerHTML = '<option value="">Seleccione una sede...</option>';
         D.reportDependencySelect.disabled = true;
     }
 }
@@ -689,12 +710,17 @@ export async function openReportFormModal(options: { report?: Report; equipment?
             if (cityIdToSelect) D.reportCitySelectResidencial.value = cityIdToSelect;
         } else { // empresa
             const companyIdToSelect = report.companyId;
+            const sedeIdToSelect = report.sedeId;
             const dependencyIdToSelect = report.dependencyId;
             if (companyIdToSelect) {
                 setReportCompanySelection(companyIdToSelect, { skipUpdate: true });
                 updateLocationDropdownsFromCompany(companyIdToSelect);
-                if (dependencyIdToSelect) {
-                    D.reportDependencySelect.value = dependencyIdToSelect;
+                if (sedeIdToSelect) {
+                    D.reportSedeSelect.value = sedeIdToSelect;
+                    handleSedeSelectionChange(sedeIdToSelect);
+                    if (dependencyIdToSelect) {
+                        D.reportDependencySelect.value = dependencyIdToSelect;
+                    }
                 }
             }
         }
@@ -744,12 +770,17 @@ export async function openReportFormModal(options: { report?: Report; equipment?
             if (cityIdToSelect) D.reportCitySelectResidencial.value = cityIdToSelect;
         } else { // empresa
             const companyIdToSelect = targetEquipment.companyId;
+            const sedeIdToSelect = targetEquipment.sedeId;
             const dependencyIdToSelect = targetEquipment.dependencyId;
             if (companyIdToSelect) {
                 setReportCompanySelection(companyIdToSelect, { skipUpdate: true });
                 updateLocationDropdownsFromCompany(companyIdToSelect);
-                if (dependencyIdToSelect) {
-                    D.reportDependencySelect.value = dependencyIdToSelect;
+                if (sedeIdToSelect) {
+                     D.reportSedeSelect.value = sedeIdToSelect;
+                     handleSedeSelectionChange(sedeIdToSelect);
+                    if (dependencyIdToSelect) {
+                        D.reportDependencySelect.value = dependencyIdToSelect;
+                    }
                 }
             }
         }
