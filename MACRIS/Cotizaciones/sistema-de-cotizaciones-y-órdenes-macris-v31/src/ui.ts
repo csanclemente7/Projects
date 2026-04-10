@@ -764,6 +764,20 @@ export function setupItemSearch(input: HTMLInputElement, results: HTMLDivElement
             input.value = '';
             results.style.display = 'none';
             currentFocus = -1;
+
+            // Automatically focus Quantity input of the newly added item row
+            setTimeout(() => {
+                const tbodyId = context === 'quote' ? 'quote-items-tbody' : 'order-items-tbody';
+                const rows = document.querySelectorAll(`#${tbodyId} .draggable-row`);
+                if (rows.length > 0) {
+                    const lastRow = rows[rows.length - 1];
+                    const qtyInput = lastRow.querySelector('.item-qty') as HTMLInputElement;
+                    if (qtyInput) {
+                        qtyInput.focus();
+                        qtyInput.select();
+                    }
+                }
+            }, 50);
         }
     });
     document.addEventListener('click', (e) => {
@@ -1124,7 +1138,21 @@ function createItemRow(item: QuoteItem | OrderItem, context: 'quote' | 'order' |
         // Ligero retraso para permitir inserción en el DOM antes de medir altura
         setTimeout(resizeTextarea, 0);
     }
-    
+    // Auto-focus back to search input when user hits Enter on quantity
+    const qtyInput = tr.querySelector('.item-qty') as HTMLInputElement;
+    if (qtyInput) {
+        qtyInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const searchInputId = context === 'quote' ? 'item-search' : 'order-item-search';
+                const searchInput = document.getElementById(searchInputId) as HTMLInputElement;
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
+        });
+    }
+
     return tr;
 }
 
