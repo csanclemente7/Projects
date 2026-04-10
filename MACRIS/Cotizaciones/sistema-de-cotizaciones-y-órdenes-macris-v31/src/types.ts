@@ -24,6 +24,7 @@ export type DatabaseQuotes = {
           phone: string | null
           email: string | null
           contactPerson: string | null
+          category: string | null
         }
         Insert: {
           id?: string
@@ -34,6 +35,7 @@ export type DatabaseQuotes = {
           phone?: string | null
           email?: string | null
           contactPerson?: string | null
+          category?: string | null
         }
         Update: {
           id?: string
@@ -44,6 +46,7 @@ export type DatabaseQuotes = {
           phone?: string | null
           email?: string | null
           contactPerson?: string | null
+          category?: string | null
         }
       }
       items: {
@@ -78,6 +81,7 @@ export type DatabaseQuotes = {
           terms: string
           image_urls?: string[] | null
           internal_notes?: string | null
+          sede_id?: string | null
         }
         Insert: {
           id?: string
@@ -88,6 +92,7 @@ export type DatabaseQuotes = {
           terms: string
           image_urls?: string[] | null
           internal_notes?: string | null
+          sede_id?: string | null
         }
         Update: {
           id?: string
@@ -98,6 +103,7 @@ export type DatabaseQuotes = {
           terms?: string
           image_urls?: string[] | null
           internal_notes?: string | null
+          sede_id?: string | null
         }
       }
       quote_items: {
@@ -204,6 +210,7 @@ export type DatabaseOrders = {
           notes: string | null
           estimated_duration: number | null
           image_urls?: string[] | null
+          sede_id: string | null
         }
         Insert: {
           id?: string
@@ -217,6 +224,7 @@ export type DatabaseOrders = {
           notes?: string | null
           estimated_duration?: number | null
           image_urls?: string[] | null
+          sede_id?: string | null
         }
         Update: {
           id?: string
@@ -230,6 +238,7 @@ export type DatabaseOrders = {
           notes?: string | null
           estimated_duration?: number | null
           image_urls?: string[] | null
+          sede_id?: string | null
         }
       }
       order_items: {
@@ -319,6 +328,14 @@ export type OrderItem = DatabaseOrders['public']['Tables']['order_items']['Row']
 export type OrderItemInsert = DatabaseOrders['public']['Tables']['order_items']['Insert'];
 export type OrderTechnicianInsert = DatabaseOrders['public']['Tables']['order_technicians']['Insert'];
 export type ServiceType = DatabaseOrders['public']['Tables']['service_types']['Row'];
+
+export type Sede = {
+    id: string;
+    name: string;
+    address?: string | null;
+    company_id?: string | null;
+    city_id?: string | null;
+};
 
 // This is the composite object the app works with for quotes
 export type Quote = DatabaseQuotes['public']['Tables']['quotes']['Row'] & {

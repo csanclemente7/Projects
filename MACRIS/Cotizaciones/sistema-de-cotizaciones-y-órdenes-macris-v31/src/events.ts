@@ -126,6 +126,23 @@ function setupQuoteEventListeners() {
             State.updateActiveQuote(quote);
         }
     });
+
+    D.quoteSedeSelect.addEventListener('change', (e) => {
+        const quote = State.getActiveQuote();
+        if (quote) {
+            quote.sede_id = (e.target as HTMLSelectElement).value || null;
+            State.updateActiveQuote(quote);
+        }
+    });
+
+    D.quoteAddSedeBtn.addEventListener('click', () => {
+        const quote = State.getActiveQuote();
+        if (quote && quote.clientId) {
+            UI.handleAddSedeClick('quote', quote.clientId);
+        } else {
+            UI.showNotification("Seleccione un cliente Empresa primero", "warning");
+        }
+    });
 }
 
 function setupManagementEventListeners() {
@@ -299,6 +316,23 @@ function setupOrderWorkspaceEventListeners() {
     D.orderAddClientBtn.addEventListener('click', () => UI.openEntityModal('client'));
     D.orderEditClientBtn.addEventListener('click', UI.handleEditClientClickOrder);
     D.orderAddNewItemBtn.addEventListener('click', () => UI.openEntityModal('item'));
+
+    D.orderSedeSelect.addEventListener('change', (e) => {
+        const order = State.getCurrentOrder();
+        if (order) {
+            order.sede_id = (e.target as HTMLSelectElement).value || null;
+            UI.handleOrderDetailsChange();
+        }
+    });
+
+    D.orderAddSedeBtn.addEventListener('click', () => {
+        const order = State.getCurrentOrder();
+        if (order && order.clientId) {
+            UI.handleAddSedeClick('order', order.clientId);
+        } else {
+            UI.showNotification("Seleccione un cliente Empresa primero", "warning");
+        }
+    });
 
     const setupTableListeners = (tbody: HTMLElement) => {
         tbody.addEventListener('click', (e) => {

@@ -59,6 +59,18 @@ export async function getClientsFromSupabase(): Promise<Client[]> {
     if (error) throw error;
     return data || [];
 }
+export async function fetchSedes(): Promise<Sede[]> {
+    const { data, error } = await supabaseOrders.from('maintenance_sede').select('*');
+    if (error) throw error;
+    // Map to Sede interface
+    return (data || []).map(dbSede => ({
+        id: dbSede.id,
+        name: dbSede.name,
+        address: dbSede.address || null,
+        companyId: dbSede.company_id || null,
+        cityId: dbSede.city_id || null,
+    }));
+}
 export async function getTechniciansFromSupabase(): Promise<Technician[]> {
     const { data, error } = await supabaseOrders.from('maintenance_users').select('*');
     if (error) throw error;
@@ -108,6 +120,24 @@ export async function upsertClient(client: ClientInsert | Client): Promise<Clien
     const { data, error } = await supabaseQuotes.from('clients').upsert([client] as any, { onConflict: 'id' }).select().single();
     if (error) throw error;
     if (!data) throw new Error('Client upsert failed.');
+    
+    // Cross-DB synchronization for "Empresa" Category
+    if (data.category === 'empresa') {
+        try {
+            const maintenanceCompany = {
+                id: data.id, // We share the exact same ID UUID
+                name: data.name,
+                city_id: data.city || null,
+                address: data.address || null,
+                // Add any other mapped attributes here
+            };
+            const { error: syncError } = await supabaseOrders.from('maintenance_companies').upsert([maintenanceCompany], { onConflict: 'id' });
+            if (syncError) console.error("Warning: Could not sync company to Orders DB:", syncError);
+        } catch (e) {
+            console.error("Failed to execute cross-DB sync:", e);
+        }
+    }
+    
     return data;
 }
 export async function deleteClient(clientId: string): Promise<void> {
@@ -123,6 +153,23 @@ export async function upsertItem(item: ItemInsert): Promise<Item> {
 export async function deleteItem(itemId: string): Promise<void> {
     const { error } = await supabaseQuotes.from('items').delete().eq('id', itemId);
     if (error) throw error;
+}
+export async function upsertSede(sedeName: string, companyId: string): Promise<Sede> {
+    const newSede = {
+        id: crypto.randomUUID(),
+        name: sedeName,
+        company_id: companyId
+    };
+    const { data, error } = await supabaseOrders.from('maintenance_sede').upsert([newSede], { onConflict: 'id' }).select().single();
+    if (error) throw error;
+    if (!data) throw new Error('Sede upsert failed.');
+    return {
+        id: data.id,
+        name: data.name,
+        address: data.address || null,
+        companyId: data.company_id || null,
+        cityId: data.city_id || null,
+    };
 }
 export async function upsertTechnician(technician: TechnicianInsert): Promise<Technician> {
     const { data, error } = await supabaseOrders.from('maintenance_users').upsert([technician] as any, { onConflict: 'id' }).select().single();
