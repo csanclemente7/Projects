@@ -1,7 +1,7 @@
 import { supabaseQuotes, supabaseOrders } from './supabase';
-import type { 
+import type {
     Item, Client, Quote, QuoteItem, Setting, Technician, Order, OrderItem, ServiceType, Sede,
-    ClientInsert, ItemInsert, QuoteInsert, QuoteItemInsert, OrderInsert, OrderItemInsert, TechnicianInsert, OrderTechnicianInsert, SettingInsert, DatabaseQuotes 
+    ClientInsert, ItemInsert, QuoteInsert, QuoteItemInsert, OrderInsert, OrderItemInsert, TechnicianInsert, OrderTechnicianInsert, SettingInsert, DatabaseQuotes
 } from './types';
 import { generateId } from './utils';
 
@@ -39,7 +39,7 @@ export async function getNextOrderId(): Promise<string> {
         .select('manualId')
         .order('manualId', { ascending: false })
         .limit(1);
-    
+
     if (error || !data || data.length === 0) {
         console.warn('Could not fetch remote next order ID, using fallback.', error);
         return '1001';
@@ -92,7 +92,7 @@ export async function getQuotesFromSupabase(): Promise<Quote[]> {
         const allItems = q.items || [];
         const realItems = allItems.filter((i: any) => !i.description.startsWith('<IMAGE::>'));
         const imageItems = allItems.filter((i: any) => i.description.startsWith('<IMAGE::>'));
-        
+
         return {
             ...q,
             items: realItems,
@@ -107,10 +107,10 @@ export async function getOrdersFromSupabase(): Promise<Order[]> {
     // otherwise it will be sent back on upsert, causing a column mismatch error.
     return (data || []).map(o => {
         const { technicians, ...restOfOrder } = o;
-        return { 
-            ...restOfOrder, 
-            items: restOfOrder.items || [], 
-            technicianIds: (technicians || []).map((t: any) => t.technician_id), 
+        return {
+            ...restOfOrder,
+            items: restOfOrder.items || [],
+            technicianIds: (technicians || []).map((t: any) => t.technician_id),
             taxRate: 0, // taxRate is an app-level concept, not in DB
         };
     });
@@ -122,7 +122,7 @@ export async function upsertClient(client: ClientInsert | Client): Promise<Clien
     const { data, error } = await supabaseQuotes.from('clients').upsert([client] as any, { onConflict: 'id' }).select().single();
     if (error) throw error;
     if (!data) throw new Error('Client upsert failed.');
-    
+
     // Cross-DB synchronization for "Empresa" Category
     if (data.category === 'empresa') {
         try {
@@ -139,7 +139,7 @@ export async function upsertClient(client: ClientInsert | Client): Promise<Clien
             console.error("Failed to execute cross-DB sync:", e);
         }
     }
-    
+
     return data;
 }
 export async function deleteClient(clientId: string): Promise<void> {
@@ -201,14 +201,14 @@ export async function saveQuote(quote: Quote): Promise<Quote> {
 
     let savedItems: QuoteItem[] = [];
     const itemsToInsert: QuoteItemInsert[] = [];
-    
+
     if (items && items.length > 0) {
         items.forEach(i => {
             const { created_at, ...itemInsert } = i;
             itemsToInsert.push({ ...itemInsert, quoteId: savedQuote.id });
         });
     }
-    
+
     if (image_urls && image_urls.length > 0) {
         image_urls.forEach((url, idx) => {
             itemsToInsert.push({
@@ -231,7 +231,7 @@ export async function saveQuote(quote: Quote): Promise<Quote> {
             savedItems = newItems.filter((i: any) => !i.description.startsWith('<IMAGE::>'));
         }
     }
-    
+
     return { ...savedQuote, items: savedItems, image_urls: image_urls || [] };
 }
 
@@ -257,17 +257,17 @@ export async function saveOrder(order: Order): Promise<Order> {
         const { error: techsError } = await supabaseOrders.from('order_technicians').insert(techsToInsert as any);
         if (techsError) throw techsError;
     }
-    
+
     // Re-fetch the complete order to return it
     const { data: finalOrderData, error: fetchError } = await supabaseOrders.from('orders').select('*, items:order_items(*), technicians:order_technicians(technician_id)').eq('id', (savedOrder as any).id).single();
-    if(fetchError || !finalOrderData) throw new Error("Could not re-fetch saved order.");
-    
+    if (fetchError || !finalOrderData) throw new Error("Could not re-fetch saved order.");
+
     // Reconstruct the Order object correctly, removing the 'technicians' property
     const { technicians, ...restOfOrder } = finalOrderData as any;
-    const finalOrder: Order = { 
-        ...restOfOrder, 
-        items: restOfOrder.items || [], 
-        technicianIds: (technicians || []).map((t: any) => t.technician_id), 
+    const finalOrder: Order = {
+        ...restOfOrder,
+        items: restOfOrder.items || [],
+        technicianIds: (technicians || []).map((t: any) => t.technician_id),
         taxRate: order.taxRate, // taxRate is app-level, not in DB
     };
 
