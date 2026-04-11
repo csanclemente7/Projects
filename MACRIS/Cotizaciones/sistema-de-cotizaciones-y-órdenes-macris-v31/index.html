@@ -712,7 +712,7 @@
                     </div>
 
                     <div class="table-responsive"
-                        style="border: 1px solid var(--color-border-light); border-radius: 8px; overflow: hidden; background: var(--surface);">
+                        style="border: 1px solid var(--color-border-light); border-radius: 8px; overflow-y: auto; overflow-x: auto; max-height: 65vh; background: var(--surface);">
                         <table id="reports-data-table" class="table" style="margin-bottom: 0;">
                             <thead>
                                 <tr>
@@ -720,6 +720,7 @@
                                             id="reports-select-all"></th>
                                     <th>Fecha</th>
                                     <th>Cliente/Empresa</th>
+                                    <th>Sede</th>
                                     <th>Dependencia</th>
                                     <th>Tipo de Servicio</th>
                                     <th>Marca</th>
@@ -1081,7 +1082,7 @@
     <!-- Share Options Modal -->
     <div class="modal" id="share-options-modal">
         <div class="modal-content" style="max-width: 400px; text-align: center;">
-            <button class="close-modal" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+            <span class="close-modal-btn">&times;</span>
             <h3 style="margin-bottom: 20px;">Compartir Reporte(s)</h3>
             <p style="margin-bottom: 20px; color: var(--text-secondary); font-size: 0.9rem;">Selecciona el medio por el
                 cual deseas compartir los documentos generados.</p>
@@ -1106,7 +1107,7 @@
     <!-- Report Details Modal -->
     <div class="modal" id="report-details-modal">
         <div class="modal-content" style="max-width: 700px;">
-            <button class="close-modal" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+            <span class="close-modal-btn">&times;</span>
             <h3>Detalles del Reporte</h3>
             <div id="report-details-body"
                 style="margin-top: 15px; font-size: 0.95rem; line-height: 1.5; color: var(--text-color);">

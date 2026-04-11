@@ -405,15 +405,24 @@ function renderPaginationControls() {
 
 function renderReportRows(reports: Report[]) {
     if (currentReports.length === 0 && reports.length === 0) {
-        DOM.reportsTbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">No se encontraron reportes</td></tr>';
+        DOM.reportsTbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No se encontraron reportes</td></tr>';
         return;
     }
 
     reports.forEach(r => {
         const tr = document.createElement('tr');
         
+        // Highlight slight red if missing signature
+        if (!r.clientSignature) {
+            tr.style.backgroundColor = 'rgba(220, 53, 69, 0.15)'; // Darker light red
+        }
+        
         const isChecked = selectedReportIds.has(r.id);
-        const dateStr = new Intl.DateTimeFormat('es-CO', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(r.timestamp));
+        const dateStr = new Intl.DateTimeFormat('es-CO', { 
+            year: 'numeric', month: '2-digit', day: '2-digit',
+            hour: '2-digit', minute: '2-digit', hour12: true 
+        }).format(new Date(r.timestamp));
+
         const clientOrCompany = r.equipmentSnapshot.category === 'residencial' 
             ? r.equipmentSnapshot.client_name 
             : r.equipmentSnapshot.companyName;
@@ -430,11 +439,15 @@ function renderReportRows(reports: Report[]) {
         const eqBrand = r.equipmentSnapshot.brand || 'N/A';
         const eqType = r.equipmentSnapshot.type || 'N/A';
         const eqDep = r.equipmentSnapshot.dependencyName || 'N/A';
+        
+        const rawSede = r.equipmentSnapshot.address || 'N/A';
+        const displaySede = rawSede.length > 20 ? rawSede.substring(0, 20) + '...' : rawSede;
 
         tr.innerHTML = `
             <td><input type="checkbox" class="report-checkbox" value="${r.id}" ${isChecked ? 'checked' : ''}></td>
             <td>${dateStr}</td>
             <td title="${clientOrCompany || ''}">${displayClient}</td>
+            <td title="${rawSede}">${displaySede}</td>
             <td>${eqDep}</td>
             <td>${r.serviceType || 'N/A'}</td>
             <td>${eqBrand}</td>
@@ -593,6 +606,28 @@ function showReportDetailsModal(report: Report) {
             <h4 class="report-details-custom-title"><i class="fas fa-box-open"></i> Insumos Utilizados</h4>
             ${itemsHtml}
         </div>
+
+        ${report.photo_internal_unit_url || report.photo_external_unit_url ? `
+        <div class="report-details-custom-card" style="margin-bottom: 12px;">
+            <h4 class="report-details-custom-title"><i class="fas fa-camera"></i> Fotos de Instalación</h4>
+            <div style="display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap;">
+                ${report.photo_internal_unit_url ? `
+                <div style="flex: 1; min-width: 200px; text-align: center;">
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 5px;">Unidad Interna</p>
+                    <a href="${report.photo_internal_unit_url}" target="_blank">
+                        <img src="${report.photo_internal_unit_url}" alt="Unidad Interna" style="max-width: 100%; border-radius: 6px; border: 1px solid var(--border-color); object-fit: contain; cursor: pointer;">
+                    </a>
+                </div>` : ''}
+                ${report.photo_external_unit_url ? `
+                <div style="flex: 1; min-width: 200px; text-align: center;">
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 5px;">Unidad Externa</p>
+                    <a href="${report.photo_external_unit_url}" target="_blank">
+                        <img src="${report.photo_external_unit_url}" alt="Unidad Externa" style="max-width: 100%; border-radius: 6px; border: 1px solid var(--border-color); object-fit: contain; cursor: pointer;">
+                    </a>
+                </div>` : ''}
+            </div>
+        </div>
+        ` : ''}
 
         <div style="display: flex; gap: 15px; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color);">
             <button id="report-modal-back-btn" class="btn btn-secondary" style="display: flex; align-items: center; gap: 8px;">

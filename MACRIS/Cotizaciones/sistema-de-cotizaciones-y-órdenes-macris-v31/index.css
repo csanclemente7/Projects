@@ -3888,6 +3888,9 @@ body.dark-theme .custom-select-container {
     background-color: #0d213b;
     white-space: nowrap;
     text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
 
 #reports-data-table th:first-child {
