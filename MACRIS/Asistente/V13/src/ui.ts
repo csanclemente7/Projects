@@ -3,7 +3,7 @@ import * as State from './state';
 import { formatDate, formatTime, fuzzyNormalize } from './utils';
 import { processAiRequest, AiResult, processImageForReport, DigitizedReportData } from './ai';
 import { getWidgetConfig, setWidgetConfig, updateDashboardData } from './dashboard';
-import { fetchReportDetails, fetchAllReports, fetchReportsForWorker, fetchAllReportsForExport, fetchUniqueNamesFromSnapshots, saveMaintenanceReport } from './api';
+import { fetchReportDetails, fetchAllReports, fetchReportsForWorker, fetchAllReportsForExport, fetchUniqueNamesFromSnapshots, saveMaintenanceReport, updateMaintenanceReport } from './api';
 import { generateReportPDF, generateReportsPDF } from './lib/pdf-generator';
 import JSZip from 'jszip';
 import * as XLSX from 'xlsx';
@@ -754,6 +754,164 @@ async function downloadPDF(id: string) {
     }
 }
 
+function setupEditReportMode(report: Report, container: HTMLElement) {
+    const isInstallation = report.serviceType === 'Montaje/Instalación';
+    
+    const workerOptions = State.users.filter(u => u.role === 'worker').map(w => `<option value="${w.id}" ${w.id === report.workerId ? 'selected' : ''}>${w.name || w.username}</option>`).join('');
+    const currentServiceType = report.serviceType;
+    const serviceTypeOptions = State.serviceTypes.map(st => `<option value="${st.name}" ${st.name === currentServiceType ? 'selected' : ''}>${st.name}</option>`).join('');
+    const eqTypeOptions = State.equipmentTypes.map(et => `<option value="${et.name}" ${et.name === report.equipmentSnapshot.type ? 'selected' : ''}>${et.name}</option>`).join('');
+
+    // Ajustar fecha para input datetime-local
+    let localDateStr = '';
+    try {
+        const d = new Date(report.timestamp);
+        d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+        localDateStr = d.toISOString().slice(0, 16);
+    } catch(e) {}
+
+    container.innerHTML = `
+        <div class="report-details-container edit-mode">
+            <h2 style="color: var(--primary); font-size: 1.4rem; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                Editando Reporte #${report.id.substring(0,8)}
+            </h2>
+            <form id="edit-report-form" style="display: flex; flex-direction: column; gap: 15px;">
+                <div class="report-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="form-group">
+                        <label style="font-weight:600; font-size:0.85rem; color:var(--text-dim); margin-bottom:5px; display:block;">Fecha y Hora</label>
+                        <input type="datetime-local" class="form-control" name="timestamp" value="${localDateStr}" required />
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:600; font-size:0.85rem; color:var(--text-dim); margin-bottom:5px; display:block;">Técnico</label>
+                        <select class="form-control" name="worker_id" required>${workerOptions}</select>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:600; font-size:0.85rem; color:var(--text-dim); margin-bottom:5px; display:block;">Servicio</label>
+                        <select class="form-control" name="service_type" required>${serviceTypeOptions}</select>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:600; font-size:0.85rem; color:var(--text-dim); margin-bottom:5px; display:block;">Estado de Pago</label>
+                        <select class="form-control" name="is_paid">
+                            <option value="true" ${report.is_paid ? 'selected' : ''}>Pagado</option>
+                            <option value="false" ${!report.is_paid ? 'selected' : ''}>Pendiente</option>
+                        </select>
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; color: var(--primary); margin-top: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px;">Equipo (Snapshot)</h3>
+                <div class="report-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="form-group">
+                        <label style="font-weight:600; font-size:0.85rem; color:var(--text-dim); margin-bottom:5px; display:block;">Marca</label>
+                        <input type="text" class="form-control" name="eq_brand" value="${report.equipmentSnapshot.brand || ''}" required />
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:600; font-size:0.85rem; color:var(--text-dim); margin-bottom:5px; display:block;">Modelo</label>
+                        <input type="text" class="form-control" name="eq_model" value="${report.equipmentSnapshot.model || ''}" required />
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:600; font-size:0.85rem; color:var(--text-dim); margin-bottom:5px; display:block;">Tipo</label>
+                        <select class="form-control" name="eq_type" required>
+                            <option value="" disabled>Seleccione Tipo</option>
+                            ${eqTypeOptions}
+                            ${!State.equipmentTypes.some(et => et.name === report.equipmentSnapshot.type) && report.equipmentSnapshot.type ? `<option value="${report.equipmentSnapshot.type}" selected>${report.equipmentSnapshot.type} (Actual)</option>` : ''}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:600; font-size:0.85rem; color:var(--text-dim); margin-bottom:5px; display:block;">Capacidad</label>
+                        <input type="text" class="form-control" name="eq_capacity" value="${report.equipmentSnapshot.capacity || ''}" />
+                    </div>
+                </div>
+
+                <h3 style="font-size: 1rem; color: var(--primary); margin-top: 10px; border-bottom: 1px solid var(--border); padding-bottom: 5px;">Mediciones</h3>
+                <div class="report-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+                    <div class="form-group">
+                        <label style="font-weight:600; font-size:0.85rem; color:var(--text-dim); margin-bottom:5px; display:block;">Presión (PSI)</label>
+                        <input type="text" class="form-control" name="pressure" value="${report.pressure || ''}" />
+                    </div>
+                    <div class="form-group">
+                        <label style="font-weight:600; font-size:0.85rem; color:var(--text-dim); margin-bottom:5px; display:block;">Amperaje (A)</label>
+                        <input type="text" class="form-control" name="amperage" value="${report.amperage || ''}" />
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-top: 10px;">
+                    <label style="font-weight:600; font-size:0.85rem; color:var(--text-dim); margin-bottom:5px; display:block;">Observaciones</label>
+                    <textarea class="form-control" name="observations" rows="4">${report.observations || ''}</textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" class="btn btn-secondary" id="btn-cancel-edit">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="btn-save-edit">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    `;
+
+    document.getElementById('btn-cancel-edit')?.addEventListener('click', () => {
+        openViewReportDetailsModal(report.id); // Vuelve al modo vista
+    });
+
+    document.getElementById('edit-report-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const form = e.target as HTMLFormElement;
+        const fm = new FormData(form);
+
+        // Ajustar fecha guardada
+        const dtStr = fm.get('timestamp') as string;
+        let finalISODate = new Date(dtStr).toISOString();
+
+        const updatedReportData = {
+            timestamp: finalISODate,
+            worker_id: fm.get('worker_id') as string,
+            worker_name: State.users.find(u => u.id === fm.get('worker_id'))?.name || '',
+            service_type: fm.get('service_type') as string,
+            is_paid: fm.get('is_paid') === 'true',
+            pressure: fm.get('pressure') as string || null,
+            amperage: fm.get('amperage') as string || null,
+            observations: fm.get('observations') as string || null,
+            equipment_snapshot: {
+                ...report.equipmentSnapshot,
+                brand: fm.get('eq_brand') as string,
+                model: fm.get('eq_model') as string,
+                type: fm.get('eq_type') as string,
+                capacity: fm.get('eq_capacity') as string || undefined,
+            }
+        };
+
+        const btnSave = document.getElementById('btn-save-edit') as HTMLButtonElement;
+        btnSave.disabled = true;
+        btnSave.textContent = 'Guardando...';
+
+        try {
+            await updateMaintenanceReport(report.id, updatedReportData);
+            showAppNotification('Reporte actualizado correctamente.', 'success');
+            
+            const index = State.reports.findIndex(r => r.id === report.id);
+            if (index !== -1) {
+                State.reports[index] = {
+                    ...State.reports[index],
+                    timestamp: updatedReportData.timestamp,
+                    workerId: updatedReportData.worker_id,
+                    workerName: updatedReportData.worker_name,
+                    serviceType: updatedReportData.service_type,
+                    is_paid: updatedReportData.is_paid,
+                    pressure: updatedReportData.pressure,
+                    amperage: updatedReportData.amperage,
+                    observations: updatedReportData.observations,
+                    equipmentSnapshot: updatedReportData.equipment_snapshot as any
+                };
+            }
+            renderAdminReportsTable();
+            openViewReportDetailsModal(report.id);
+        } catch (error) {
+            console.error(error);
+            showAppNotification('Error al actualizar reporte', 'error');
+            btnSave.disabled = false;
+            btnSave.textContent = 'Guardar Cambios';
+        }
+    });
+}
+
 export async function openViewReportDetailsModal(reportId: string) {
     currentViewedReportId = reportId;
     showLoader('Cargando detalles...');
@@ -768,9 +926,15 @@ export async function openViewReportDetailsModal(reportId: string) {
         if (!container) return;
         container.innerHTML = `
             <div class="report-details-container">
-                <h2 style="color: var(--primary); font-size: 1.4rem; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
-                    Reporte #${report.id.substring(0,8)}
-                </h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                    <h2 style="color: var(--primary); font-size: 1.4rem; margin: 0;">
+                        Reporte #${report.id.substring(0,8)}
+                    </h2>
+                    <button class="btn btn-secondary btn-compact" id="btn-edit-report" data-id="${report.id}" style="background: var(--warning); color: white; border: none; font-weight: 600;">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                </div>
+                
                 <div class="report-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                     <div class="detail-item"><strong>Fecha:</strong><br>${formatDate(report.timestamp)}</div>
                     <div class="detail-item"><strong>Técnico:</strong><br>${report.workerName}</div>
@@ -815,6 +979,11 @@ export async function openViewReportDetailsModal(reportId: string) {
                 ` : ''}
             </div>
         `;
+
+        document.getElementById('btn-edit-report')?.addEventListener('click', () => {
+            setupEditReportMode(report, container);
+        });
+
         if (D.viewReportModal) D.viewReportModal.style.display = 'flex';
     } catch (error) {
         showAppNotification('Error al cargar detalles completos', 'error');
