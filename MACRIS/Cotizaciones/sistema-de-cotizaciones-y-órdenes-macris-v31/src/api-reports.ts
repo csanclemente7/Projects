@@ -126,3 +126,15 @@ export async function fetchDependencies(): Promise<Dependency[]> {
     if (error) return [];
     return data as Dependency[];
 }
+export async function updateFullReport(id: string, updates: Partial<any>): Promise<boolean> {
+    const { error } = await supabaseOrders
+        .from('maintenance_reports')
+        .update(updates)
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error updating full report:', error);
+        return false;
+    }
+    return true;
+}

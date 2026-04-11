@@ -45,8 +45,9 @@
             <div class="login-brand-content">
                 <img src="MacrisLogoBlanco.png" alt="Macris Logo" class="login-brand-logo">
                 <h1 class="login-brand-title">Gestión Operativa<br>y Cotizaciones</h1>
-                <p class="login-brand-subtitle">Plataforma centralizada para la ingeniería,<br>administración y el control de órdenes.</p>
-                
+                <p class="login-brand-subtitle">Plataforma centralizada para la ingeniería,<br>administración y el
+                    control de órdenes.</p>
+
                 <div class="login-pulse-container">
                     <div class="pulse-ring pulse-ring-1"></div>
                     <div class="pulse-ring pulse-ring-2"></div>
@@ -112,7 +113,8 @@
             </nav>
             <div class="sidebar-bottom">
                 <div id="current-user-badge" class="sidebar-user-info">
-                    <i id="admin-portal-btn" class="fas fa-user-circle user-avatar-icon" style="cursor: pointer;" title="Portal Admin"></i>
+                    <i id="admin-portal-btn" class="fas fa-user-circle user-avatar-icon" style="cursor: pointer;"
+                        title="Portal Admin"></i>
                     <div class="user-details">
                         <span id="current-user-name"></span>
                         <div id="connection-status" class="sidebar-connection">
@@ -151,7 +153,8 @@
                                 <h3>Cliente</h3>
                                 <div class="form-group">
                                     <div class="input-with-button">
-                                        <input type="text" id="client-search" placeholder="Buscar por nombre o ID..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                                        <input type="text" id="client-search" placeholder="Buscar por nombre o ID..."
+                                            autocomplete="off" data-lpignore="true" data-1p-ignore>
                                         <button id="add-client-btn" class="btn btn-add-inline" title="Nuevo Cliente"><i
                                                 class="fas fa-plus"></i></button>
                                         <button id="edit-client-btn" class="btn btn-add-inline"
@@ -159,13 +162,15 @@
                                     </div>
                                     <div id="client-search-results"></div>
                                 </div>
-                                <div id="quote-sede-container" class="form-group" style="display: none; margin-top: 10px;">
+                                <div id="quote-sede-container" class="form-group"
+                                    style="display: none; margin-top: 10px;">
                                     <label for="quote-sede-select">Sede del Cliente</label>
                                     <div class="input-with-button">
                                         <select id="quote-sede-select" class="form-control">
                                             <option value="">Cargando sedes...</option>
                                         </select>
-                                        <button id="quote-add-sede-btn" class="btn btn-add-inline" title="Nueva Sede"><i class="fas fa-plus"></i></button>
+                                        <button id="quote-add-sede-btn" class="btn btn-add-inline" title="Nueva Sede"><i
+                                                class="fas fa-plus"></i></button>
                                     </div>
                                 </div>
                                 <div id="client-details" class="client-details-display"></div>
@@ -194,7 +199,8 @@
                                 <div class="form-group">
                                     <label for="item-search">Agregar Ítem</label>
                                     <div class="input-with-button">
-                                        <input type="text" id="item-search" placeholder="Buscar por código o nombre..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                                        <input type="text" id="item-search" placeholder="Buscar por código o nombre..."
+                                            autocomplete="off" data-lpignore="true" data-1p-ignore>
                                         <button id="add-new-item-quote-page-btn" class="btn btn-add-inline"
                                             title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
                                     </div>
@@ -234,19 +240,28 @@
                         </div>
 
                         <div class="card" style="margin-bottom: 20px;">
-                            <h3 style="margin-top: 0; margin-bottom: 15px;">Notas Internas <span style="font-size: 0.8rem; font-weight: normal; color: var(--color-text-secondary);">(Uso interno adm. - NO aparece en PDF)</span></h3>
-                            <textarea id="quote-internal-notes-textarea" class="form-control form-control-textarea" rows="3" placeholder="Observaciones privadas sobre esta cotización..."></textarea>
+                            <h3 style="margin-top: 0; margin-bottom: 15px;">Notas Internas <span
+                                    style="font-size: 0.8rem; font-weight: normal; color: var(--color-text-secondary);">(Uso
+                                    interno adm. - NO aparece en PDF)</span></h3>
+                            <textarea id="quote-internal-notes-textarea" class="form-control form-control-textarea"
+                                rows="3" placeholder="Observaciones privadas sobre esta cotización..."></textarea>
                         </div>
 
                         <div class="quote-annex-images card" style="margin-bottom: 20px;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                <h3 style="margin: 0; font-size: 15px; color: #5a5a5a; font-weight: 600;"><i class="fas fa-image" style="margin-right: 8px;"></i> Fotografías / Anexos Técnicos (Opcional)</h3>
-                                <label for="quote-annex-upload" class="btn btn-outline" style="cursor: pointer; padding: 6px 14px; font-size: 13px; margin: 0;">
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <h3 style="margin: 0; font-size: 15px; color: #5a5a5a; font-weight: 600;"><i
+                                        class="fas fa-image" style="margin-right: 8px;"></i> Fotografías / Anexos
+                                    Técnicos (Opcional)</h3>
+                                <label for="quote-annex-upload" class="btn btn-outline"
+                                    style="cursor: pointer; padding: 6px 14px; font-size: 13px; margin: 0;">
                                     <i class="fas fa-upload"></i> Subir
                                 </label>
-                                <input type="file" id="quote-annex-upload" multiple accept="image/*" style="display: none;">
+                                <input type="file" id="quote-annex-upload" multiple accept="image/*"
+                                    style="display: none;">
                             </div>
-                            <div id="quote-annex-preview-container" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                            <div id="quote-annex-preview-container"
+                                style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
                                 <!-- Uploaded image previews will appear here -->
                             </div>
                         </div>
@@ -254,7 +269,8 @@
                         <div class="quote-main-actions card">
                             <button id="delete-current-quote-btn" class="btn btn-danger btn-danger-solid"
                                 style="display: none;"><i class="fas fa-trash"></i><span>Eliminar</span></button>
-                            <button id="duplicate-quote-btn" class="btn btn-duplicate" style="display: none; margin-right: auto;"><i class="fas fa-copy"></i> Duplicar</button>
+                            <button id="duplicate-quote-btn" class="btn btn-duplicate"
+                                style="display: none; margin-right: auto;"><i class="fas fa-copy"></i> Duplicar</button>
                             <button id="save-quote-btn" class="btn btn-success"><i class="fas fa-save"></i> Guardar
                                 Cotización</button>
                             <button id="generate-pdf-btn" class="btn btn-secondary"><i class="fas fa-file-pdf"></i>
@@ -291,9 +307,15 @@
                                             <label for="order-time">Hora de Inicio</label>
                                             <input type="time" id="order-time" class="form-control">
                                             <div class="time-presets" style="display: flex; gap: 8px; margin-top: 8px;">
-                                                <button type="button" class="btn btn-sm preset-time-btn" style="padding: 4px 8px; font-size: 0.75rem; min-width: auto; background-color: var(--color-background-alt); border: 1px solid var(--color-border); color: var(--color-text-secondary);" data-time="07:00">7:00 AM</button>
-                                                <button type="button" class="btn btn-sm preset-time-btn" style="padding: 4px 8px; font-size: 0.75rem; min-width: auto; background-color: var(--color-background-alt); border: 1px solid var(--color-border); color: var(--color-text-secondary);" data-time="10:30">10:30 AM</button>
-                                                <button type="button" class="btn btn-sm preset-time-btn" style="padding: 4px 8px; font-size: 0.75rem; min-width: auto; background-color: var(--color-background-alt); border: 1px solid var(--color-border); color: var(--color-text-secondary);" data-time="14:30">2:30 PM</button>
+                                                <button type="button" class="btn btn-sm preset-time-btn"
+                                                    style="padding: 4px 8px; font-size: 0.75rem; min-width: auto; background-color: var(--color-background-alt); border: 1px solid var(--color-border); color: var(--color-text-secondary);"
+                                                    data-time="07:00">7:00 AM</button>
+                                                <button type="button" class="btn btn-sm preset-time-btn"
+                                                    style="padding: 4px 8px; font-size: 0.75rem; min-width: auto; background-color: var(--color-background-alt); border: 1px solid var(--color-border); color: var(--color-text-secondary);"
+                                                    data-time="10:30">10:30 AM</button>
+                                                <button type="button" class="btn btn-sm preset-time-btn"
+                                                    style="padding: 4px 8px; font-size: 0.75rem; min-width: auto; background-color: var(--color-background-alt); border: 1px solid var(--color-border); color: var(--color-text-secondary);"
+                                                    data-time="14:30">2:30 PM</button>
                                             </div>
                                         </div>
                                         <div class="form-group">
@@ -306,11 +328,14 @@
                                             </select>
                                             <input type="hidden" id="order-duration-hours" value="0">
                                             <input type="hidden" id="order-duration-minutes" value="0">
-                                            <div id="order-duration-hint" style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 4px; min-height: 14px;"></div>
+                                            <div id="order-duration-hint"
+                                                style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 4px; min-height: 14px;">
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="form-group">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                        <div
+                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                                             <label for="order-type" style="margin-bottom: 0;">Tipo de Orden</label>
                                         </div>
                                         <div id="order-type-selector" class="custom-select-container" tabindex="0">
@@ -319,13 +344,14 @@
                                             </div>
                                             <i class="fas fa-chevron-down custom-select-arrow"></i>
                                         </div>
-                                        <div id="order-type-dropdown" class="custom-select-dropdown search-results-popover">
+                                        <div id="order-type-dropdown"
+                                            class="custom-select-dropdown search-results-popover">
                                             <!-- Options injected via JS -->
                                         </div>
                                         <select id="order-type" style="display: none;">
                                             <option value="" disabled selected>Cargando...</option>
                                         </select>
-                                        
+
                                         <input type="text" id="order-type-custom" class="form-control"
                                             placeholder="Especifique el tipo..."
                                             style="display: none; margin-top: 10px;">
@@ -346,7 +372,8 @@
                                     <div class="form-group">
                                         <div class="input-with-button">
                                             <input type="text" id="order-client-search"
-                                                placeholder="Buscar por nombre o ID..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                                                placeholder="Buscar por nombre o ID..." autocomplete="off"
+                                                data-lpignore="true" data-1p-ignore>
                                             <button id="order-add-client-btn" class="btn btn-add-inline"
                                                 title="Nuevo Cliente"><i class="fas fa-plus"></i></button>
                                             <button id="order-edit-client-btn" class="btn btn-add-inline"
@@ -354,13 +381,15 @@
                                         </div>
                                         <div id="order-client-search-results"></div>
                                     </div>
-                                    <div id="order-sede-container" class="form-group" style="display: none; margin-top: 10px;">
+                                    <div id="order-sede-container" class="form-group"
+                                        style="display: none; margin-top: 10px;">
                                         <label for="order-sede-select">Sede del Cliente</label>
                                         <div class="input-with-button">
                                             <select id="order-sede-select" class="form-control">
                                                 <option value="">Cargando sedes...</option>
                                             </select>
-                                            <button id="order-add-sede-btn" class="btn btn-add-inline" title="Nueva Sede"><i class="fas fa-plus"></i></button>
+                                            <button id="order-add-sede-btn" class="btn btn-add-inline"
+                                                title="Nueva Sede"><i class="fas fa-plus"></i></button>
                                         </div>
                                     </div>
                                     <div id="order-client-details" class="client-details-display"></div>
@@ -430,7 +459,8 @@
                                     <label for="order-item-search">Agregar Servicio o Material</label>
                                     <div class="input-with-button">
                                         <input type="text" id="order-item-search"
-                                            placeholder="Buscar por código o nombre..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                                            placeholder="Buscar por código o nombre..." autocomplete="off"
+                                            data-lpignore="true" data-1p-ignore>
                                         <button id="order-add-new-item-btn" class="btn btn-add-inline"
                                             title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
                                     </div>
@@ -447,16 +477,21 @@
                                 <textarea id="order-notes" rows="6"></textarea>
                             </div>
                         </div>
-                        
+
                         <div class="card" style="margin-top: 20px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <h3 style="margin: 0;"><i class="fas fa-camera" style="color: var(--color-text-secondary); margin-right: 8px;"></i> Fotografías / Anexos (Opcional)</h3>
-                                <label for="order-annex-upload" class="btn btn-outline" style="cursor: pointer; padding: 6px 14px; font-size: 13px; margin: 0;">
+                                <h3 style="margin: 0;"><i class="fas fa-camera"
+                                        style="color: var(--color-text-secondary); margin-right: 8px;"></i> Fotografías
+                                    / Anexos (Opcional)</h3>
+                                <label for="order-annex-upload" class="btn btn-outline"
+                                    style="cursor: pointer; padding: 6px 14px; font-size: 13px; margin: 0;">
                                     <i class="fas fa-upload"></i> Subir
                                 </label>
-                                <input type="file" id="order-annex-upload" multiple accept="image/*" style="display: none;">
+                                <input type="file" id="order-annex-upload" multiple accept="image/*"
+                                    style="display: none;">
                             </div>
-                            <div id="order-annex-preview-container" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                            <div id="order-annex-preview-container"
+                                style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
                             </div>
                         </div>
 
@@ -478,7 +513,8 @@
                     <div class="page-header-main">
                         <h2>Gestión de Órdenes <span id="order-count-badge" class="header-count-badge"></span></h2>
                         <div class="page-actions">
-                            <input type="text" id="order-list-search" placeholder="Buscar orden..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                            <input type="text" id="order-list-search" placeholder="Buscar orden..." autocomplete="off"
+                                data-lpignore="true" data-1p-ignore>
                             <button id="add-new-order-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i>
                                 <span>Nueva Orden</span></button>
                         </div>
@@ -533,11 +569,13 @@
                     <div class="page-header-main">
                         <h2>Gestión de Clientes <span id="client-count-badge" class="header-count-badge"></span></h2>
                         <div class="page-actions">
-                            <input type="text" id="client-list-search" placeholder="Buscar cliente..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                            <input type="text" id="client-list-search" placeholder="Buscar cliente..."
+                                autocomplete="off" data-lpignore="true" data-1p-ignore>
                             <button id="add-new-client-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i>
-                                  <span>Agregar Cliente</span></button>
-                            <button id="add-new-sede-page-btn" class="btn btn-secondary" style="margin-left: 10px;"><i class="fas fa-building"></i>
-                                  <span>Agregar Sede</span></button>
+                                <span>Agregar Cliente</span></button>
+                            <button id="add-new-sede-page-btn" class="btn btn-secondary" style="margin-left: 10px;"><i
+                                    class="fas fa-building"></i>
+                                <span>Agregar Sede</span></button>
                         </div>
                     </div>
                     <button id="delete-all-clients-btn" class="btn btn-icon-only btn-subtle-danger"
@@ -556,7 +594,8 @@
                     <div class="page-header-main">
                         <h2>Gestión de Insumos <span id="item-count-badge" class="header-count-badge"></span></h2>
                         <div class="page-actions">
-                            <input type="text" id="item-list-search" placeholder="Buscar insumo o servicio..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                            <input type="text" id="item-list-search" placeholder="Buscar insumo o servicio..."
+                                autocomplete="off" data-lpignore="true" data-1p-ignore>
                             <button id="add-new-item-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i>
                                 <span>Agregar Insumo</span></button>
                         </div>
@@ -578,7 +617,8 @@
                         <h2>Gestión de Técnicos <span id="technician-count-badge" class="header-count-badge"></span>
                         </h2>
                         <div class="page-actions">
-                            <input type="text" id="technician-list-search" placeholder="Buscar técnico..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                            <input type="text" id="technician-list-search" placeholder="Buscar técnico..."
+                                autocomplete="off" data-lpignore="true" data-1p-ignore>
                             <button id="add-new-technician-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i>
                                 <span>Agregar Técnico</span></button>
                         </div>
@@ -597,7 +637,8 @@
                     <div class="page-header-main">
                         <h2>Mis Cotizaciones <span id="saved-quotes-count-badge" class="header-count-badge"></span></h2>
                         <div class="page-actions">
-                            <input type="text" id="saved-quotes-search" placeholder="Buscar por ID o cliente..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                            <input type="text" id="saved-quotes-search" placeholder="Buscar por ID o cliente..."
+                                autocomplete="off" data-lpignore="true" data-1p-ignore>
                         </div>
                     </div>
                     <button id="delete-all-quotes-btn" class="btn btn-icon-only btn-subtle-danger"
@@ -615,36 +656,47 @@
                 <header class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
                     <h2>Reportes Históricos</h2>
                     <div style="display: flex; gap: 8px;">
-                        <button id="reports-export-excel-btn" class="btn btn-outline" style="color: #28a745; border-color: #28a745;">
+                        <button id="reports-export-excel-btn" class="btn btn-outline"
+                            style="color: #28a745; border-color: #28a745;">
                             <i class="fas fa-file-excel"></i> Excel
                         </button>
-                        <button id="reports-export-zip-btn" class="btn btn-outline" style="color: #17a2b8; border-color: #17a2b8;">
+                        <button id="reports-export-zip-btn" class="btn btn-outline"
+                            style="color: #17a2b8; border-color: #17a2b8;">
                             <i class="fas fa-file-archive"></i> ZIP Todos
                         </button>
-                        <button id="reports-export-merged-btn" class="btn btn-outline" style="color: #d9534f; border-color: #d9534f;">
+                        <button id="reports-export-merged-btn" class="btn btn-outline"
+                            style="color: #d9534f; border-color: #d9534f;">
                             <i class="fas fa-file-pdf"></i> Unir PDFs
                         </button>
-                        <button id="reports-export-whatsapp-btn" class="btn btn-primary" style="background-color: #25D366; border-color: #25D366; color: white;">
+                        <button id="reports-export-whatsapp-btn" class="btn btn-primary"
+                            style="background-color: #25D366; border-color: #25D366; color: white;">
                             <i class="fas fa-share-alt"></i> Compartir
                         </button>
                     </div>
                 </header>
                 <div class="page-content">
-                    <div class="filters-container" style="background: var(--surface); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border); display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div class="filters-container"
+                        style="background: var(--surface); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border); display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
                         <div>
-                            <label style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Buscar</label>
-                            <input type="text" id="reports-search" class="form-control" placeholder="Técnico, equipo, tipo..." autocomplete="off">
+                            <label
+                                style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Buscar</label>
+                            <input type="text" id="reports-search" class="form-control"
+                                placeholder="Técnico, equipo, tipo..." autocomplete="off">
                         </div>
                         <div>
-                            <label style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Desde</label>
+                            <label
+                                style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Desde</label>
                             <input type="date" id="reports-date-from" class="form-control">
                         </div>
                         <div>
-                            <label style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Hasta</label>
+                            <label
+                                style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Hasta</label>
                             <input type="date" id="reports-date-to" class="form-control">
                         </div>
                         <div>
-                            <label style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Registros por página</label>
+                            <label
+                                style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Registros
+                                por página</label>
                             <select id="reports-page-size" class="form-control">
                                 <option value="10">10</option>
                                 <option value="25">25</option>
@@ -659,11 +711,13 @@
                         <p style="color: var(--text-secondary); margin-top: 5px;">Cargando reportes...</p>
                     </div>
 
-                    <div class="table-responsive" style="border: 1px solid var(--color-border-light); border-radius: 8px; overflow: hidden; background: var(--surface);">
+                    <div class="table-responsive"
+                        style="border: 1px solid var(--color-border-light); border-radius: 8px; overflow: hidden; background: var(--surface);">
                         <table id="reports-data-table" class="table" style="margin-bottom: 0;">
                             <thead>
                                 <tr>
-                                    <th style="width: 40px; text-align: center;"><input type="checkbox" id="reports-select-all"></th>
+                                    <th style="width: 40px; text-align: center;"><input type="checkbox"
+                                            id="reports-select-all"></th>
                                     <th>Fecha</th>
                                     <th>Cliente/Empresa</th>
                                     <th>Dependencia</th>
@@ -680,13 +734,19 @@
                         </table>
                     </div>
 
-                    <div class="pagination-controls" style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;">
-                        <span id="reports-page-info" style="color: var(--text-secondary); font-size: 0.9rem;">Página 1 de 1</span>
+                    <div class="pagination-controls"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;">
+                        <span id="reports-page-info" style="color: var(--text-secondary); font-size: 0.9rem;">Página 1
+                            de 1</span>
                         <div style="display: flex; gap: 5px;">
-                            <button id="reports-first-page-btn" class="btn btn-outline" style="padding: 5px 10px;"><i class="fas fa-angle-double-left"></i></button>
-                            <button id="reports-prev-page-btn" class="btn btn-outline" style="padding: 5px 10px;"><i class="fas fa-angle-left"></i></button>
-                            <button id="reports-next-page-btn" class="btn btn-outline" style="padding: 5px 10px;"><i class="fas fa-angle-right"></i></button>
-                            <button id="reports-last-page-btn" class="btn btn-outline" style="padding: 5px 10px;"><i class="fas fa-angle-double-right"></i></button>
+                            <button id="reports-first-page-btn" class="btn btn-outline" style="padding: 5px 10px;"><i
+                                    class="fas fa-angle-double-left"></i></button>
+                            <button id="reports-prev-page-btn" class="btn btn-outline" style="padding: 5px 10px;"><i
+                                    class="fas fa-angle-left"></i></button>
+                            <button id="reports-next-page-btn" class="btn btn-outline" style="padding: 5px 10px;"><i
+                                    class="fas fa-angle-right"></i></button>
+                            <button id="reports-last-page-btn" class="btn btn-outline" style="padding: 5px 10px;"><i
+                                    class="fas fa-angle-double-right"></i></button>
                         </div>
                     </div>
                 </div>
@@ -1023,16 +1083,20 @@
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <button class="close-modal" aria-label="Cerrar"><i class="fas fa-times"></i></button>
             <h3 style="margin-bottom: 20px;">Compartir Reporte(s)</h3>
-            <p style="margin-bottom: 20px; color: var(--text-secondary); font-size: 0.9rem;">Selecciona el medio por el cual deseas compartir los documentos generados.</p>
-            
+            <p style="margin-bottom: 20px; color: var(--text-secondary); font-size: 0.9rem;">Selecciona el medio por el
+                cual deseas compartir los documentos generados.</p>
+
             <div style="display: flex; flex-direction: column; gap: 15px;">
-                <button id="share-whatsapp-btn" class="btn" style="background-color: #25D366; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">
+                <button id="share-whatsapp-btn" class="btn"
+                    style="background-color: #25D366; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">
                     <i class="fab fa-whatsapp fa-lg"></i> Compartir vía WhatsApp
                 </button>
-                <button id="share-gmail-btn" class="btn" style="background-color: #EA4335; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">
+                <button id="share-gmail-btn" class="btn"
+                    style="background-color: #EA4335; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">
                     <i class="fab fa-google fa-lg"></i> Redactar en Gmail
                 </button>
-                <button id="share-outlook-btn" class="btn" style="background-color: #0078D4; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">
+                <button id="share-outlook-btn" class="btn"
+                    style="background-color: #0078D4; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">
                     <i class="fab fa-microsoft fa-lg"></i> Redactar en Outlook
                 </button>
             </div>
@@ -1044,7 +1108,8 @@
         <div class="modal-content" style="max-width: 700px;">
             <button class="close-modal" aria-label="Cerrar"><i class="fas fa-times"></i></button>
             <h3>Detalles del Reporte</h3>
-            <div id="report-details-body" style="margin-top: 15px; font-size: 0.95rem; line-height: 1.5; color: var(--text-color);">
+            <div id="report-details-body"
+                style="margin-top: 15px; font-size: 0.95rem; line-height: 1.5; color: var(--text-color);">
                 <!-- Contenido dinámico -->
             </div>
         </div>
@@ -1192,6 +1257,17 @@
                     </div>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Image Viewer Modal -->
+    <div id="image-viewer-modal">
+        <button id="image-viewer-close" class="image-viewer-btn"><i class="fas fa-times"></i></button>
+        <img id="image-viewer-img" src="" alt="Vista previa">
+        <div class="image-viewer-controls">
+            <button id="image-viewer-prev" class="image-viewer-btn"><i class="fas fa-arrow-left"></i></button>
+            <span id="image-viewer-counter" style="font-size: 16px; font-weight: bold;"></span>
+            <button id="image-viewer-next" class="image-viewer-btn"><i class="fas fa-arrow-right"></i></button>
         </div>
     </div>
 

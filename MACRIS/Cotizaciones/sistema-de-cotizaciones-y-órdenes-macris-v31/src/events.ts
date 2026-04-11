@@ -18,11 +18,11 @@ function setupNavigationEventListeners() {
                 if (pageName === 'page-settings') {
                     const currentTheme = await UI.getCurrentThemeFromDB();
                     const radio = document.querySelector(`input[name="theme"][value="${currentTheme}"]`) as HTMLInputElement;
-                     if (radio) radio.checked = true;
+                    if (radio) radio.checked = true;
                 }
-                
+
                 UI.navigateTo(pageName);
-                
+
                 if (pageName === 'page-reports') {
                     onSwitchToReportsPage(); // Ejecuta de forma asíncrona pero sin bloquear la UI
                 }
@@ -44,15 +44,15 @@ function setupQuoteEventListeners() {
         if (!quote) return;
         const quoteItem = quote.items.find(i => i.id === quoteItemId);
         if (!quoteItem) return;
-        
+
         if (target.matches('.item-qty')) {
             quoteItem.quantity = parseFloat(target.value) || 0;
         } else if (target.matches('.item-price')) {
-            quoteItem.price = parseFloat(target.value.replace(/[^0-9]+/g,"")) || 0;
+            quoteItem.price = parseFloat(target.value.replace(/[^0-9]+/g, "")) || 0;
         } else if (target.matches('.item-desc')) {
             quoteItem.description = target.value;
         }
-        
+
         State.updateActiveQuote(quote);
         UI.updateQuoteSummary();
         UI.updateItemRowTotal(row);
@@ -62,15 +62,15 @@ function setupQuoteEventListeners() {
         const target = e.target as HTMLElement;
         const row = target.closest('tr');
         if (!row || !row.dataset.itemId) return;
-    
+
         const itemId = row.dataset.itemId;
-    
+
         // Handle delete button clicks first
         if (target.closest('.delete-item-btn')) {
             UI.handleRemoveItemFromQuote(itemId);
             return; // Important to stop further processing
         }
-    
+
         // Handle clicks specifically on the edit pencil
         const pencil = target.closest<HTMLElement>('.edit-indicator');
         if (pencil) {
@@ -80,7 +80,7 @@ function setupQuoteEventListeners() {
                 UI.openDescriptionEditModal(itemId, 'quote');
                 return;
             }
-    
+
             // Check if it's for quantity or price
             const valueWrapper = pencil.closest<HTMLElement>('.item-value-mobile-view');
             if (valueWrapper) {
@@ -174,14 +174,14 @@ function setupManagementEventListeners() {
         const target = e.target as HTMLElement;
         const editBtn = target.closest('.edit-btn') as HTMLElement | null;
         const deleteBtn = target.closest('.delete-btn') as HTMLElement | null;
-        
+
         if (editBtn && editBtn.dataset.id) {
             UI.openEntityModal('item', editBtn.dataset.id);
         } else if (deleteBtn && deleteBtn.dataset.id) {
             UI.handleDeleteItem(deleteBtn.dataset.id);
         }
     });
-    
+
     // Saved Quotes
     D.savedQuotesSearchInput.addEventListener('input', () => UI.renderSavedQuotesPageList());
     D.deleteAllQuotesBtn.addEventListener('click', UI.handleDeleteAllSavedQuotes);
@@ -220,7 +220,7 @@ function setupManagementEventListeners() {
 function setupModalEventListeners() {
     D.closeModalBtns.forEach(btn => btn.addEventListener('click', UI.closeAllModals));
     D.cancelModalBtns.forEach(btn => btn.addEventListener('click', UI.closeAllModals));
-    
+
     const modals = [D.entityModal, D.pdfPreviewModal, D.descriptionEditModal, D.valueEditModal, D.orderSourceModal, D.confirmationModal];
     modals.forEach(modal => {
         modal.addEventListener('click', (e) => {
@@ -267,7 +267,7 @@ function setupGlobalActionListeners() {
         }
     });
     D.generatePdfBtn.addEventListener('click', UI.handleGeneratePdf);
-    
+
     D.savedQuotesPageContainer.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
         const quoteRow = target.closest('tr') as HTMLTableRowElement | null;
@@ -343,14 +343,14 @@ function setupOrderWorkspaceEventListeners() {
             const target = e.target as HTMLElement;
             const row = target.closest('tr');
             if (!row || !row.dataset.itemId) return;
-        
+
             const itemId = row.dataset.itemId;
-        
+
             if (target.closest('.delete-item-btn')) {
                 UI.handleRemoveItemFromOrder(itemId);
                 return;
             }
-        
+
             const pencil = target.closest<HTMLElement>('.edit-indicator');
             if (pencil) {
                 const descWrapper = pencil.closest('.item-desc-mobile-view');
@@ -358,7 +358,7 @@ function setupOrderWorkspaceEventListeners() {
                     UI.openDescriptionEditModal(itemId, 'order');
                     return;
                 }
-        
+
                 const valueWrapper = pencil.closest<HTMLElement>('.item-value-mobile-view');
                 if (valueWrapper) {
                     const field = valueWrapper.dataset.field as 'quantity' | 'price' | undefined;
@@ -373,7 +373,7 @@ function setupOrderWorkspaceEventListeners() {
 
     if (D.orderServicesTableBody) setupTableListeners(D.orderServicesTableBody);
     if (D.orderMaterialsTableBody) setupTableListeners(D.orderMaterialsTableBody);
-    
+
     // Listeners are setup via setupTableListeners
     D.orderTypeSelect.addEventListener('change', UI.handleOrderDetailsChange);
     D.orderTypeCustomInput.addEventListener('input', UI.handleOrderDetailsChange);
@@ -385,13 +385,13 @@ function setupOrderWorkspaceEventListeners() {
     document.querySelectorAll('.preset-time-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const time = (e.currentTarget as HTMLElement).dataset.time;
-            if(time) {
+            if (time) {
                 D.orderTimeInput.value = time;
                 UI.handleOrderDetailsChange();
             }
         });
     });
-    
+
     if (D.orderDifficultySelect) {
         D.orderDifficultySelect.addEventListener('change', () => {
             UI.handleOrderDifficultyChange();
@@ -437,7 +437,7 @@ function setupSettingsEventListeners() {
                 previewBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>`;
                 try {
                     await UI.handlePreviewPdfTemplate(template);
-                } catch(err) {
+                } catch (err) {
                     console.error("PDF preview failed", err);
                 } finally {
                     previewBtn.disabled = false;
@@ -452,7 +452,7 @@ function setupSettingsEventListeners() {
             }
         }
     });
-    
+
     D.pdfOutputOptionsContainer?.addEventListener('change', (e) => {
         const target = e.target as HTMLInputElement;
         if (target.name === 'pdf-output') {
@@ -529,7 +529,7 @@ function setupPdfDownloadListener() {
     D.downloadPdfBtn.addEventListener('click', async () => {
         const doc = State.getCurrentPdfDocForDownload();
         const fileName = State.getCurrentPdfFileName();
-        
+
         if (doc) {
             const saveSuccess = await UI.handleSaveQuote();
             if (saveSuccess) {
@@ -537,7 +537,7 @@ function setupPdfDownloadListener() {
                 UI.showNotification(`Iniciando descarga de ${effectiveFileName}`, 'info');
                 doc.save(effectiveFileName);
                 if (!fileName) {
-                     UI.showNotification('No se encontró el nombre de archivo, se usó uno genérico.', 'warning');
+                    UI.showNotification('No se encontró el nombre de archivo, se usó uno genérico.', 'warning');
                 }
                 UI.closeAllModals();
             }
@@ -576,7 +576,7 @@ function setupOrderTabsEventListeners() {
 
             tabsContainer.querySelectorAll('.tab-link').forEach(tab => tab.classList.remove('active'));
             tabLink.classList.add('active');
-            
+
             State.setActiveOrderTab(tabType);
             UI.renderOrdersList();
         }

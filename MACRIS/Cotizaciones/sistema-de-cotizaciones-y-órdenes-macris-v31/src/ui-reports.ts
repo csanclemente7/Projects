@@ -1,5 +1,5 @@
 import * as DOM from './dom';
-import { fetchReportsBatch, fetchAllExportableReports, fetchCities, fetchCompanies, fetchDependencies, SUPABASE_REPORT_BATCH, updateReportPaymentStatus, deleteReport } from './api-reports';
+import { fetchReportsBatch, fetchAllExportableReports, fetchCities, fetchCompanies, fetchDependencies, SUPABASE_REPORT_BATCH, updateReportPaymentStatus, deleteReport, updateFullReport } from './api-reports';
 import { generateZipExport, generateExcelExport, generateMergedPdfExport, getMergedPdfBlob } from './exporter';
 import { generateReportPDF } from './pdf-reports';
 import type { Report, City, Company, Dependency } from './reports-types';
@@ -492,111 +492,222 @@ function showReportDetailsModal(report: Report) {
 
     const eq = (report.equipmentSnapshot || {}) as any;
     const isRes = eq.category === 'residencial';
-    const clientName = isRes ? eq.client_name : eq.companyName;
-
-    let itemsHtml = '';
-    if (report.itemsSnapshot && report.itemsSnapshot.length > 0) {
-        itemsHtml = `<ul style="padding-left: 20px; margin: 0; color: var(--text-color);">` + 
-            report.itemsSnapshot.map(i => `<li style="margin-bottom: 4px;"><strong>${i.quantity}x</strong> ${i.description}</li>`).join('') + 
-            `</ul>`;
-    } else {
-        itemsHtml = '<p style="color: var(--text-muted); font-style: italic;">No se registraron insumos.</p>';
-    }
+    
+    // We will render inputs so it's fully editable
+    // Insumos editable list
+    let itemsHtml = `
+        <div id="report-items-container">
+            ${(report.itemsSnapshot || []).map((i: any, index: number) => `
+                <div class="report-item-row" data-index="${index}" style="display: flex; gap: 10px; margin-bottom: 8px;">
+                    <input type="number" class="input item-qty" value="${i.quantity}" style="width: 80px;" min="1">
+                    <input type="text" class="input item-desc" value="${i.description}" style="flex: 1;">
+                    <button class="btn btn-icon-only-modal btn-remove-item"><i class="fas fa-trash"></i></button>
+                </div>
+            `).join('')}
+        </div>
+        <button id="report-add-item-btn" class="btn btn-secondary" style="margin-top: 10px; font-size: 0.85rem;"><i class="fas fa-plus"></i> Agregar Insumo</button>
+    `;
 
     body.innerHTML = `
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);">
-            <div>
-                <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;"><i class="fas fa-info-circle"></i> Información General</h4>
-                <p style="margin: 5px 0;"><strong>Fecha:</strong> ${new Date(report.timestamp).toLocaleString()}</p>
-                <p style="margin: 5px 0;"><strong>Tipo Servicio:</strong> ${report.serviceType}</p>
-                <p style="margin: 5px 0;"><strong>Técnico:</strong> ${report.workerName}</p>
-                <p style="margin: 5px 0;"><strong>Estado:</strong> <span style="color: ${report.is_paid ? '#28a745' : '#ffc107'}; font-weight: bold;">${report.is_paid ? 'Pagado' : 'No pagado'}</span></p>
-            </div>
-            <div>
-                <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;"><i class="fas fa-building"></i> Datos del Cliente/Empresa</h4>
-                <div class="form-group" style="margin-bottom: 8px;">
-                    <label style="font-size: 0.85rem; font-weight: bold;">Nombre del Cliente/Empresa:</label>
-                    <div style="display: flex; gap: 5px; margin-top: 3px;">
-                        <input type="text" id="report-client-name-input" class="input" value="${clientName || ''}" style="flex:1; padding: 6px; font-size: 0.9rem;" placeholder="Nombre...">
-                        <button id="report-save-client-btn" class="btn btn-primary" title="Guardar Nombre" style="padding: 6px 12px;"><i class="fas fa-save"></i></button>
-                    </div>
+        <div class="report-details-custom-card" style="margin-bottom: 12px;">
+            <h4 class="report-details-custom-title"><i class="fas fa-info-circle"></i> Información General</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div class="report-details-form-row">
+                    <label>Tipo Servicio</label>
+                    <input type="text" id="report-edit-service-type" class="input" value="${report.serviceType || ''}">
                 </div>
-                <p style="margin: 5px 0;"><strong>Dirección:</strong> ${eq.address || 'N/A'}</p>
-                <p style="margin: 5px 0;"><strong>Dependencia:</strong> ${eq.dependencyName || 'N/A'}</p>
+                <div class="report-details-form-row">
+                    <label>Técnico</label>
+                    <input type="text" id="report-edit-worker-name" class="input" value="${report.workerName || ''}">
+                </div>
+                <div class="report-details-form-row">
+                    <label>Estado de Pago</label>
+                    <select id="report-edit-is-paid" class="input">
+                        <option value="true" ${report.is_paid ? 'selected' : ''}>Pagado</option>
+                        <option value="false" ${!report.is_paid ? 'selected' : ''}>No pagado</option>
+                    </select>
+                </div>
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 15px;">
-            <div>
-                <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;"><i class="fas fa-tools"></i> Equipo Intervenido</h4>
-                <p style="margin: 5px 0;"><strong>Marca:</strong> ${eq.brand || 'N/A'}</p>
-                <p style="margin: 5px 0;"><strong>Modelo:</strong> ${eq.model || 'N/A'}</p>
-                <p style="margin: 5px 0;"><strong>Tipo:</strong> ${eq.type || 'N/A'}</p>
-                <p style="margin: 5px 0;"><strong>Capacidad:</strong> ${eq.capacity || 'N/A'}</p>
-                <p style="margin: 5px 0;"><strong>Refrigerante:</strong> ${eq.refrigerant || 'N/A'}</p>
-            </div>
-            <div>
-                <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;"><i class="fas fa-tachometer-alt"></i> Mediciones</h4>
-                <p style="margin: 5px 0;"><strong>Presión:</strong> ${report.pressure || 'N/A'}</p>
-                <p style="margin: 5px 0;"><strong>Amperaje:</strong> ${report.amperage || 'N/A'}</p>
+        <div class="report-details-custom-card" style="margin-bottom: 12px;">
+            <h4 class="report-details-custom-title"><i class="fas fa-building"></i> Datos del Cliente</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div class="report-details-form-row">
+                    <label>Nombre</label>
+                    <input type="text" id="report-edit-client-name" class="input" value="${(isRes ? eq.client_name : eq.companyName) || ''}">
+                </div>
+                <div class="report-details-form-row">
+                    <label>Dirección</label>
+                    <input type="text" id="report-edit-address" class="input" value="${eq.address || ''}">
+                </div>
+                <div class="report-details-form-row">
+                    <label>Dependencia</label>
+                    <input type="text" id="report-edit-dependency" class="input" value="${eq.dependencyName || ''}">
+                </div>
             </div>
         </div>
 
-        <div style="background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 15px;">
-            <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;"><i class="fas fa-clipboard-list"></i> Observaciones</h4>
-            <p style="margin: 0; font-style: italic;">${report.observations || 'Sin observaciones'}</p>
+        <div class="report-details-custom-card" style="margin-bottom: 12px;">
+            <h4 class="report-details-custom-title"><i class="fas fa-tools"></i> Equipo y Mediciones</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div class="report-details-form-row">
+                    <label>Marca</label>
+                    <input type="text" id="report-edit-brand" class="input" value="${eq.brand || ''}">
+                </div>
+                <div class="report-details-form-row">
+                    <label>Modelo</label>
+                    <input type="text" id="report-edit-model" class="input" value="${eq.model || ''}">
+                </div>
+                <div class="report-details-form-row">
+                    <label>Tipo</label>
+                    <input type="text" id="report-edit-type" class="input" value="${eq.type || ''}">
+                </div>
+                <div class="report-details-form-row">
+                    <label>Capacidad</label>
+                    <input type="text" id="report-edit-capacity" class="input" value="${eq.capacity || ''}">
+                </div>
+                <div class="report-details-form-row">
+                    <label>Refrigerante</label>
+                    <input type="text" id="report-edit-refrigerant" class="input" value="${eq.refrigerant || ''}">
+                </div>
+                <div class="report-details-form-row">
+                    <label>Presión</label>
+                    <input type="text" id="report-edit-pressure" class="input" value="${report.pressure || ''}">
+                </div>
+                <div class="report-details-form-row">
+                    <label>Amperaje</label>
+                    <input type="text" id="report-edit-amperage" class="input" value="${report.amperage || ''}">
+                </div>
+            </div>
         </div>
 
-        <div style="background: var(--bg-color); padding: 15px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 15px;">
-            <h4 style="margin-top: 0; color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 5px; margin-bottom: 10px;"><i class="fas fa-box-open"></i> Insumos Utilizados</h4>
+        <div class="report-details-custom-card" style="margin-bottom: 12px;">
+            <h4 class="report-details-custom-title"><i class="fas fa-clipboard-list"></i> Observaciones</h4>
+            <div class="report-details-form-row">
+                <textarea id="report-edit-observations" class="input" rows="2" style="resize: vertical;">${report.observations || ''}</textarea>
+            </div>
+        </div>
+
+        <div class="report-details-custom-card" style="margin-bottom: 12px;">
+            <h4 class="report-details-custom-title"><i class="fas fa-box-open"></i> Insumos Utilizados</h4>
             ${itemsHtml}
         </div>
 
-        <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
-            <button id="report-modal-download-btn" class="btn btn-danger" style="display: flex; align-items: center; gap: 8px; font-weight: bold;">
-                <i class="fas fa-file-pdf"></i> Descargar PDF
+        <div style="display: flex; gap: 15px; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+            <button id="report-modal-back-btn" class="btn btn-secondary" style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-arrow-left"></i> Atrás
+            </button>
+            <button id="report-modal-download-btn" class="btn btn-secondary" style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-file-pdf"></i> PDF
+            </button>
+            <button id="report-modal-save-btn" class="btn btn-primary" style="display: flex; align-items: center; gap: 8px; font-weight: bold; flex-grow: 1; justify-content: center;">
+                <i class="fas fa-save"></i> Guardar Cambios
             </button>
         </div>
     `;
 
     modal.classList.add('active');
 
-    // Attach Event Listeners
-    const saveBtn = document.getElementById('report-save-client-btn') as HTMLButtonElement;
+    // Setup logic for adding/removing items
+    const itemsContainer = document.getElementById('report-items-container');
+    const addItemBtn = document.getElementById('report-add-item-btn');
+    if (itemsContainer && addItemBtn) {
+        addItemBtn.addEventListener('click', () => {
+            const row = document.createElement('div');
+            row.className = 'report-item-row';
+            row.style.cssText = 'display: flex; gap: 10px; margin-bottom: 8px;';
+            row.innerHTML = `
+                <input type="number" class="input item-qty" value="1" style="width: 80px;" min="1" placeholder="Cant">
+                <input type="text" class="input item-desc" value="" style="flex: 1;" placeholder="Descripción del insumo">
+                <button class="btn btn-icon-only-modal btn-remove-item"><i class="fas fa-trash"></i></button>
+            `;
+            itemsContainer.appendChild(row);
+            
+            row.querySelector('.btn-remove-item')?.addEventListener('click', () => row.remove());
+        });
+
+        itemsContainer.querySelectorAll('.btn-remove-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const target = e.currentTarget as HTMLElement;
+                target.closest('.report-item-row')?.remove();
+            });
+        });
+    }
+
+    // Back button and Save logic
+    const backBtn = document.getElementById('report-modal-back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+    }
+
+    const saveBtn = document.getElementById('report-modal-save-btn') as HTMLButtonElement;
     if (saveBtn) {
         saveBtn.addEventListener('click', async () => {
-            const input = document.getElementById('report-client-name-input') as HTMLInputElement;
-            if (!input || !input.value.trim()) return;
-            
-            const newName = input.value.trim();
-            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
             saveBtn.disabled = true;
 
             try {
-                // Update local copy
-                if (isRes) {
-                    eq.client_name = newName;
-                } else {
-                    eq.companyName = newName;
-                }
-                
-                // Save to API
-                const { updateReportEquipmentSnapshot } = await import('./api-reports');
-                const success = await updateReportEquipmentSnapshot(report.id, eq);
-                
+                // Gather generic fields
+                report.serviceType = (document.getElementById('report-edit-service-type') as HTMLInputElement).value;
+                report.workerName = (document.getElementById('report-edit-worker-name') as HTMLInputElement).value;
+                report.is_paid = (document.getElementById('report-edit-is-paid') as HTMLSelectElement).value === 'true';
+                report.pressure = (document.getElementById('report-edit-pressure') as HTMLInputElement).value;
+                report.amperage = (document.getElementById('report-edit-amperage') as HTMLInputElement).value;
+                report.observations = (document.getElementById('report-edit-observations') as HTMLTextAreaElement).value;
+
+                // Gather equipment fields
+                const newClientName = (document.getElementById('report-edit-client-name') as HTMLInputElement).value;
+                if (isRes) eq.client_name = newClientName;
+                else eq.companyName = newClientName;
+
+                eq.address = (document.getElementById('report-edit-address') as HTMLInputElement).value;
+                eq.dependencyName = (document.getElementById('report-edit-dependency') as HTMLInputElement).value;
+                eq.brand = (document.getElementById('report-edit-brand') as HTMLInputElement).value;
+                eq.model = (document.getElementById('report-edit-model') as HTMLInputElement).value;
+                eq.type = (document.getElementById('report-edit-type') as HTMLInputElement).value;
+                eq.capacity = (document.getElementById('report-edit-capacity') as HTMLInputElement).value;
+                eq.refrigerant = (document.getElementById('report-edit-refrigerant') as HTMLInputElement).value;
+
+                report.equipmentSnapshot = eq;
+
+                // Gather items
+                const newItems: any[] = [];
+                itemsContainer?.querySelectorAll('.report-item-row').forEach(row => {
+                    const qty = (row.querySelector('.item-qty') as HTMLInputElement).value;
+                    const desc = (row.querySelector('.item-desc') as HTMLInputElement).value;
+                    if (desc.trim() !== '') {
+                        newItems.push({ quantity: parseFloat(qty) || 1, description: desc.trim() });
+                    }
+                });
+                report.itemsSnapshot = newItems;
+
+                // Save via API
+                const success = await updateFullReport(report.id, {
+                    service_type: report.serviceType,
+                    worker_name: report.workerName,
+                    is_paid: report.is_paid,
+                    pressure: report.pressure,
+                    amperage: report.amperage,
+                    observations: report.observations,
+                    equipment_snapshot: eq,
+                    items_snapshot: newItems
+                });
+
                 if (success) {
-                    UI.showNotification("Nombre del cliente/empresa actualizado.", "success");
-                    // Refresh table underlying info
-                    report.equipmentSnapshot = eq;
                     renderReportRows(currentReports);
+                    UI.showNotification("Reporte actualizado correctamente", "success");
+                    modal.classList.remove('active');
                 } else {
-                    throw new Error("Failed to update snapshot");
+                    throw new Error("Failed to update report");
                 }
             } catch (err) {
-                console.error("Error updating company name:", err);
-                UI.showNotification("Error al actualizar.", "error");
+                console.error("Error saving report details:", err);
+                UI.showNotification("Hubo un error al guardar", "error");
             } finally {
-                saveBtn.innerHTML = '<i class="fas fa-save"></i>';
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Guardar Cambios';
                 saveBtn.disabled = false;
             }
         });
@@ -612,7 +723,6 @@ function showReportDetailsModal(report: Report) {
                 const url = URL.createObjectURL(blob);
                 const file = new File([blob], `Reporte_${report.id.substring(0,8)}.pdf`, { type: 'application/pdf' });
                 
-                // Directly download
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = file.name;
@@ -627,7 +737,7 @@ function showReportDetailsModal(report: Report) {
                 console.error("Error generating PDF:", error);
                 alert("Error al generar PDF.");
             } finally {
-                downloadBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Descargar PDF';
+                downloadBtn.innerHTML = '<i class="fas fa-file-pdf"></i> PDF';
                 downloadBtn.disabled = false;
             }
         });
@@ -635,8 +745,10 @@ function showReportDetailsModal(report: Report) {
 
     const closeBtn = modal.querySelector('.close-modal');
     if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            modal.classList.remove('active');
-        }, { once: true });
+        const newClose = closeBtn.cloneNode(true);
+        closeBtn.parentNode?.replaceChild(newClose, closeBtn);
+        newClose.addEventListener('click', () => {
+             modal.classList.remove('active');
+        });
     }
 }

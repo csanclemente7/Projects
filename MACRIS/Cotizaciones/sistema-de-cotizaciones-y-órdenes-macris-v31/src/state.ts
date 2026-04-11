@@ -34,7 +34,8 @@ let serviceTypes: ServiceType[] = [];
 let sedes: Sede[] = [];
 let openQuotes: Quote[] = [];
 let activeQuoteId: string | null = null;
-let currentOrder: Order | null = null; // For the order workspace
+let openOrders: Order[] = [];
+let activeOrderId: string | null = null;
 let filteredCatalogItems: Item[] = [];
 let activePdfTemplate: PdfTemplate = 'modern';
 let defaultVatRate: number = 19;
@@ -62,12 +63,16 @@ let orderAuthors: Record<string, string> = {};
 // --- LocalStorage Keys for Session Persistence ---
 const OPEN_QUOTES_KEY = 'macris_session_open_quotes';
 const ACTIVE_QUOTE_ID_KEY = 'macris_session_active_quote_id';
+const OPEN_ORDERS_KEY = 'macris_session_open_orders';
+const ACTIVE_ORDER_ID_KEY = 'macris_session_active_order_id';
 
 // --- Private Session Management ---
 function saveSessionState() {
     try {
         localStorage.setItem(OPEN_QUOTES_KEY, JSON.stringify(openQuotes));
         localStorage.setItem(ACTIVE_QUOTE_ID_KEY, activeQuoteId || '');
+        localStorage.setItem(OPEN_ORDERS_KEY, JSON.stringify(openOrders));
+        localStorage.setItem(ACTIVE_ORDER_ID_KEY, activeOrderId || '');
     } catch (e) {
         console.error("Error saving session state to localStorage", e);
     }
@@ -88,7 +93,12 @@ export const getActiveQuote = (): Quote | null => {
     if (!activeQuoteId) return null;
     return openQuotes.find(q => q.id === activeQuoteId) || null;
 };
-export const getCurrentOrder = () => currentOrder;
+export const getOpenOrders = () => openOrders;
+export const getActiveOrderId = () => activeOrderId;
+export const getCurrentOrder = (): Order | null => {
+    if (!activeOrderId) return null;
+    return openOrders.find(o => o.id === activeOrderId) || null;
+};
 export const getFilteredCatalogItems = () => filteredCatalogItems;
 export const getActivePdfTemplate = () => activePdfTemplate;
 export const getDefaultVatRate = () => defaultVatRate;
@@ -167,8 +177,47 @@ export function setActiveQuoteId(quoteId: string | null) {
     saveSessionState();
 }
 
+export function addOpenOrder(order: Order) {
+    if (!openOrders.some(o => o.id === order.id)) {
+        openOrders.push(order);
+        saveSessionState();
+    }
+}
+
+export function removeOpenOrder(orderId: string) {
+    openOrders = openOrders.filter(o => o.id !== orderId);
+    saveSessionState();
+}
+
+export function setOpenOrders(newOpenOrders: Order[]) {
+    openOrders = newOpenOrders;
+    saveSessionState();
+}
+
+export function setActiveOrderId(orderId: string | null) {
+    activeOrderId = orderId;
+    saveSessionState();
+}
+
+export function updateCurrentOrder(updatedOrder: Order) {
+    const index = openOrders.findIndex(o => o.id === activeOrderId);
+    if (index !== -1) {
+        openOrders[index] = updatedOrder;
+        saveSessionState();
+    }
+}
+
 export function setCurrentOrder(order: Order | null) {
-    currentOrder = order;
+    // Deprecated legacy function for backward compatibility. 
+    // Use updateCurrentOrder or addOpenOrder instead.
+    if (!order) {
+        // usually used for cleanup, but now we use removeOpenOrder
+        activeOrderId = null;
+    } else {
+        addOpenOrder(order);
+        setActiveOrderId(order.id);
+        updateCurrentOrder(order);
+    }
 }
 
 export function setAgendaDate(newDate: Date) {
@@ -367,5 +416,28 @@ export function loadSessionState() {
         activeQuoteId = openQuotes[0].id; // Fallback to the first available tab
     } else {
         activeQuoteId = null;
+    }
+
+    const savedOpenOrdersJson = localStorage.getItem(OPEN_ORDERS_KEY);
+    if (savedOpenOrdersJson && savedOpenOrdersJson !== '[]') {
+        try {
+            const savedOpenOrders = JSON.parse(savedOpenOrdersJson);
+            if (Array.isArray(savedOpenOrders) && savedOpenOrders.length > 0) {
+                openOrders = savedOpenOrders;
+            }
+        } catch (e) {
+            console.error("Error parsing saved open orders:", e);
+            openOrders = [];
+            localStorage.removeItem(OPEN_ORDERS_KEY);
+        }
+    }
+
+    const savedActiveOrderId = localStorage.getItem(ACTIVE_ORDER_ID_KEY);
+    if (savedActiveOrderId && openOrders.some(o => o.id === savedActiveOrderId)) {
+        activeOrderId = savedActiveOrderId;
+    } else if (openOrders.length > 0) {
+        activeOrderId = openOrders[0].id;
+    } else {
+        activeOrderId = null;
     }
 }

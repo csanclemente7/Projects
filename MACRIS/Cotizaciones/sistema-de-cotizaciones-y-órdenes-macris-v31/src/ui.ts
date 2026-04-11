@@ -3362,6 +3362,7 @@ export function renderQuoteAnnexPreviews(quote: Quote | null) {
     if (!container) return;
     container.innerHTML = "";
     const urls = quote.image_urls || [];
+    const previewUrls: (string | null)[] = new Array(urls.length).fill(null);
     urls.forEach((url, index) => {
         const el = document.createElement("div");
         el.className = "quote-annex-preview-item";
@@ -3373,13 +3374,20 @@ export function renderQuoteAnnexPreviews(quote: Quote | null) {
             let imgHtml = "";
             if (!error && data) {
                 objectUrl = URL.createObjectURL(data);
-                imgHtml = `<img src="${objectUrl}" alt="Anexo">`;
+                previewUrls[index] = objectUrl;
+                imgHtml = `<img src="${objectUrl}" alt="Anexo" class="clickable-annex-img" style="cursor: pointer;">`;
             } else {
                 console.error(error);
                 imgHtml = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:red;"><i class="fas fa-exclamation-circle"></i></div>`;
             }
 
             el.innerHTML = `${imgHtml}<button class="remove-photo-btn" data-index="${index}"><i class="fas fa-times"></i></button>`;
+            const imgEl = el.querySelector('.clickable-annex-img');
+            if (imgEl) {
+                imgEl.addEventListener('click', () => {
+                    openImageViewer(previewUrls, index);
+                });
+            }
             el.querySelector(".remove-photo-btn")?.addEventListener("click", (e) => {
                 e.preventDefault();
                 const activeQ = State.getActiveQuote();
@@ -3444,6 +3452,7 @@ export function renderOrderAnnexPreviews(order: Order | null) {
     if (!container) return;
     container.innerHTML = "";
     const urls = order.image_urls || [];
+    const previewUrls: (string | null)[] = new Array(urls.length).fill(null);
     urls.forEach((url, index) => {
         const el = document.createElement("div");
         el.className = "quote-annex-preview-item"; // Re-using styling class
@@ -3463,13 +3472,20 @@ export function renderOrderAnnexPreviews(order: Order | null) {
             let imgHtml = "";
             if (!error && data) {
                 objectUrl = URL.createObjectURL(data);
-                imgHtml = `<img src="${objectUrl}" alt="Anexo Orden">`;
+                previewUrls[index] = objectUrl;
+                imgHtml = `<img src="${objectUrl}" alt="Anexo Orden" class="clickable-annex-img" style="cursor: pointer;">`;
             } else {
                 console.error(error);
                 imgHtml = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:red;"><i class="fas fa-exclamation-circle"></i></div>`;
             }
 
             el.innerHTML = `${imgHtml}<button class="remove-photo-btn" data-index="${index}"><i class="fas fa-times"></i></button>`;
+            const imgEl = el.querySelector('.clickable-annex-img');
+            if (imgEl) {
+                imgEl.addEventListener('click', () => {
+                    openImageViewer(previewUrls, index);
+                });
+            }
             el.querySelector(".remove-photo-btn")?.addEventListener("click", (e) => {
                 e.preventDefault();
                 const activeOrder = State.getCurrentOrder();
@@ -3522,3 +3538,54 @@ export async function handleAddSedeClick(context: 'quote' | 'order', companyId: 
 
 
 
+
+
+// --- Image Viewer Logic ---
+let currentViewerImages: string[] = [];
+let currentViewerIndex: number = 0;
+
+export function openImageViewer(imagesUrls: (string | null)[], startIndex: number) {
+    const validUrls = imagesUrls.filter(u => u !== null) as string[];
+    if (validUrls.length === 0) return;
+    
+    currentViewerImages = validUrls;
+    currentViewerIndex = Math.max(0, Math.min(startIndex, validUrls.length - 1));
+
+    const modal = document.getElementById('image-viewer-modal');
+    if (!modal) return;
+
+    updateImageViewer();
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function updateImageViewer() {
+    const imgEl = document.getElementById('image-viewer-img') as HTMLImageElement;
+    const counterEl = document.getElementById('image-viewer-counter');
+    if (!imgEl || !counterEl) return;
+
+    imgEl.src = currentViewerImages[currentViewerIndex];
+    counterEl.innerText = `${currentViewerIndex + 1} / ${currentViewerImages.length}`;
+}
+
+function closeImageViewer() {
+    const modal = document.getElementById('image-viewer-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('image-viewer-close')?.addEventListener('click', closeImageViewer);
+    document.getElementById('image-viewer-prev')?.addEventListener('click', () => {
+        if (currentViewerImages.length === 0) return;
+        currentViewerIndex = (currentViewerIndex - 1 + currentViewerImages.length) % currentViewerImages.length;
+        updateImageViewer();
+    });
+    document.getElementById('image-viewer-next')?.addEventListener('click', () => {
+        if (currentViewerImages.length === 0) return;
+        currentViewerIndex = (currentViewerIndex + 1) % currentViewerImages.length;
+        updateImageViewer();
+    });
+});
