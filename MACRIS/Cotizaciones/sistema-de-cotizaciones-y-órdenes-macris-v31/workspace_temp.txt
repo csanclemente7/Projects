@@ -1,0 +1,210 @@
+﻿            <div id="page-order-workspace" class="page">
+                <header class="app-header">
+                    <div class="header-main-title">
+                        <i class="fas fa-clipboard-check"></i>
+                        <h1 id="order-workspace-title">Nueva Orden de Servicio</h1>
+                    </div>
+                    <button id="back-to-orders-list-btn" class="btn btn-secondary"><i
+                            class="fas fa-arrow-left"></i><span>Volver</span></button>
+                </header>
+                <div id="order-tabs-bar"></div>
+                <div class="page-content">
+                    <div class="quote-workspace"> <!-- Reusing styling -->
+
+                        <!-- Order Details: Client, Date, Time, Techs -->
+                        <div class="card">
+                            <div class="quote-header"> <!-- Reusing styling -->
+                                <div class="quote-header-left">
+                                    <h3>Datos del Servicio</h3>
+                                    <div class="form-group">
+                                        <label for="order-date">Fecha de Servicio</label>
+                                        <input type="text" id="order-date" placeholder="Seleccionar fecha...">
+                                    </div>
+                                    <div class="form-group-row">
+                                        <div class="form-group">
+                                            <label for="order-time">Hora de Inicio</label>
+                                            <input type="time" id="order-time" class="form-control">
+                                            <div class="time-presets" style="display: flex; gap: 8px; margin-top: 8px;">
+                                                <button type="button" class="btn btn-sm preset-time-btn" style="padding: 4px 8px; font-size: 0.75rem; min-width: auto; background-color: var(--color-background-alt); border: 1px solid var(--color-border); color: var(--color-text-secondary);" data-time="07:00">7:00 AM</button>
+                                                <button type="button" class="btn btn-sm preset-time-btn" style="padding: 4px 8px; font-size: 0.75rem; min-width: auto; background-color: var(--color-background-alt); border: 1px solid var(--color-border); color: var(--color-text-secondary);" data-time="10:30">10:30 AM</button>
+                                                <button type="button" class="btn btn-sm preset-time-btn" style="padding: 4px 8px; font-size: 0.75rem; min-width: auto; background-color: var(--color-background-alt); border: 1px solid var(--color-border); color: var(--color-text-secondary);" data-time="14:30">2:30 PM</button>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="order-difficulty">Nivel de Dificultad</label>
+                                            <select id="order-difficulty" class="form-control">
+                                                <option value="">Seleccionar (Opcional)</option>
+                                                <option value="facil">Fácil</option>
+                                                <option value="medio">Medio</option>
+                                                <option value="dificil">Difícil</option>
+                                            </select>
+                                            <input type="hidden" id="order-duration-hours" value="0">
+                                            <input type="hidden" id="order-duration-minutes" value="0">
+                                            <div id="order-duration-hint" style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 4px; min-height: 14px;"></div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                            <label for="order-type" style="margin-bottom: 0;">Tipo de Orden</label>
+                                        </div>
+                                        <div id="order-type-selector" class="custom-select-container" tabindex="0">
+                                            <div id="order-type-selected-pills" class="pill-input-container">
+                                                <span class="custom-select-placeholder">Seleccionar tipos...</span>
+                                            </div>
+                                            <i class="fas fa-chevron-down custom-select-arrow"></i>
+                                        </div>
+                                        <div id="order-type-dropdown" class="custom-select-dropdown search-results-popover">
+                                            <!-- Options injected via JS -->
+                                        </div>
+                                        <select id="order-type" style="display: none;">
+                                            <option value="" disabled selected>Cargando...</option>
+                                        </select>
+                                        
+                                        <input type="text" id="order-type-custom" class="form-control"
+                                            placeholder="Especifique el tipo..."
+                                            style="display: none; margin-top: 10px;">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="order-status">Estado</label>
+                                        <select id="order-status">
+                                            <option value="pending">Pendiente</option>
+                                            <option value="scheduled">Programada</option>
+                                            <option value="in_progress">En Progreso</option>
+                                            <option value="completed">Completada</option>
+                                            <option value="cancelled">Cancelada</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="quote-header-right">
+                                    <h3>Cliente</h3>
+                                    <div class="form-group">
+                                        <div class="input-with-button">
+                                            <input type="text" id="order-client-search"
+                                                placeholder="Buscar por nombre o ID..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                                            <button id="order-add-client-btn" class="btn btn-add-inline"
+                                                title="Nuevo Cliente"><i class="fas fa-plus"></i></button>
+                                            <button id="order-edit-client-btn" class="btn btn-add-inline"
+                                                title="Editar Cliente"><i class="fas fa-edit"></i></button>
+                                        </div>
+                                        <div id="order-client-search-results"></div>
+                                    </div>
+                                    <div id="order-sede-container" class="form-group" style="display: none; margin-top: 10px;">
+                                        <label for="order-sede-select">Sede del Cliente</label>
+                                        <div class="input-with-button">
+                                            <select id="order-sede-select" class="form-control">
+                                                <option value="">Cargando sedes...</option>
+                                            </select>
+                                            <button id="order-add-sede-btn" class="btn btn-add-inline" title="Nueva Sede"><i class="fas fa-plus"></i></button>
+                                        </div>
+                                    </div>
+                                    <div id="order-client-details" class="client-details-display"></div>
+                                    <div class="form-group">
+                                        <label for="order-client-city">Ciudad del Servicio</label>
+                                        <input type="text" id="order-client-city" class="form-control"
+                                            placeholder="Ej: Buga, Cali...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="form-group">
+                                <label for="technician-selector">Técnicos Asignados</label>
+                                <div id="technician-selector" class="custom-select-container" tabindex="0">
+                                    <div id="technician-selected-pills" class="pill-input-container">
+                                        <!-- Selected technician pills will be injected here -->
+                                        <span class="custom-select-placeholder">Seleccionar técnicos...</span>
+                                    </div>
+                                    <i class="fas fa-chevron-down custom-select-arrow"></i>
+                                </div>
+                                <div id="technician-dropdown" class="custom-select-dropdown search-results-popover">
+                                    <!-- Technician list will be injected here -->
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <!-- Order Services (Mano de Obra) -->
+                        <div class="quote-items card order-services-section" style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3>Servicios a Realizar <span>(Mano de Obra)</span></h3>
+                            </div>
+                            <div class="table-container">
+                                <table id="order-services-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-desc">Descripción del Servicio</th>
+                                            <th class="col-qty">Cant.</th>
+                                            <th class="col-actions"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="order-services-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Order Materials (Insumos) -->
+                        <div class="quote-items card">
+                            <h3>Materiales e Insumos <span>(Opcional)</span></h3>
+                            <div class="table-container">
+                                <table id="order-materials-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-desc">Descripción del Material</th>
+                                            <th class="col-qty">Cant.</th>
+                                            <th class="col-actions"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="order-materials-tbody"></tbody>
+                                </table>
+                            </div>
+                            <div class="add-item-form-container">
+                                <div class="form-group">
+                                    <label for="order-item-search">Agregar Servicio o Material</label>
+                                    <div class="input-with-button">
+                                        <input type="text" id="order-item-search"
+                                            placeholder="Buscar por código o nombre..." autocomplete="off" data-lpignore="true" data-1p-ignore>
+                                        <button id="order-add-new-item-btn" class="btn btn-add-inline"
+                                            title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div id="order-item-search-results"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order Status & Notes -->
+                        <div class="card">
+                            <h3>Notas Internas</h3>
+                            <div class="form-group">
+                                <label for="order-notes">Notas (No visibles para el cliente ni técnicos)</label>
+                                <textarea id="order-notes" rows="6"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div class="card" style="margin-top: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3 style="margin: 0;"><i class="fas fa-camera" style="color: var(--color-text-secondary); margin-right: 8px;"></i> Fotografías / Anexos (Opcional)</h3>
+                                <label for="order-annex-upload" class="btn btn-outline" style="cursor: pointer; padding: 6px 14px; font-size: 13px; margin: 0;">
+                                    <i class="fas fa-upload"></i> Subir
+                                </label>
+                                <input type="file" id="order-annex-upload" multiple accept="image/*" style="display: none;">
+                            </div>
+                            <div id="order-annex-preview-container" style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                            </div>
+                        </div>
+
+                        <!-- Order Actions -->
+                        <div class="quote-main-actions card">
+                            <button id="save-order-btn" class="btn btn-success"><i class="fas fa-save"></i> Guardar
+                                Orden</button>
+                            <button id="generate-order-pdf-btn" class="btn btn-secondary"><i
+                                    class="fas fa-file-pdf"></i> Generar PDF</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ORDERS PAGE -->
+            <div id="page-orders" class="page">
