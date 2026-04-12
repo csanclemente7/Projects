@@ -6,6 +6,7 @@ import * as D from './dom';
 import * as Auth from './auth';
 import { setupEventListeners } from './events';
 import { initCompanyMerge } from './company-merge';
+import { initSedeCleanup } from './sede-cleanup';
 import { initBackupRestore } from './backup';
 
 async function initAuthGate() {
@@ -31,7 +32,7 @@ async function initAuthGate() {
 
 export async function loadSharedLookupData() {
     try {
-        const [sTypes, eTypes, cities, companies, deps, rTypes] = await Promise.all([
+        const [sTypes, eTypes, cities, companies, deps, rTypes, sedes] = await Promise.all([
             fetchServiceTypes(),
             fetchEquipmentTypes(),
             fetchCities(),
@@ -53,6 +54,7 @@ import { setupDashboard } from './dashboard';
 export async function main() {
     setupEventListeners();
     initCompanyMerge();
+    initSedeCleanup();
     initBackupRestore();
     setupDashboard();
 

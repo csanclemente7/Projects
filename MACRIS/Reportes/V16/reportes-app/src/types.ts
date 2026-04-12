@@ -78,21 +78,15 @@ export type Database = {
         Relationships: [];
       };
       maintenance_companies: {
-        Row: { id: string; name: string; city_id: string; created_at?: string; };
-        Insert: { id?: string; name: string; city_id: string; created_at?: string; };
-        Update: { id?: string; name?: string; city_id?: string; created_at?: string; };
-        Relationships: [];
-      };
-      maintenance_sede: {
-        Row: { id: string; name: string; address: string | null; company_id: string | null; city_id: string | null; created_at?: string; };
-        Insert: { id?: string; name: string; address?: string | null; company_id?: string | null; city_id?: string | null; created_at?: string; };
-        Update: { id?: string; name?: string; address?: string | null; company_id?: string | null; city_id?: string | null; created_at?: string; };
+        Row: { id: string; name: string; city_id: string; client_id: string | null; category: string | null; created_at?: string; };
+        Insert: { id?: string; name: string; city_id: string; client_id?: string | null; category?: string | null; created_at?: string; };
+        Update: { id?: string; name?: string; city_id?: string; client_id?: string | null; category?: string | null; created_at?: string; };
         Relationships: [];
       };
       maintenance_dependencies: {
-        Row: { id: string; name: string; company_id: string; sede_id: string | null; created_at?: string; };
-        Insert: { id?: string; name: string; company_id: string; sede_id?: string | null; created_at?: string; };
-        Update: { id?: string; name?: string; company_id?: string; sede_id?: string | null; created_at?: string; };
+        Row: { id: string; name: string; company_id: string; sede_id: string | null; client_id: string | null; created_at?: string; };
+        Insert: { id?: string; name: string; company_id: string; sede_id?: string | null; client_id?: string | null; created_at?: string; };
+        Update: { id?: string; name?: string; company_id?: string; sede_id?: string | null; client_id?: string | null; created_at?: string; };
         Relationships: [];
       };
       maintenance_equipment: {
@@ -115,6 +109,7 @@ export type Database = {
           address: string | null;
           client_name: string | null;
           sede_id: string | null;
+          client_id: string | null;
         };
         Insert: {
           id?: string;
@@ -135,6 +130,7 @@ export type Database = {
           address?: string | null;
           client_name?: string | null;
           sede_id?: string | null;
+          client_id?: string | null;
         };
         Update: {
           id?: string;
@@ -155,6 +151,7 @@ export type Database = {
           address?: string | null;
           client_name?: string | null;
           sede_id?: string | null;
+          client_id?: string | null;
         };
         Relationships: [
           {
@@ -192,6 +189,7 @@ export type Database = {
           photo_external_unit_url: string | null;
           order_id: string | null;
           sede_id: string | null;
+          client_id: string | null;
         };
         Insert: {
           id?: string;
@@ -213,6 +211,7 @@ export type Database = {
           photo_external_unit_url?: string | null;
           order_id?: string | null;
           sede_id?: string | null;
+          client_id?: string | null;
         };
         Update: {
           id?: string;
@@ -234,6 +233,7 @@ export type Database = {
           photo_external_unit_url?: string | null;
           order_id?: string | null;
           sede_id?: string | null;
+          client_id?: string | null;
         };
         Relationships: [];
       };
@@ -433,6 +433,8 @@ export interface Sede {
     address?: string | null;
     companyId: string | null;
     cityId: string | null;
+    contact_person?: string | null;
+    phone?: string | null;
 }
 
 export interface Dependency {
@@ -500,10 +502,14 @@ export interface Report {
         companyName?: string; // Denormalized for display
         dependencyName?: string; // Denormalized for display
         sedeName?: string; // Denormalized for display
+        contact_person?: string | null;
+        phone?: string | null;
     };
     itemsSnapshot: { description: string; quantity: number }[] | null;
     cityId: string;
     companyId: string | null;
+    clientId?: string | null;
+    sedeId?: string | null;
     dependencyId: string | null;
     workerId: string; // User ID of the worker
     workerName: string; // Name of the worker
@@ -537,6 +543,7 @@ export interface Client {
     email: string | null;
     city: string | null;
     created_at?: string;
+    sede_id?: string | null;
 }
 
 export interface OrderItem {
@@ -557,6 +564,7 @@ export interface Order {
     manualId: string | null;
     quoteId: string | null;
     clientId: string;
+    sede_id?: string | null;
     status: 'pending' | 'en_progreso' | 'completed' | 'cancelada' | null;
     service_date: string | null;
     service_time: string | null;

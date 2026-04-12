@@ -167,14 +167,9 @@ export type DatabaseOrders = {
   public: {
     Tables: {
       maintenance_companies: {
-        Row: { id: string; name: string; city_id: string | null; address: string | null; };
-        Insert: { id?: string; name: string; city_id?: string | null; address?: string | null; };
-        Update: { id?: string; name?: string; city_id?: string | null; address?: string | null; };
-      };
-      maintenance_sede: {
-        Row: { id: string; name: string; company_id: string; address: string | null; city_id: string | null; phone: string | null; contact_person: string | null; };
-        Insert: { id?: string; name: string; company_id: string; address?: string | null; city_id?: string | null; phone?: string | null; contact_person?: string | null; };
-        Update: { id?: string; name?: string; company_id?: string; address?: string | null; city_id?: string | null; phone?: string | null; contact_person?: string | null; };
+        Row: { id: string; name: string; city_id: string | null; address: string | null; client_id: string | null; category: string | null; };
+        Insert: { id?: string; name: string; city_id?: string | null; address?: string | null; client_id?: string | null; category?: string | null; };
+        Update: { id?: string; name?: string; city_id?: string | null; address?: string | null; client_id?: string | null; category?: string | null; };
       };
       maintenance_users: {
         Row: {
@@ -343,10 +338,12 @@ export type Sede = {
     id: string;
     name: string;
     address?: string | null;
-    company_id?: string | null;
     city_id?: string | null;
-    phone?: string | null;
+    client_id?: string | null;
+    cityName?: string | null;
     contact_person?: string | null;
+    phone?: string | null;
+    category?: 'empresa' | 'residencial' | string | null;
 };
 
 // This is the composite object the app works with for quotes

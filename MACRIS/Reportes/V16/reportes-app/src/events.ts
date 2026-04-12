@@ -462,7 +462,7 @@ async function handleEntityFormSubmit(e: SubmitEvent) {
                 break;
             case 'dependency': 
                  if (isOfflineCreation) {
-                    const newDependency: Dependency = { id: data.id, name: data.name, companyId: data.company_id };
+                    const newDependency: Dependency = { id: data.id, name: data.name, companyId: data.company_id || data.client_id };
                     const duplicateInState = findDependencyMatch(newDependency.companyId, newDependency.name);
                     if (!duplicateInState) {
                         State.setDependencies([...State.dependencies, newDependency]);
@@ -486,7 +486,7 @@ async function handleEntityFormSubmit(e: SubmitEvent) {
                         const companySelect = D.entityFormFieldsContainer.querySelector('#equipment-company') as HTMLSelectElement;
                         const dependencySelect = D.entityFormFieldsContainer.querySelector('#equipment-dependency') as HTMLSelectElement;
                         if(companySelect && dependencySelect) {
-                           companySelect.value = data.company_id;
+                           companySelect.value = data.company_id || data.client_id;
                            companySelect.dispatchEvent(new Event('change'));
                            setTimeout(() => dependencySelect.value = data.id, 50);
                         }
@@ -665,10 +665,13 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
              equipmentSnapshot = {
                 id: 'INSTALL_NO_ID', manualId: null, model: 'N/A', brand: 'N/A', type: 'N/A', refrigerant: 'N/A',
                 category: selectedCategory,
-                address: selectedCategory === 'residencial' ? D.reportAddressInput.value : null,
+                address: selectedCategory === 'residencial' ? D.reportAddressInput.value : State.sedes.find(s => s.id === (D.reportSedeSelect as HTMLSelectElement).value)?.address,
                 client_name: selectedCategory === 'residencial' ? D.reportClientNameInput.value : null,
                 companyName: selectedCategory === 'empresa' ? State.companies.find(c => c.id === D.reportCompanySelect.value)?.name : undefined,
+                sedeName: selectedCategory === 'empresa' ? State.sedes.find(s => s.id === (D.reportSedeSelect as HTMLSelectElement).value)?.name : undefined,
                 dependencyName: selectedCategory === 'empresa' ? State.dependencies.find(d => d.id === D.reportDependencySelect.value)?.name : undefined,
+                contact_person: selectedCategory === 'empresa' ? State.sedes.find(s => s.id === (D.reportSedeSelect as HTMLSelectElement).value)?.contact_person : undefined,
+                phone: selectedCategory === 'empresa' ? State.sedes.find(s => s.id === (D.reportSedeSelect as HTMLSelectElement).value)?.phone : undefined,
             };
         } else {
             const equipmentId = D.reportEquipmentIdHidden.value;
@@ -678,9 +681,13 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
                 equipmentSnapshot = {
                     id: equipment.id, manualId: equipment.manualId, model: equipment.model, brand: equipment.brand,
                     type: equipment.typeName, capacity: equipment.capacity, refrigerant: equipment.refrigerantName,
-                    category: equipment.category, address: equipment.address, client_name: equipment.client_name,
+                    client_name: equipment.client_name,
                     companyName: State.companies.find(c => c.id === equipment.companyId)?.name,
+                    sedeName: State.sedes.find(s => s.id === equipment.sedeId)?.name,
                     dependencyName: State.dependencies.find(d => d.id === equipment.dependencyId)?.name,
+                    address: equipment.category === 'residencial' ? equipment.address : State.sedes.find(s => s.id === equipment.sedeId)?.address,
+                    contact_person: equipment.category === 'empresa' ? State.sedes.find(s => s.id === equipment.sedeId)?.contact_person : undefined,
+                    phone: equipment.category === 'empresa' ? State.sedes.find(s => s.id === equipment.sedeId)?.phone : undefined,
                 };
             } else {
                 const equipmentTypeName = State.equipmentTypes.find(et => et.id === D.reportEquipmentTypeSelect.value)?.name || 'Desconocido';
@@ -689,11 +696,13 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
                     id: 'MANUAL_NO_ID', manualId: null, model: D.reportEquipmentModelInput.value, brand: D.reportEquipmentBrandInput.value,
                     type: equipmentTypeName, capacity: D.reportEquipmentCapacityInput.value, refrigerant: refrigerantTypeName,
                     category: selectedCategory,
-                    address: selectedCategory === 'residencial' ? D.reportAddressInput.value : null,
+                    address: selectedCategory === 'residencial' ? D.reportAddressInput.value : State.sedes.find(s => s.id === (D.reportSedeSelect as HTMLSelectElement).value)?.address,
                     client_name: selectedCategory === 'residencial' ? D.reportClientNameInput.value : null,
                     companyName: selectedCategory === 'empresa' ? State.companies.find(c => c.id === D.reportCompanySelect.value)?.name : undefined,
                     sedeName: selectedCategory === 'empresa' ? State.sedes.find(s => s.id === (D.reportSedeSelect as HTMLSelectElement).value)?.name : undefined,
                     dependencyName: selectedCategory === 'empresa' ? State.dependencies.find(d => d.id === D.reportDependencySelect.value)?.name : undefined,
+                    contact_person: selectedCategory === 'empresa' ? State.sedes.find(s => s.id === (D.reportSedeSelect as HTMLSelectElement).value)?.contact_person : undefined,
+                    phone: selectedCategory === 'empresa' ? State.sedes.find(s => s.id === (D.reportSedeSelect as HTMLSelectElement).value)?.phone : undefined,
                 };
             }
         }
@@ -720,9 +729,10 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             equipmentSnapshot: equipmentSnapshot,
             itemsSnapshot: itemsSnapshot,
             cityId: cityId,
-            companyId: selectedCategory === 'empresa' ? D.reportCompanySelect.value : null,
-            sedeId: selectedCategory === 'empresa' ? (D.reportSedeSelect as HTMLSelectElement).value : null,
-            dependencyId: selectedCategory === 'empresa' ? D.reportDependencySelect.value : null,
+            companyId: selectedCategory === 'empresa' ? ((D.reportSedeSelect as HTMLSelectElement).value || null) : null,
+            clientId: selectedCategory === 'empresa' ? (D.reportCompanySelect.value || null)  : null,
+            sedeId: selectedCategory === 'empresa' ? ((D.reportSedeSelect as HTMLSelectElement).value || null) : null,
+            dependencyId: selectedCategory === 'empresa' ? (D.reportDependencySelect.value || null) : null,
             workerId: State.currentUser.id,
             workerName: State.currentUser.name || State.currentUser.username,
             clientSignature: signatureData,
@@ -796,6 +806,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             items_snapshot: reportForState.itemsSnapshot,
             city_id: reportForState.cityId,
             company_id: reportForState.companyId,
+            client_id: reportForState.clientId || null,
             sede_id: reportForState.sedeId || null,
             dependency_id: reportForState.dependencyId,
             worker_id: reportForState.workerId,
@@ -908,15 +919,22 @@ async function handleEditReportAssignmentSubmit(e: SubmitEvent) {
         let updatedSnapshot = { ...originalReport.equipmentSnapshot };
 
         if (newCategory === 'empresa') {
-            const newCompanyId = D.editReportCompanySelect.value;
+            const newClientId = D.editReportCompanySelect.value;
+            const newCityId = D.editReportCitySelect.value;
+            const newSedeId = D.editReportSedeSelect.value;
             let newDependencyId = D.editReportDependencySelect.value;
-            const newCompany = State.companies.find(c => c.id === newCompanyId);
-            if (!newCompany) throw new Error('La empresa seleccionada no es válida.');
+            
+            const newClient = State.companies.find(c => c.id === newClientId);
+            const newCity = State.cities.find(c => c.id === newCityId);
+            const newSede = State.sedes.find(s => s.id === newSedeId);
+            
+            if (!newClient) throw new Error('La empresa seleccionada no es válida.');
+            if (!newSede) throw new Error('La sede seleccionada no es válida.');
 
             if (State.editLocationState.newDependencyNameToCreate) {
                 const formData = new FormData();
                 formData.append('name', State.editLocationState.newDependencyNameToCreate);
-                formData.append('company_id', newCompanyId);
+                formData.append('company_id', newSedeId); // Dependencia depends on Sede
                 const { data: newDependency, error } = await saveEntity('dependency', '', formData);
                 if (error) throw error;
                 newDependencyId = newDependency.id;
@@ -927,14 +945,17 @@ async function handleEditReportAssignmentSubmit(e: SubmitEvent) {
             const newDependency = State.dependencies.find(d => d.id === newDependencyId);
             if (!newDependency) throw new Error('La dependencia seleccionada no es válida.');
 
-            reportUpdateData.company_id = newCompanyId;
+            reportUpdateData.client_id = newClientId;
+            reportUpdateData.company_id = newSedeId; // Supabase company_id holds Sede ID
+            reportUpdateData.sede_id = newSedeId;
             reportUpdateData.dependency_id = newDependencyId;
-            reportUpdateData.city_id = newCompany.cityId;
+            reportUpdateData.city_id = newCityId;
             
             updatedSnapshot = {
                 ...updatedSnapshot,
                 category: 'empresa',
-                companyName: newCompany.name,
+                companyName: newClient.name,
+                sedeName: newSede.name,
                 dependencyName: newDependency.name,
                 client_name: null,
                 address: null,
@@ -1155,6 +1176,8 @@ if (!networkListenerActive) {
     D.editCategoryEmpresaRadio?.addEventListener('change', UI.toggleAssignmentFields);
     D.editCategoryResidencialRadio?.addEventListener('change', UI.toggleAssignmentFields);
     D.editReportCompanySelect?.addEventListener('change', UI.handleAssignmentCompanyChange);
+    D.editReportCitySelect?.addEventListener('change', UI.handleAssignmentCityChange);
+    D.editReportSedeSelect?.addEventListener('change', UI.handleAssignmentSedeChange);
     D.editReportDependencySelect?.addEventListener('change', () => {
         if (State.editLocationState.newDependencyNameToCreate) {
             State.editLocationState.newDependencyNameToCreate = null;
@@ -1269,6 +1292,7 @@ if (!networkListenerActive) {
     // --- Report Form Dynamics ---
     D.reportServiceTypeSelect?.addEventListener('change', (e) => UI.toggleReportFormFields((e.target as HTMLSelectElement).value));
     D.reportCompanySelect?.addEventListener('change', (e) => UI.updateLocationDropdownsFromCompany((e.target as HTMLSelectElement).value));
+    D.reportCitySelectEmpresa?.addEventListener('change', (e) => UI.handleCitySelectionChange((e.target as HTMLSelectElement).value));
     D.reportSedeSelect?.addEventListener('change', (e) => UI.handleSedeSelectionChange((e.target as HTMLSelectElement).value));
     D.reportCompanySearchInput?.addEventListener('input', UI.renderCompanySearchResults);
     D.reportCompanySearchInput?.addEventListener('focus', UI.renderCompanySearchResults);
@@ -1624,14 +1648,22 @@ if (!networkListenerActive) {
             // Determine the context more accurately
             if (addBtn.closest('#report-form-modal')) {
                 context.source = 'reportForm';
-                // If creating a dependency, capture the currently selected company
                 if (entityType === 'dependency') {
+                    const selectedSedeId = D.reportSedeSelect.value;
                     const selectedCompanyId = D.reportCompanySelect.value;
+                    
                     if (!selectedCompanyId) {
                         UI.showAppNotification('Seleccione una empresa primero', 'warning');
                         return;
                     }
-                    context.selectedCompanyId = selectedCompanyId;
+                    
+                    const companySedes = State.sedes.filter(s => s.companyId === selectedCompanyId);
+                    if (companySedes.length > 0 && !selectedSedeId) {
+                        UI.showAppNotification('Seleccione una sede primero', 'warning');
+                        return;
+                    }
+
+                    context.selectedCompanyId = selectedSedeId || selectedCompanyId;
                 }
             } else if (addBtn.closest('#entity-form-modal')) {
                 context.source = 'entityForm';

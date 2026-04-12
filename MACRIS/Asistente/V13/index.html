@@ -96,6 +96,7 @@
                 <button id="export-zip-btn" class="btn btn-accent btn-compact desktop-only"><i class="fas fa-file-archive"></i> ZIP</button>
                 <button id="export-pdf-btn" class="btn btn-primary btn-compact desktop-only"><i class="fas fa-file-pdf"></i> PDF</button>
                 <button id="company-merge-btn" class="btn btn-secondary btn-compact desktop-only"><i class="fas fa-code-branch"></i> Unificar</button>
+                <button id="sede-cleanup-btn" class="btn btn-secondary btn-compact desktop-only" style="background: rgba(255,165,0,0.15); border-color: rgba(255,165,0,0.4); color: #ffad33;"><i class="fas fa-sitemap"></i> Limpiar Sedes</button>
                 <button id="db-backup-btn" class="btn btn-accent btn-compact desktop-only" style="background:var(--secondary); color:#fff"><i class="fas fa-database"></i> Copias</button>
                 <button id="toggle-chat-mobile" class="btn-drawer-toggle mobile-only">
                     <i class="fas fa-robot"></i>
@@ -336,6 +337,7 @@
             <div class="chat-input-area">
                 <div class="chat-actions">
                     <button id="company-merge-scan" class="btn btn-primary"><i class="fas fa-search"></i> Buscar duplicadas</button>
+                    <button id="company-merge-manual" class="btn btn-secondary"><i class="fas fa-hand-pointer"></i> Fusión Manual</button>
                 </div>
             </div>
         </div>
@@ -410,6 +412,49 @@
             </div>
         </div>
     </dialog>
+
+    <!-- Modal: Limpieza Supervisada de Sedes -->
+    <div id="sede-cleanup-modal" class="modal">
+        <div class="modal-content" style="max-width: 1000px; width: 95vw;">
+            <span id="close-sede-cleanup-modal" class="close-button">&times;</span>
+            <div class="chat-header" style="padding: 0 0 15px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <i class="fas fa-sitemap" style="color: #ffad33;"></i>
+                    <span>Limpieza Supervisada de Sedes</span>
+                </div>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-dim); padding: 12px 0; line-height: 1.6; border-bottom: 1px dashed var(--border); margin-bottom: 15px;">
+                <i class="fas fa-info-circle" style="color: var(--primary);"></i>
+                Esta herramienta detecta empresas que realmente son sedes de una misma organización
+                (ej: &quot;MEDIC IPS - SEDE GUACARI&quot; y &quot;MEDIC IPS CALI TEQUENDAMA&quot;).
+                Al aplicar, las empresas seleccionadas se convierten en sedes bajo una empresa central,
+                migrando reportes, equipos y dependencias automáticamente.
+            </div>
+            <div id="sede-cleanup-dashboard" style="max-height: 60vh; overflow-y: auto; overflow-x: hidden; padding: 10px 0;">
+                <div style="text-align: center; color: var(--text-dim); padding: 40px; font-size: 0.95rem;">
+                    <i class="fas fa-sitemap" style="font-size: 2rem; margin-bottom: 15px; opacity: 0.5; color: #ffad33;"></i><br>
+                    Haz clic en &quot;Escanear Sedes&quot; para analizar empresas auto-referenciadas<br>
+                    y agruparlas por similitud de nombre.
+                </div>
+            </div>
+            <div id="sede-cleanup-progress" style="display:none; padding: 0 0 12px 0;">
+                <div class="mini-loader">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    <span id="sede-cleanup-progress-text">Analizando...</span>
+                </div>
+                <div style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; height: 8px; margin-top: 6px;">
+                    <div id="sede-cleanup-progress-bar" style="height: 100%; width: 0%; background: #ffad33; transition: width 0.3s;"></div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="chat-actions">
+                    <button id="sede-cleanup-scan" class="btn btn-primary" style="background: linear-gradient(135deg, #ffad33, #ff8c00); border: none;">
+                        <i class="fas fa-search"></i> Escanear Sedes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Required Libraries for Dashboard -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>

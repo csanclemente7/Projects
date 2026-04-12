@@ -32,6 +32,7 @@ export async function fetchReportDetails(reportId: string): Promise<any> {
 import { createClient, PostgrestError } from '@supabase/supabase-js';
 import { Database, Report, User, Equipment, City, Company, Sede, Dependency, Order, OrderItem, ServiceType, AppSettings, ClientsDatabase, EntityType, EquipmentType, RefrigerantType } from './types';
 import { addEntityToQueue } from './lib/local-db';
+import * as State from './state';
 
 // --- Supabase Configuration ---
 // DB for Orders/Maintenance
@@ -177,13 +178,13 @@ export async function fetchCities(): Promise<City[]> {
 
 export async function fetchCompanies(): Promise<Company[]> {
     const companyRows = await fetchAllRows<any>(
-        () => supabaseOrders.from('maintenance_companies').select('*').order('name'),
+        () => supabaseClients.from('clients').select('*').eq('category', 'empresa').order('name'),
         'companies'
     );
     return companyRows.map((dbCompany) => ({
         id: dbCompany.id,
         name: dbCompany.name,
-        cityId: dbCompany.city_id,
+        cityId: dbCompany.city || '', // Clients only have string city, real UI city flow is driven by Sede
     }));
 }
 
@@ -195,22 +196,24 @@ export async function fetchDependencies(): Promise<Dependency[]> {
     return dependencyRows.map((dbDependency) => ({
         id: dbDependency.id,
         name: dbDependency.name,
-        companyId: dbDependency.company_id,
+        companyId: dbDependency.company_id || dbDependency.client_id,
         sedeId: dbDependency.sede_id || null,
     }));
 }
 
 export async function fetchSedes(): Promise<Sede[]> {
     const sedeRows = await fetchAllRows<any>(
-        () => supabaseOrders.from('maintenance_sede').select('*').order('name'),
+        () => supabaseOrders.from('maintenance_companies').select('*').order('name'),
         'sedes'
     );
     return sedeRows.map((dbSede) => ({
         id: dbSede.id,
         name: dbSede.name,
         address: dbSede.address || null,
-        companyId: dbSede.company_id || null,
+        companyId: dbSede.client_id || null,
         cityId: dbSede.city_id || null,
+        contact_person: dbSede.contact_person || null,
+        phone: dbSede.phone || null,
     }));
 }
 
@@ -508,6 +511,7 @@ const enrichOrders = async (baseOrders: OrderWithItems[], allUsers: User[]): Pro
             manualId: (dbOrder as any).manual_id || dbOrder.manualId,
             quoteId: (dbOrder as any).quote_id || dbOrder.quoteId,
             clientId: (dbOrder as any).client_id || dbOrder.clientId,
+            sede_id: dbOrder.sede_id || (dbOrder as any).sede_id,
             status: dbOrder.status,
             service_date: dbOrder.service_date,
             service_time: dbOrder.service_time,
@@ -772,23 +776,32 @@ export async function saveEntity(type: EntityType, id: string, formData: FormDat
                     : await supabaseOrders.from('maintenance_companies').insert(companyData).select().single();
                 break;
             case 'dependency':
-                const dependencyData = {
+                const rawCompanyId = ((formData.get('company_id') as string) || '').trim();
+                const isClientDirect = !!State.companies.find(c => c.id === rawCompanyId);
+
+                const dependencyData: any = {
                     name: normalizeEntityName((formData.get('name') as string) || ''),
-                    company_id: ((formData.get('company_id') as string) || '').trim(),
                 };
 
-                if (!dependencyData.company_id) {
-                    throw new Error('Debe seleccionar una empresa para la dependencia.');
+                if (isClientDirect) {
+                    dependencyData.client_id = rawCompanyId;
+                    dependencyData.company_id = null; // Let's hope the DB allows null if it's a direct client
+                } else {
+                    dependencyData.company_id = rawCompanyId;
+                }
+
+                if (!rawCompanyId) {
+                    throw new Error('Debe seleccionar una empresa o sede para la dependencia.');
                 }
                 if (!dependencyData.name) {
                     throw new Error('El nombre de la dependencia es obligatorio.');
                 }
 
-                // Server-side guard: evita duplicados por empresa incluso con variaciones de mayúsculas, tildes y espacios.
+                // Server-side guard
                 let existingDependenciesQuery = supabaseOrders
                     .from('maintenance_dependencies')
-                    .select('id, name, company_id')
-                    .eq('company_id', dependencyData.company_id);
+                    .select('id, name, company_id, client_id')
+                    .or(`company_id.eq.${rawCompanyId},client_id.eq.${rawCompanyId}`);
 
                 if (isEditing) {
                     existingDependenciesQuery = existingDependenciesQuery.neq('id', normalizedEntityId);
@@ -796,18 +809,13 @@ export async function saveEntity(type: EntityType, id: string, formData: FormDat
 
                 const { data: existingDependencies, error: existingDependenciesError } = await existingDependenciesQuery;
 
-                if (existingDependenciesError) {
-                    // Do not hard-fail on pre-check read errors. Proceed with write and let DB constraints decide.
-                    console.warn('[Dependency Guard] Could not verify duplicates before save. Proceeding with write.', existingDependenciesError);
-                } else {
+                if (!existingDependenciesError) {
                     const dependencyKey = normalizeEntityKey(dependencyData.name);
                     const duplicateDependency = (existingDependencies || []).find((row: any) =>
-                        normalizeEntityKey((row?.name as string) || '') === dependencyKey &&
-                        (!isEditing || normalizeEntityId(row?.id) !== normalizedEntityId)
+                        normalizeEntityKey((row?.name as string) || '') === dependencyKey
                     );
-
                     if (duplicateDependency) {
-                        throw new Error(`La dependencia "${dependencyData.name}" ya existe para la empresa seleccionada.`);
+                        throw new Error(`La dependencia "${dependencyData.name}" ya existe para este destino.`);
                     }
                 }
 

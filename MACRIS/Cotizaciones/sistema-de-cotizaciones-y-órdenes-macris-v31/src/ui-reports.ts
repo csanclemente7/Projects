@@ -450,13 +450,30 @@ function renderReportRows(reports: Report[]) {
             hour: '2-digit', minute: '2-digit', hour12: true 
         }).format(new Date(r.timestamp));
 
-        const clientOrCompany = r.equipmentSnapshot.category === 'residencial' 
-            ? r.equipmentSnapshot.client_name 
-            : r.equipmentSnapshot.companyName;
+        let clientOrCompany = 'N/A';
+        let rawSede = 'N/A';
 
-        const displayClient = clientOrCompany && clientOrCompany.length > 25 
+        if (r.equipmentSnapshot.category === 'residencial') {
+            clientOrCompany = r.equipmentSnapshot.client_name || 'N/A';
+            rawSede = r.equipmentSnapshot.address || 'N/A';
+        } else {
+            // Es Empresa
+            const hasSedeName = !!r.equipmentSnapshot.sedeName;
+            
+            if (hasSedeName) {
+                // Reporte con Jerarquía Nueva: Tiene Cliente (Padre) y Sede
+                clientOrCompany = r.equipmentSnapshot.companyName || 'N/A'; // Nombre del Padre
+                rawSede = r.equipmentSnapshot.sedeName || 'N/A'; // Nombre real de la Sede
+            } else {
+                // Reporte Antiguo (Retrocompatibilidad)
+                clientOrCompany = r.equipmentSnapshot.companyName || 'N/A'; // La sede original actúa como cliente
+                rawSede = 'N/A'; // Dejamos explícito que es la sede única
+            }
+        }
+
+        const displayClient = clientOrCompany.length > 25 
             ? clientOrCompany.substring(0, 25) + '...' 
-            : (clientOrCompany || 'N/A');
+            : clientOrCompany;
 
         const paidColor = r.is_paid ? '#28a745' : '#ffc107'; 
         const isPaidBtn = `<button class="btn btn-outline btn-toggle-paid" data-id="${r.id}" title="${r.is_paid ? 'Marcar como No Pagado' : 'Marcar como Pagado'}" style="border-width: 2px; border-color: ${paidColor}; color: ${paidColor}; padding: 0.25rem 0.5rem; font-size: 0.85rem;">
@@ -467,7 +484,6 @@ function renderReportRows(reports: Report[]) {
         const eqType = r.equipmentSnapshot.type || 'N/A';
         const eqDep = r.equipmentSnapshot.dependencyName || 'N/A';
         
-        const rawSede = r.equipmentSnapshot.address || 'N/A';
         const displaySede = rawSede.length > 20 ? rawSede.substring(0, 20) + '...' : rawSede;
 
         tr.innerHTML = `

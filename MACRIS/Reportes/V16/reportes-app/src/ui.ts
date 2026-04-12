@@ -167,7 +167,21 @@ export const populateDropdown = (
     if (!selectElement) return;
     const currentVal = selectElement.value;
     selectElement.innerHTML = `<option value="">${placeholder}</option>`;
-    items.sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
+    
+    // Deduplicate items based on a normalized name (ignoring case, accents, and extra spaces)
+    const seen = new Set<string>();
+    const uniqueItems = items.filter(item => {
+        const normalized = item.name.trim()
+            .replace(/\s+/g, ' ')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+        if (seen.has(normalized)) return false;
+        seen.add(normalized);
+        return true;
+    });
+
+    uniqueItems.sort((a, b) => a.name.localeCompare(b.name)).forEach(item => {
         const option = new Option(item.name, item.id);
         selectElement.appendChild(option);
     });
@@ -197,22 +211,75 @@ export function updateLocationDropdownsFromCompany(selectedCompanyId: string) {
     const company = State.companies.find(c => c.id === selectedCompanyId);
 
     if (company) {
-        // Set city automatically
-        D.reportCitySelectEmpresa.value = company.cityId;
-
-        // Filter and populate sedes
+        // Find sedes for this company
         const filteredSedes = State.sedes.filter(s => s.companyId === selectedCompanyId);
-        populateDropdown(D.reportSedeSelect, filteredSedes);
-        D.reportSedeSelect.disabled = false;
         
-        // Reset and disable dependency select until sede is chosen
-        D.reportDependencySelect.innerHTML = '<option value="">Seleccione una sede primero...</option>';
-        D.reportDependencySelect.disabled = true;
+        if (filteredSedes.length > 0) {
+            // Get unique cities from those sedes
+            const uniqueCityIds = Array.from(new Set(filteredSedes.map(s => s.cityId).filter(id => id)));
+            const availableCities = State.cities.filter(city => uniqueCityIds.includes(city.id));
+            populateDropdown(D.reportCitySelectEmpresa, availableCities, undefined, 'Seleccione...', false);
+            D.reportCitySelectEmpresa.disabled = false;
+            
+            D.reportSedeSelect.innerHTML = '<option value="">Seleccione una ciudad...</option>';
+            D.reportSedeSelect.disabled = true;
+            const sedeFormGroup = D.reportSedeSelect.closest('.form-group') as HTMLElement;
+            if (sedeFormGroup) sedeFormGroup.style.display = '';
+
+            D.reportDependencySelect.innerHTML = '<option value="">Seleccione una sede...</option>';
+            D.reportDependencySelect.disabled = true;
+        } else {
+            // Company has NO SEDES
+            populateDropdown(D.reportCitySelectEmpresa, State.cities, undefined, 'Seleccione...', false);
+            D.reportCitySelectEmpresa.disabled = false;
+            
+            D.reportSedeSelect.innerHTML = '<option value="">Sin sedes disponibles</option>';
+            D.reportSedeSelect.disabled = true;
+            const sedeFormGroup = D.reportSedeSelect.closest('.form-group') as HTMLElement;
+            if (sedeFormGroup) sedeFormGroup.style.display = 'none';
+            
+            // Allow selecting dependencies directly for this company
+            const filteredDependencies = State.dependencies.filter(d => d.companyId === selectedCompanyId);
+            populateDropdown(D.reportDependencySelect, filteredDependencies);
+            D.reportDependencySelect.disabled = false;
+        }
 
     } else {
         // Reset if no company is selected
-        D.reportCitySelectEmpresa.value = '';
+        D.reportCitySelectEmpresa.innerHTML = '<option value="">Seleccione una empresa...</option>';
+        D.reportCitySelectEmpresa.disabled = true;
         D.reportSedeSelect.innerHTML = '<option value="">Seleccione una empresa...</option>';
+        D.reportSedeSelect.disabled = true;
+        const sedeFormGroup = D.reportSedeSelect.closest('.form-group') as HTMLElement;
+        if (sedeFormGroup) sedeFormGroup.style.display = '';
+        D.reportDependencySelect.innerHTML = '<option value="">Seleccione una sede...</option>';
+        D.reportDependencySelect.disabled = true;
+    }
+}
+
+/**
+ * Updates the Sede dropdown based on the selected City and Company.
+ * @param selectedCityId The ID of the currently selected city.
+ */
+export function handleCitySelectionChange(selectedCityId: string) {
+    const selectedCompanyId = D.reportCompanySelect?.value;
+    
+    if (selectedCityId && selectedCompanyId) {
+        const companySedes = State.sedes.filter(s => s.companyId === selectedCompanyId);
+        if (companySedes.length === 0) return; // Do nothing if it's a sede-less company, let Dependency remain populated
+
+        // Filter sedes by chosen company and chosen city
+        const filteredSedes = companySedes.filter(s => s.cityId === selectedCityId);
+        populateDropdown(D.reportSedeSelect, filteredSedes, undefined, 'Seleccione...');
+        D.reportSedeSelect.disabled = false;
+        
+        D.reportDependencySelect.innerHTML = '<option value="">Seleccione una sede...</option>';
+        D.reportDependencySelect.disabled = true;
+    } else {
+        const companySedes = State.sedes.filter(s => s.companyId === selectedCompanyId);
+        if (companySedes.length === 0) return; // Do nothing if it's a sede-less company
+
+        D.reportSedeSelect.innerHTML = '<option value="">Seleccione una ciudad...</option>';
         D.reportSedeSelect.disabled = true;
         D.reportDependencySelect.innerHTML = '<option value="">Seleccione una sede...</option>';
         D.reportDependencySelect.disabled = true;
@@ -226,7 +293,7 @@ export function updateLocationDropdownsFromCompany(selectedCompanyId: string) {
 export function handleSedeSelectionChange(selectedSedeId: string) {
     if (selectedSedeId) {
         // Filter and populate dependencies based on Sede
-        const filteredDependencies = State.dependencies.filter(d => d.sedeId === selectedSedeId);
+        const filteredDependencies = State.dependencies.filter(d => d.companyId === selectedSedeId);
         populateDropdown(D.reportDependencySelect, filteredDependencies);
         D.reportDependencySelect.disabled = false;
     } else {
@@ -749,9 +816,19 @@ export async function openReportFormModal(options: { report?: Report; equipment?
                 setReportCompanySelection(matchedCompany.id, { skipUpdate: true });
                 // This populates dependencies and sets city from company record.
                 updateLocationDropdownsFromCompany(matchedCompany.id);
+                // Pre-select Sede if order has it
+                if (order.sede_id) {
+                    const matchedSede = State.sedes.find(s => s.id === order.sede_id);
+                    if (matchedSede && matchedSede.cityId) {
+                        D.reportCitySelectEmpresa.value = matchedSede.cityId;
+                        handleCitySelectionChange(matchedSede.cityId);
+                    }
+                    D.reportSedeSelect.value = order.sede_id;
+                    handleSedeSelectionChange(order.sede_id);
+                }
             }
-            // Now, override the city with the one from the order, if it was found/created.
-            if (city) {
+            // Now, override the city with the one from the order, if it was found/created and no sede was selected.
+            if (city && !order.sede_id) {
                 D.reportCitySelectEmpresa.value = city.id;
             }
         } else { // residencial
@@ -776,6 +853,11 @@ export async function openReportFormModal(options: { report?: Report; equipment?
                 setReportCompanySelection(companyIdToSelect, { skipUpdate: true });
                 updateLocationDropdownsFromCompany(companyIdToSelect);
                 if (sedeIdToSelect) {
+                     const matchedSede = State.sedes.find(s => s.id === sedeIdToSelect);
+                     if (matchedSede && matchedSede.cityId) {
+                         D.reportCitySelectEmpresa.value = matchedSede.cityId;
+                         handleCitySelectionChange(matchedSede.cityId);
+                     }
                      D.reportSedeSelect.value = sedeIdToSelect;
                      handleSedeSelectionChange(sedeIdToSelect);
                     if (dependencyIdToSelect) {
@@ -1397,8 +1479,8 @@ export async function handlePhotoCaptured() {
 }
 
 export async function handlePhotoUploadWeb(file: File) {
-    const modalType = D.photoCaptureModal?.getAttribute('data-photo-type') as 'internal' | 'external';
-    const captureType = modalType || State.currentPhotoCaptureType || 'internal';
+    // Rely exclusively on the accurately updated State from the file upload flow
+    const captureType = State.currentPhotoCaptureType || 'internal';
     const context = State.contextForPhotoUpdate;
 
     const reader = new FileReader();
@@ -1804,37 +1886,99 @@ export function handleAssignmentCompanyChange() {
     State.editLocationState.newDependencyNameToCreate = null;
     D.editReportDependencyWarning.style.display = 'none';
     D.saveEditReportAssignmentButton.disabled = false;
+    
+    D.editReportCitySelect.innerHTML = '<option value="">Primero seleccione una empresa</option>';
+    D.editReportCitySelect.disabled = true;
+    D.editReportSedeSelect.innerHTML = '<option value="">Primero seleccione una ciudad</option>';
+    D.editReportSedeSelect.disabled = true;
+    D.editReportDependencySelect.innerHTML = '';
+    D.editReportDependencySelect.disabled = true;
     D.editReportDependencySelect.required = true;
 
     const newCompanyId = D.editReportCompanySelect.value;
-    const company = State.companies.find(c => c.id === newCompanyId);
-    const originalReport = State.editLocationState.originalReport;
+    if (!newCompanyId) return;
 
-    if (!company) {
-        D.editReportCityInput.value = '';
-        D.editReportDependencySelect.innerHTML = '<option value="">Seleccione una empresa...</option>';
-        D.editReportDependencySelect.disabled = true;
-        return;
+    const sedesForCompany = State.sedes.filter(s => s.clientId === newCompanyId);
+    const uniqueCityIds = Array.from(new Set(sedesForCompany.map(s => s.cityId).filter(Boolean)));
+    const availableCities = State.cities.filter(c => uniqueCityIds.includes(c.id));
+
+    if (availableCities.length > 0) {
+        populateDropdown(D.editReportCitySelect, availableCities, undefined, 'Seleccione...');
+        D.editReportCitySelect.disabled = false;
+
+        if (availableCities.length === 1) {
+            D.editReportCitySelect.value = availableCities[0].id;
+            handleAssignmentCityChange();
+        }
+    } else {
+        D.editReportCitySelect.innerHTML = '<option value="">Sin ciudades registradas</option>';
     }
+}
 
-    const city = State.cities.find(c => c.id === company.cityId);
-    D.editReportCityInput.value = city ? city.name : 'N/A';
+export function handleAssignmentCityChange() {
+    State.editLocationState.newDependencyNameToCreate = null;
+    D.editReportDependencyWarning.style.display = 'none';
+    D.saveEditReportAssignmentButton.disabled = false;
 
-    const dependenciesForNewCompany = State.dependencies.filter(d => d.companyId === newCompanyId);
-    populateDropdown(D.editReportDependencySelect, dependenciesForNewCompany);
-    D.editReportDependencySelect.disabled = false;
-    D.editReportDependencySelect.value = '';
+    D.editReportSedeSelect.innerHTML = '<option value="">Primero seleccione una ciudad</option>';
+    D.editReportSedeSelect.disabled = true;
+    D.editReportDependencySelect.innerHTML = '';
+    D.editReportDependencySelect.disabled = true;
 
+    const selectedCompanyId = D.editReportCompanySelect.value;
+    const selectedCityId = D.editReportCitySelect.value;
+
+    if (!selectedCompanyId || !selectedCityId) return;
+
+    const availableSedes = State.sedes.filter(s => 
+        s.clientId === selectedCompanyId && 
+        s.cityId === selectedCityId
+    );
+
+    if (availableSedes.length > 0) {
+        populateDropdown(D.editReportSedeSelect, availableSedes, undefined, 'Seleccione...', false);
+        D.editReportSedeSelect.disabled = false;
+        
+        if (availableSedes.length === 1) {
+            D.editReportSedeSelect.value = availableSedes[0].id;
+            handleAssignmentSedeChange();
+        }
+    } else {
+        D.editReportSedeSelect.innerHTML = '<option value="">Sin sedes registradas</option>';
+    }
+}
+
+export function handleAssignmentSedeChange() {
+    State.editLocationState.newDependencyNameToCreate = null;
+    D.editReportDependencyWarning.style.display = 'none';
+    D.saveEditReportAssignmentButton.disabled = false;
+
+    D.editReportDependencySelect.innerHTML = '';
+    D.editReportDependencySelect.disabled = true;
+
+    const selectedSedeId = D.editReportSedeSelect.value;
+    if (!selectedSedeId) return;
+
+    const availableDependencies = State.dependencies.filter(d => d.companyId === selectedSedeId);
+
+    if (availableDependencies.length > 0) {
+        populateDropdown(D.editReportDependencySelect, availableDependencies, undefined, 'Seleccione...', false);
+        D.editReportDependencySelect.disabled = false;
+    } else {
+        D.editReportDependencySelect.innerHTML = '<option value="">Sin dependencias (Debe crear una)</option>';
+    }
+    
+    const originalReport = State.editLocationState.originalReport;
     if (!originalReport) return;
 
     const originalDependencyName = originalReport.equipmentSnapshot.dependencyName;
     if (originalDependencyName) {
-        const existingDependency = dependenciesForNewCompany.find(d => d.name.trim().toLowerCase() === originalDependencyName.trim().toLowerCase());
+        const existingDependency = availableDependencies.find(d => d.name.trim().toLowerCase() === originalDependencyName.trim().toLowerCase());
         if (existingDependency) {
             D.editReportDependencySelect.value = existingDependency.id;
         } else {
             State.editLocationState.newDependencyNameToCreate = originalDependencyName;
-            D.editReportDependencyWarning.innerHTML = `La dependencia "<b>${originalDependencyName}</b>" no existe para esta empresa. Se creará una nueva al guardar.<br>Si no desea crearla, seleccione una dependencia existente de la lista.`;
+            D.editReportDependencyWarning.innerHTML = `La dependencia "<b>${originalDependencyName}</b>" no existe para esta sede. Se creará una nueva al guardar.<br>Si no desea crearla, seleccione una dependencia existente.`;
             D.editReportDependencyWarning.style.display = 'block';
             D.editReportDependencySelect.required = false;
         }
@@ -1853,7 +1997,32 @@ export function openEditReportAssignmentModal(reportId: string) {
     D.editReportAssignmentForm.reset();
     D.editReportAssignmentReportId.value = reportId;
 
-    populateDropdown(D.editReportCompanySelect, State.companies, report.companyId);
+    let actualClientId = report.clientId;
+    let actualSedeId = report.companyId; // companyId is the legacy ID for maintenance_companies (Sedes)
+    let actualCityId = report.cityId;
+
+    if (!actualClientId && actualSedeId) {
+        const sede = State.sedes.find(s => s.id === actualSedeId);
+        if (sede) actualClientId = sede.clientId;
+    }
+
+    populateDropdown(D.editReportCompanySelect, State.companies, actualClientId || undefined);
+    
+    if (actualClientId) {
+        handleAssignmentCompanyChange();
+        if (actualCityId) {
+            D.editReportCitySelect.value = actualCityId;
+            handleAssignmentCityChange();
+            if (actualSedeId) {
+                D.editReportSedeSelect.value = actualSedeId;
+                handleAssignmentSedeChange();
+                if (report.dependencyId) {
+                    D.editReportDependencySelect.value = report.dependencyId;
+                }
+            }
+        }
+    }
+
     D.editReportClientNameInput.value = report.equipmentSnapshot.client_name || '';
     D.editReportClientAddressInput.value = report.equipmentSnapshot.address || '';
     populateDropdown(D.editReportClientCitySelect, State.cities, report.cityId);
@@ -1866,11 +2035,6 @@ export function openEditReportAssignmentModal(reportId: string) {
     }
 
     toggleAssignmentFields();
-
-    const originalDependencyExists = Array.from(D.editReportDependencySelect.options).some(opt => opt.value === report.dependencyId);
-    if (report.dependencyId && originalDependencyExists) {
-        D.editReportDependencySelect.value = report.dependencyId;
-    }
 
     D.editReportAssignmentModal.style.display = 'flex';
     resetModalScroll(D.editReportAssignmentModal);
@@ -2617,6 +2781,26 @@ function createOrderCardHTML(order: Order): string {
         }
     }
 
+    let addressValue = order.clientDetails?.address || 'N/A';
+    let contactValue = order.clientDetails?.phone || 'N/A';
+    let cityValue = order.clientDetails?.city ? ` &bull; ${order.clientDetails.city}` : '';
+    let cityText = order.clientDetails?.city ? ` • ${order.clientDetails.city}` : '';
+    let clientNameValue = order.clientDetails?.name || 'Desconocido';
+
+    if (order.sede_id) {
+        const sede = State.sedes.find(s => s.id === order.sede_id);
+        if (sede) {
+            addressValue = sede.address || 'N/A';
+            contactValue = sede.phone || sede.contact_person || 'N/A';
+            const cityObj = State.cities.find(c => c.id === sede.cityId);
+            if (cityObj) {
+                cityValue = ` &bull; ${cityObj.name}`;
+                cityText = ` • ${cityObj.name}`;
+            }
+            clientNameValue = `${order.clientDetails?.name || 'Desconocido'} - ${sede.name}`;
+        }
+    }
+
     return `
         <details class="accordion-card" data-order-id="${order.id}">
             <summary class="order-card-summary">
@@ -2642,20 +2826,20 @@ function createOrderCardHTML(order: Order): string {
 
                 <div class="order-card-row">
                     <p class="order-card-label"><i class="fas fa-user-tie"></i> Cliente</p>
-                    <p class="order-card-value">${order.clientDetails?.name || 'Desconocido'}</p>
+                    <p class="order-card-value">${clientNameValue}</p>
                 </div>
                 <div class="order-card-row">
                     <p class="order-card-label"><i class="fas fa-map-marker-alt"></i> Dirección</p>
                     <div class="order-card-value" style="display: flex; align-items: center; gap: 8px;">
-                        <span>${order.clientDetails?.address || 'N/A'}${order.clientDetails?.city ? ` &bull; ${order.clientDetails.city}` : ''}</span>
-                        <button type="button" class="copy-info-btn" data-copy-text="${order.clientDetails?.address || ''}${order.clientDetails?.city ? ` • ${order.clientDetails.city}` : ''}" style="background:none; border:none; color:var(--color-accent-primary); cursor:pointer; padding:5px;"><i class="far fa-copy"></i></button>
+                        <span>${addressValue}${cityValue}</span>
+                        <button type="button" class="copy-info-btn" data-copy-text="${addressValue}${cityText}" style="background:none; border:none; color:var(--color-accent-primary); cursor:pointer; padding:5px;"><i class="far fa-copy"></i></button>
                     </div>
                 </div>
                 <div class="order-card-row">
                     <p class="order-card-label"><i class="fas fa-phone-alt"></i> Contacto</p>
                     <div class="order-card-value" style="display: flex; align-items: center; gap: 8px;">
-                        <span>${order.clientDetails?.phone || 'N/A'}</span>
-                        <button type="button" class="copy-info-btn" data-copy-text="${order.clientDetails?.phone || ''}" style="background:none; border:none; color:var(--color-accent-primary); cursor:pointer; padding:5px;"><i class="far fa-copy"></i></button>
+                        <span>${contactValue}</span>
+                        <button type="button" class="copy-info-btn" data-copy-text="${contactValue}" style="background:none; border:none; color:var(--color-accent-primary); cursor:pointer; padding:5px;"><i class="far fa-copy"></i></button>
                     </div>
                 </div>
                 <div class="order-card-row">
@@ -2945,11 +3129,37 @@ export function openOrderDetailsModal(orderId: string) {
     if (!order || !D.orderDetailsModal) return;
 
     D.orderManualIdHeader.textContent = `${order.manualId || order.id.substring(0, 8)}`;
-    D.orderClientName.textContent = order.clientDetails?.name || 'N/A';
-    D.orderClientAddress.textContent = order.clientDetails?.address || 'N/A';
-    D.orderClientCity.textContent = order.clientDetails?.city || 'N/A';
-    D.orderClientPhone.textContent = order.clientDetails?.phone || 'N/A';
-    D.orderClientEmail.textContent = order.clientDetails?.email || 'N/A';
+    
+    let clientName = order.clientDetails?.name || 'N/A';
+    let clientAddress = order.clientDetails?.address || 'N/A';
+    let clientCity = order.clientDetails?.city || 'N/A';
+    let clientPhone = order.clientDetails?.phone || 'N/A';
+    let clientEmail = order.clientDetails?.email || 'N/A';
+
+    if (order.sede_id) {
+        const sede = State.sedes.find(s => s.id === order.sede_id);
+        if (sede) {
+            clientName = `${order.clientDetails?.name || ''} - Sede ${sede.name}`.trim();
+            clientAddress = sede.address || clientAddress;
+            if (sede.cityId) {
+                const city = State.cities.find(c => c.id === sede.cityId);
+                if (city) clientCity = city.name;
+            }
+            if (sede.contact_person) {
+                clientEmail = sede.contact_person; // Mapping contact_person to the 'Contacto/Email' field
+            }
+            if (sede.phone) {
+                clientPhone = sede.phone;
+            }
+        }
+    }
+
+    D.orderClientName.textContent = clientName;
+    D.orderClientAddress.textContent = clientAddress;
+    D.orderClientCity.textContent = clientCity;
+    D.orderClientPhone.textContent = clientPhone;
+    D.orderClientEmail.textContent = clientEmail;
+    
     D.orderServiceDate.textContent = `${formatDate(order.service_date, false)} a las ${formatTime(order.service_time)}`;
     D.orderType.textContent = order.order_type || 'N/A';
     D.orderNotes.textContent = order.notes || 'Sin notas.';
@@ -3180,18 +3390,32 @@ export function openEntityFormModal(type: EntityType, id?: string, context?: any
             const dependency = State.dependencies.find(d => d.id === id);
             const selectedCompany = (context?.source === 'reportForm' || context?.source === 'entityForm') ? context.selectedCompanyId : dependency?.companyId;
             if (context?.source === 'reportForm' && selectedCompany) {
-                const companyName = State.companies.find(c => c.id === selectedCompany)?.name || '';
+                const sedeRecord = State.sedes.find(s => s.id === selectedCompany);
+                let displayName = '';
+                let destLabel = 'Destino';
+                if (sedeRecord) {
+                    const parentCompany = State.companies.find(c => c.id === sedeRecord?.companyId);
+                    displayName = `${parentCompany?.name || ''} - ${sedeRecord.name}`;
+                    destLabel = 'Sede Destino';
+                } else {
+                    const companyRecord = State.companies.find(c => c.id === selectedCompany);
+                    if (companyRecord) {
+                        displayName = companyRecord.name;
+                        destLabel = 'Empresa Destino';
+                    }
+                }
+
                 fieldsHTML = getField('Nombre de la Dependencia', 'name', 'text', dependency?.name)
                     + `
                     <div class="form-group">
-                        <label for="company_id_display">Empresa Destino</label>
-                        <input type="text" id="company_id_display" value="${companyName}" readonly class="readonly-field">
+                        <label for="company_id_display">${destLabel}</label>
+                        <input type="text" id="company_id_display" value="${displayName}" readonly class="readonly-field">
                         <input type="hidden" id="company_id" name="company_id" value="${selectedCompany}">
                     </div>
                 `;
             } else {
                 fieldsHTML = getField('Nombre de la Dependencia', 'name', 'text', dependency?.name)
-                    + getSelectWithAdd('Empresa', 'company_id', State.companies, selectedCompany, true, 'company');
+                    + getSelectWithAdd('Sede', 'company_id', State.sedes, selectedCompany, false, 'company');
             }
             break;
         case 'employee':

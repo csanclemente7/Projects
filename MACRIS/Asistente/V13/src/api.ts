@@ -292,8 +292,7 @@ export async function fetchCities(): Promise<City[]> {
 export async function fetchCompanies(): Promise<Company[]> {
     const { data, error } = await supabaseOrders.from('maintenance_companies').select('*').order('name');
     if (error) throw error;
-    // Map city_id to cityId to match Company interface
-    return (data as any[] || []).map(db => ({ id: db.id, name: db.name, cityId: db.city_id }));
+    return (data as any[] || []).map(db => ({ id: db.id, name: db.name, cityId: db.city_id, clientId: db.client_id, category: db.category }));
 }
 
 export async function fetchDependencies(): Promise<Dependency[]> {
@@ -459,4 +458,27 @@ export async function updateOrderItemQuantity(id: string, quantity: number) {
 
 export async function updateOrderStatus(orderId: string, status: string) {
     return await supabaseOrders.from('orders').update({ status }).eq('id', orderId);
+}
+
+export async function markCompanyAsResidential(company: Company): Promise<void> {
+    const { data: cityData } = await supabaseOrders.from('maintenance_cities').select('name').eq('id', company.cityId).single();
+    const cityName = cityData?.name || null;
+
+    const { data: newClient, error: clientErr } = await supabaseClients.from('clients')
+        .insert({
+            name: company.name,
+            category: 'residencial',
+            city: cityName,
+        })
+        .select('id')
+        .single();
+    
+    if (clientErr) throw clientErr;
+    const newClientId = newClient.id;
+
+    await supabaseOrders.from('maintenance_reports').update({ client_id: newClientId, company_id: null }).eq('company_id', company.id);
+    await supabaseOrders.from('maintenance_equipment').update({ client_id: newClientId, company_id: null }).eq('company_id', company.id);
+    await supabaseOrders.from('maintenance_dependencies').update({ client_id: newClientId, company_id: null }).eq('company_id', company.id);
+
+    await supabaseOrders.from('maintenance_companies').delete().eq('id', company.id);
 }

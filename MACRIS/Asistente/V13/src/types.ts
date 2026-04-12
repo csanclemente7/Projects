@@ -79,21 +79,15 @@ export type Database = {
         Relationships: [];
       };
       maintenance_companies: {
-        Row: { id: string; name: string; city_id: string; created_at?: string; };
-        Insert: { id?: string; name: string; city_id: string; created_at?: string; };
-        Update: { id?: string; name?: string; city_id?: string; created_at?: string; };
-        Relationships: [];
-      };
-      maintenance_sede: {
-        Row: { id: string; name: string; address: string | null; company_id: string | null; city_id: string | null; created_at?: string; };
-        Insert: { id?: string; name: string; address?: string | null; company_id?: string | null; city_id?: string | null; created_at?: string; };
-        Update: { id?: string; name?: string; address?: string | null; company_id?: string | null; city_id?: string | null; created_at?: string; };
+        Row: { id: string; name: string; city_id: string; client_id: string | null; category: string | null; created_at?: string; };
+        Insert: { id?: string; name: string; city_id: string; client_id?: string | null; category?: string | null; created_at?: string; };
+        Update: { id?: string; name?: string; city_id?: string; client_id?: string | null; category?: string | null; created_at?: string; };
         Relationships: [];
       };
       maintenance_dependencies: {
-        Row: { id: string; name: string; company_id: string; sede_id: string | null; created_at?: string; };
-        Insert: { id?: string; name: string; company_id: string; sede_id?: string | null; created_at?: string; };
-        Update: { id?: string; name?: string; company_id?: string; sede_id?: string | null; created_at?: string; };
+        Row: { id: string; name: string; company_id: string; sede_id: string | null; client_id: string | null; created_at?: string; };
+        Insert: { id?: string; name: string; company_id: string; sede_id?: string | null; client_id?: string | null; created_at?: string; };
+        Update: { id?: string; name?: string; company_id?: string; sede_id?: string | null; client_id?: string | null; created_at?: string; };
         Relationships: [];
       };
       maintenance_equipment: {
@@ -116,6 +110,7 @@ export type Database = {
           address: string | null;
           client_name: string | null;
           sede_id: string | null;
+          client_id: string | null;
         };
         Insert: {
           id?: string;
@@ -136,6 +131,7 @@ export type Database = {
           address?: string | null;
           client_name?: string | null;
           sede_id?: string | null;
+          client_id?: string | null;
         };
         Update: {
           id?: string;
@@ -156,6 +152,7 @@ export type Database = {
           address?: string | null;
           client_name?: string | null;
           sede_id?: string | null;
+          client_id?: string | null;
         };
         Relationships: [
           {
@@ -193,6 +190,7 @@ export type Database = {
           photo_external_unit_url: string | null;
           order_id: string | null;
           sede_id: string | null;
+          client_id: string | null;
         };
         Insert: {
           id?: string;
@@ -214,6 +212,7 @@ export type Database = {
           photo_external_unit_url?: string | null;
           order_id?: string | null;
           sede_id?: string | null;
+          client_id?: string | null;
         };
         Update: {
           id?: string;
@@ -235,6 +234,7 @@ export type Database = {
           photo_external_unit_url?: string | null;
           order_id?: string | null;
           sede_id?: string | null;
+          client_id?: string | null;
         };
         Relationships: [];
       };
@@ -411,12 +411,22 @@ export interface Company {
     id: string;
     name: string;
     cityId: string;
+    clientId?: string | null;
+    category?: string | null;
 }
 
 export interface Dependency {
     id: string;
     name: string;
     companyId: string;
+}
+
+export interface Sede {
+    id: string;
+    name: string;
+    address: string | null;
+    companyId: string | null;
+    cityId: string | null;
 }
 
 export interface ServiceType {

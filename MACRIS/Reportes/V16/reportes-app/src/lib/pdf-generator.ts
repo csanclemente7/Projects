@@ -187,7 +187,15 @@ export async function generateReportPDF(
         col1Y += addField('Dirección:', report.equipmentSnapshot.address, col1X, col1Y, colWidth);
     } else {
         col1Y += addField('Empresa:', report.equipmentSnapshot.companyName, col1X, col1Y, colWidth);
+        col1Y += addField('Sede:', report.equipmentSnapshot.sedeName, col1X, col1Y, colWidth);
         col1Y += addField('Dependencia:', report.equipmentSnapshot.dependencyName, col1X, col1Y, colWidth);
+        if (report.equipmentSnapshot.address) {
+            col1Y += addField('Dirección Sede:', report.equipmentSnapshot.address, col1X, col1Y, colWidth);
+        }
+        const contactInfo = `${report.equipmentSnapshot.contact_person || ''} ${report.equipmentSnapshot.phone ? '(' + report.equipmentSnapshot.phone + ')' : ''}`.trim();
+        if (contactInfo) {
+            col1Y += addField('Contacto Sede:', contactInfo, col1X, col1Y, colWidth);
+        }
     }
     col1Y += addField('Ciudad:', city, col1X, col1Y, colWidth);
     

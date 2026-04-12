@@ -574,48 +574,48 @@
 
 
           <!-- Wrapper for Empresa fields -->
-          <div id="report-location-empresa-container" style="display: none">
-            <div class="form-group">
-              <label for="report-company-search">Empresa:</label>
-              <div class="input-with-button company-search-row">
-                <div class="company-search" id="report-company-search-container">
-                  <div class="company-search-field">
-                    <i class="fas fa-search"></i>
-                    <input type="search" id="report-company-search" placeholder="Escriba para buscar empresa..."
-                      autocomplete="off" />
+            <div id="report-location-empresa-container" style="display: none">
+              <div class="form-group">
+                <label for="report-company-search">Empresa:</label>
+                <div class="input-with-button company-search-row">
+                  <div class="company-search" id="report-company-search-container">
+                    <div class="company-search-field">
+                      <i class="fas fa-search"></i>
+                      <input type="search" id="report-company-search" placeholder="Escriba para buscar empresa..."
+                        autocomplete="off" />
+                    </div>
+                    <div id="report-company-search-results" class="company-search-results"></div>
+                    <div id="report-company-selected-badge" class="company-selected-badge" style="display: none">
+                      <i class="far fa-building"></i>
+                      <span class="company-badge-name"></span>
+                      <button type="button" id="report-company-badge-clear" class="company-badge-clear"
+                        title="Quitar empresa">
+                        <i class="fas fa-times"></i>
+                      </button>
+                    </div>
+                    <select id="report-company" name="company_id" class="visually-hidden" aria-hidden="true"
+                      tabindex="-1"></select>
                   </div>
-                  <div id="report-company-search-results" class="company-search-results"></div>
-                  <div id="report-company-selected-badge" class="company-selected-badge" style="display: none">
-                    <i class="far fa-building"></i>
-                    <span class="company-badge-name"></span>
-                    <button type="button" id="report-company-badge-clear" class="company-badge-clear"
-                      title="Quitar empresa">
-                      <i class="fas fa-times"></i>
-                    </button>
-                  </div>
-                  <select id="report-company" name="company_id" class="visually-hidden" aria-hidden="true"
-                    tabindex="-1"></select>
+                  <button type="button" class="btn btn-add-inline" data-entity-type="company"
+                    title="Agregar Nueva Empresa" style="display: none;">
+                    <i class="fas fa-plus"></i>
+                  </button>
                 </div>
-                <button type="button" class="btn btn-add-inline" data-entity-type="company"
-                  title="Agregar Nueva Empresa">
-                  <i class="fas fa-plus"></i>
-                </button>
               </div>
-            </div>
-            <div class="form-group">
-              <label for="report-city-empresa">Ciudad (Automático):</label>
-              <div class="input-with-button">
-                <select id="report-city-empresa" name="city_id_empresa" required disabled></select>
+              <div class="form-group">
+                <label for="report-city-empresa">Ciudad:</label>
+                <div class="input-with-button">
+                  <select id="report-city-empresa" name="city_id_empresa" required></select>
+                </div>
               </div>
-            </div>
-            <div class="form-group">
-              <label for="report-sede">Sede:</label>
-              <div class="input-with-button">
-                <select id="report-sede" name="sede_id">
-                  <option value="">Seleccione una empresa...</option>
-                </select>
+              <div class="form-group">
+                <label for="report-sede">Sede:</label>
+                <div class="input-with-button">
+                  <select id="report-sede" name="sede_id">
+                    <option value="">Seleccione una ciudad...</option>
+                  </select>
+                </div>
               </div>
-            </div>
             <div class="form-group">
               <label for="report-dependency">Dependencia:</label>
               <div class="input-with-button">

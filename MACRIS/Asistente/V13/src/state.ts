@@ -1,5 +1,5 @@
 
-import type { Report, User, City, Company, ServiceType, EquipmentType, Dependency, Order, Equipment, RefrigerantType } from './types';
+import type { Report, User, City, Company, ServiceType, EquipmentType, Dependency, Order, Equipment, RefrigerantType, Sede } from './types';
 import { fuzzyNormalize } from './utils';
 
 // Standard lookup data
@@ -12,6 +12,7 @@ export let dependencies: Dependency[] = [];
 export let serviceTypes: ServiceType[] = [];
 export let equipmentTypes: EquipmentType[] = [];
 export let refrigerantTypes: RefrigerantType[] = [];
+export let sedes: Sede[] = [];
 export let historicalCompanyNames: string[] = []; // Nombres únicos de snapshots históricos
 
 // Pagination State
@@ -117,6 +118,7 @@ export function setCompanies(data: Company[]) { companies = data; }
 export function setDependencies(data: Dependency[]) { dependencies = data; }
 export function setEquipmentTypes(data: EquipmentType[]) { equipmentTypes = data; }
 export function setRefrigerantTypes(data: RefrigerantType[]) { refrigerantTypes = data; }
+export function setSedes(data: Sede[]) { sedes = data; }
 export function setHistoricalCompanyNames(names: string[]) { historicalCompanyNames = names; }
 export function setShowAllMyReports(val: boolean) { showAllMyReports = val; }
 export function setTableSearchTerm(table: keyof typeof tableSearchTerms, term: string) { tableSearchTerms[table] = term; }

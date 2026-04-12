@@ -4,6 +4,7 @@ import type {
     ClientInsert, ItemInsert, QuoteInsert, QuoteItemInsert, OrderInsert, OrderItemInsert, TechnicianInsert, OrderTechnicianInsert, SettingInsert, DatabaseQuotes
 } from './types';
 import { generateId } from './utils';
+import { fetchCities } from './api-reports';
 
 // --- ID Generation ---
 async function _findNextHighestManualId(
@@ -60,17 +61,26 @@ export async function getClientsFromSupabase(): Promise<Client[]> {
     return data || [];
 }
 export async function fetchSedes(): Promise<Sede[]> {
-    const { data, error } = await supabaseOrders.from('maintenance_sede').select('*');
+    const [{ data, error }, cities] = await Promise.all([
+        supabaseOrders.from('maintenance_companies').select('*'),
+        fetchCities()
+    ]);
     if (error) throw error;
+    
+    const cityMap = new Map();
+    cities.forEach(c => cityMap.set(c.id, c.name));
+
     // Map to Sede interface
     return (data || []).map(dbSede => ({
         id: dbSede.id,
         name: dbSede.name,
         address: dbSede.address || null,
-        company_id: dbSede.company_id || null,
+        client_id: dbSede.client_id || null,
         city_id: dbSede.city_id || null,
-        phone: dbSede.phone || null,
-        contact_person: dbSede.contact_person || null,
+        cityName: cityMap.get(dbSede.city_id) || null,
+        contact_person: (dbSede as any).contact_person || null,
+        phone: (dbSede as any).phone || null,
+        category: dbSede.category || null,
     }));
 }
 export async function getTechniciansFromSupabase(): Promise<Technician[]> {
@@ -160,23 +170,23 @@ export async function upsertSedeFull(sedeId: string, sedeName: string, companyId
     const newSede = {
         id: sedeId,
         name: sedeName,
-        company_id: companyId,
+        client_id: companyId,
         address: address || null,
         city_id: cityId || null,
         phone: phone || null,
         contact_person: contactPerson || null
     };
-    const { data, error } = await supabaseOrders.from('maintenance_sede').upsert([newSede], { onConflict: 'id' }).select().single();
+    const { data, error } = await supabaseOrders.from('maintenance_companies').upsert([newSede] as any, { onConflict: 'id' }).select().single();
     if (error) throw error;
     if (!data) throw new Error('Sede upsert failed.');
     return {
         id: data.id,
         name: data.name,
-        address: data.address || null,
-        company_id: data.company_id || null,
+        address: (data as any).address || null,
+        client_id: data.client_id || null,
         city_id: data.city_id || null,
-        phone: data.phone || null,
-        contact_person: data.contact_person || null,
+        phone: (data as any).phone || null,
+        contact_person: (data as any).contact_person || null,
     };
 }
 export async function upsertTechnician(technician: TechnicianInsert): Promise<Technician> {

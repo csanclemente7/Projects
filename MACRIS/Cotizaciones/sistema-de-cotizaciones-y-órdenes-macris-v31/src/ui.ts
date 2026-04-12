@@ -4,6 +4,7 @@ import * as API from './api';
 import { generateQuotePDFDoc, generateOrderPDFDoc, generatePreviewPDF, previewPdfInModal, generateBillPDFDoc } from './pdf';
 import type { Quote, QuoteItem, Client, Item, PdfTemplate, Order, Technician, OrderItem, ClientInsert, ItemInsert, TechnicianInsert } from './types';
 import { formatCurrency, generateId, isMobileDevice, formatTime } from './utils';
+import { fetchCities } from './api-reports';
 import { getSessionUser } from './user-session';
 import { supabaseQuotes, supabaseOrders } from './supabase';
 
@@ -792,7 +793,10 @@ export function setupClientSearch(input: HTMLInputElement, results: HTMLDivEleme
         const term = input.value.toLowerCase();
         results.style.display = 'none';
         if (term.length < 1) return;
-        const clients = State.getClients().filter(c => c.name.toLowerCase().includes(term) || c.manualId.toLowerCase().includes(term)).slice(0, 5);
+        const clients = State.getClients().filter(c => 
+            (c.category === 'empresa' || c.category === 'residencial') &&
+            (c.name.toLowerCase().includes(term) || c.manualId.toLowerCase().includes(term))
+        ).slice(0, 5);
         if (clients.length > 0) {
             results.innerHTML = clients.map(c => `<div class="search-result-item" data-id="${c.id}"><span class="client-id">[${c.manualId}]</span> ${c.name}</div>`).join('');
             results.style.display = 'block';
@@ -887,10 +891,12 @@ function addItemToOrder(item: Item) {
     renderOrderWorkspace(order);
 }
 
-export function renderClientDetails(clientId: string | null, context: 'quote' | 'order') {
+export function renderClientDetails(clientId: string | null, context: 'quote' | 'order', currentCityFilter: string | null = null) {
     const container = context === 'quote' ? D.clientDetailsContainer : D.orderClientDetails;
     const sedeContainer = context === 'quote' ? D.quoteSedeContainer : D.orderSedeContainer;
     const sedeSelect = context === 'quote' ? D.quoteSedeSelect : D.orderSedeSelect;
+    const cityContainer = context === 'quote' ? D.quoteCityContainer : D.orderCityContainer;
+    const citySelect = context === 'quote' ? D.quoteCitySelect : D.orderCitySelect;
     
     let currentSedeId: string | null = null;
     if (context === 'quote') {
@@ -902,6 +908,7 @@ export function renderClientDetails(clientId: string | null, context: 'quote' | 
     if (!clientId) {
         container.innerHTML = '<p>Ningún cliente seleccionado</p>';
         sedeContainer.style.display = 'none';
+        if (cityContainer) cityContainer.style.display = 'none';
         return;
     }
     const client = State.getClients().find(c => c.id === clientId);
@@ -909,17 +916,106 @@ export function renderClientDetails(clientId: string | null, context: 'quote' | 
         container.innerHTML = `<p><i class="fas fa-user-tie"></i> <strong>Contacto:</strong> ${client.contactPerson || 'N/A'}</p><p><i class="fas fa-map-marker-alt"></i> <strong>Dirección:</strong> ${client.address || 'N/A'}</p><p><i class="fas fa-phone"></i> <strong>Teléfono:</strong> ${client.phone || 'N/A'}</p><p><i class="fas fa-envelope"></i> <strong>Email:</strong> ${client.email || 'N/A'}</p>`;
         
         if (client.category === 'empresa') {
-            sedeContainer.style.display = 'block';
-            const sedes = State.getSedes().filter(s => s.company_id === clientId);
-            sedeSelect.innerHTML = '<option value="">Seleccione una sede (Opcional)...</option>' + 
-                sedes.map(s => `<option value="${s.id}" ${s.id === currentSedeId ? 'selected' : ''}>${s.name}</option>`).join('');
+            const sedes = State.getSedes().filter(s => s.client_id === clientId);
+            
+            if (sedes.length === 0) {
+                // No sedes registered - just show the company info
+                if (cityContainer) cityContainer.style.display = 'none';
+                sedeContainer.style.display = 'none';
+            } else if (sedes.length === 1) {
+                // Only one sede - hide selectors, show sede info inline, auto-assign
+                if (cityContainer) cityContainer.style.display = 'none';
+                sedeContainer.style.display = 'none';
+                
+                const sede = sedes[0];
+                container.innerHTML = `<p><i class="fas fa-building"></i> <strong>Sede:</strong> ${sede.name}</p>
+                    <p><i class="fas fa-user-tie"></i> <strong>Contacto:</strong> ${sede.contact_person || client.contactPerson || 'N/A'}</p>
+                    <p><i class="fas fa-map-marker-alt"></i> <strong>Dirección:</strong> ${sede.address || client.address || 'N/A'}</p>
+                    <p><i class="fas fa-city"></i> <strong>Ciudad:</strong> ${sede.cityName || client.city || 'N/A'}</p>
+                    <p><i class="fas fa-phone"></i> <strong>Teléfono:</strong> ${sede.phone || client.phone || 'N/A'}</p>
+                    <p><i class="fas fa-envelope"></i> <strong>Email:</strong> ${client.email || 'N/A'}</p>`;
+                
+                // Auto-assign the only sede
+                if (!currentSedeId || currentSedeId !== sede.id) {
+                    setTimeout(() => {
+                        if (context === 'quote') {
+                            const quote = State.getActiveQuote();
+                            if (quote && quote.sede_id !== sede.id) { 
+                                quote.sede_id = sede.id; 
+                                State.updateActiveQuote(quote); 
+                            }
+                        } else {
+                            const order = State.getCurrentOrder();
+                            if (order && order.sede_id !== sede.id) { 
+                                order.sede_id = sede.id; 
+                                if (D.orderClientCityInput) {
+                                    const clientT = State.getClients().find(c => c.id === order.clientId);
+                                    D.orderClientCityInput.value = sede.cityName || clientT?.city || '';
+                                }
+                            }
+                        }
+                    }, 0);
+                }
+            } else {
+                // Multiple sedes - show cascading city -> sede selectors
+                if (cityContainer) cityContainer.style.display = 'block';
+                sedeContainer.style.display = 'block';
+                sedeSelect.disabled = false;
+                
+                const validCities = sedes.filter(s => s.city_id).map(s => ({ id: s.city_id!, name: s.cityName || 'Ciudad desconocida' }));
+                const uniqueCitiesMap = new Map();
+                validCities.forEach(c => uniqueCitiesMap.set(c.id, c.name));
+                
+                if (citySelect) {
+                    citySelect.innerHTML = '<option value="">Seleccione una ciudad...</option>' + 
+                        Array.from(uniqueCitiesMap.entries()).map(([id, name]) => `<option value="${id}" ${id === currentCityFilter ? 'selected' : ''}>${name}</option>`).join('');
+                }
+
+                const filteredSedes = currentCityFilter ? sedes.filter(s => s.city_id === currentCityFilter) : sedes;
+                
+                sedeSelect.innerHTML = '<option value="">Seleccione una sede...</option>' + 
+                    filteredSedes.map(s => `<option value="${s.id}" ${s.id === currentSedeId ? 'selected' : ''}>${s.name} ${s.cityName && !currentCityFilter ? `(${s.cityName})` : ''}</option>`).join('');
+
+                if (currentSedeId) {
+                    const selectedSede = sedes.find(s => s.id === currentSedeId);
+                    if (selectedSede) {
+                        container.innerHTML = `<p><i class="fas fa-building"></i> <strong>Sede:</strong> ${selectedSede.name}</p>
+                            <p><i class="fas fa-user-tie"></i> <strong>Contacto:</strong> ${selectedSede.contact_person || client.contactPerson || 'N/A'}</p>
+                            <p><i class="fas fa-map-marker-alt"></i> <strong>Dirección:</strong> ${selectedSede.address || client.address || 'N/A'}</p>
+                            <p><i class="fas fa-city"></i> <strong>Ciudad:</strong> ${selectedSede.cityName || client.city || 'N/A'}</p>
+                            <p><i class="fas fa-phone"></i> <strong>Teléfono:</strong> ${selectedSede.phone || client.phone || 'N/A'}</p>
+                            <p><i class="fas fa-envelope"></i> <strong>Email:</strong> ${client.email || 'N/A'}</p>`;
+                    }
+                }
+            }
         } else {
+            if (cityContainer) cityContainer.style.display = 'none';
             sedeContainer.style.display = 'none';
-            sedeSelect.innerHTML = '<option value="">Seleccione una sede (Opcional)...</option>';
+            if (citySelect) citySelect.innerHTML = '<option value="">Seleccione una ciudad...</option>';
+            sedeSelect.innerHTML = '<option value="">Seleccione una sede...</option>';
+            
+            if (currentSedeId) {
+                setTimeout(() => {
+                    if (context === 'quote') {
+                        const quote = State.getActiveQuote();
+                        if (quote && quote.sede_id !== null) { 
+                            quote.sede_id = null; 
+                            State.updateActiveQuote(quote); 
+                        }
+                    } else {
+                        const order = State.getCurrentOrder();
+                        if (order && order.sede_id !== null) { 
+                            order.sede_id = null; 
+                        }
+                    }
+                }, 0);
+            }
         }
     } else {
         container.innerHTML = '<p>Cliente no encontrado.</p>';
+        if (cityContainer) cityContainer.style.display = 'none';
         sedeContainer.style.display = 'none';
+        if (citySelect) citySelect.innerHTML = '<option value="">Seleccione una ciudad...</option>';
         sedeSelect.innerHTML = '<option value="">Seleccione una sede (Opcional)...</option>';
     }
 }
@@ -1299,7 +1395,7 @@ export function handleValueEditFormSubmit(e: Event) {
     closeAllModals();
 }
 
-export async function openEntityModal(type: 'client' | 'item' | 'technician' | 'sede', id: string | null = null) {
+export async function openEntityModal(type: 'client' | 'item' | 'technician' | 'sede', id: string | null = null, parentId: string | null = null) {
     D.modalForm.dataset.type = type;
     D.modalForm.dataset.id = id || '';
     let fieldsHtml = '', title = '';
@@ -1317,21 +1413,27 @@ export async function openEntityModal(type: 'client' | 'item' | 'technician' | '
         const manualId = item ? item.manualId : await getNextItemManualIdForUI();
         fieldsHtml = `<div class="form-group"><label>Código</label><input name="manualId" value="${manualId}" readonly></div><div class="form-group"><label>Nombre</label><input name="name" value="${item?.name || ''}" required></div><div class="form-group"><label>Precio</label><input name="price" type="number" step="any" value="${item?.price || 0}" required></div>`;
     } else if (type === 'sede') {
-        title = 'Nueva Sede';
+        const sede = id ? State.getSedes().find(s => s.id === id) : null;
+        title = sede ? 'Editar Sede' : 'Nueva Sede';
         let companySelectHtml;
-        if (id) {
-            companySelectHtml = `<input type="hidden" name="companyId" value="${id}">`;
+        const targetCompanyId = sede ? sede.client_id : parentId;
+        if (targetCompanyId) {
+            companySelectHtml = `<input type="hidden" name="companyId" value="${targetCompanyId}">`;
         } else {
             const empresas = State.getClients().filter(c => c.category === 'empresa');
             const options = empresas.map(c => `<option value="${c.id}">${c.name} (ID: ${c.manualId})</option>`).join('');
             companySelectHtml = `<div class="form-group"><label>Empresa a la que pertenece</label><select name="companyId" required class="form-control">${options}</select></div>`;
         }
+        const cities = await fetchCities();
+        const citySelectOptions = '<option value="">Seleccione una ciudad...</option>' + 
+            cities.map(c => `<option value="${c.id}" ${sede && sede.city_id === c.id ? 'selected' : ''}>${c.name}</option>`).join('');
+
         fieldsHtml = `${companySelectHtml}
-        <div class="form-group"><label>Nombre de Sede</label><input name="name" value="" required placeholder="Ej. Principal, Sucursal Norte..."></div>
-        <div class="form-group"><label>Encargado</label><input name="contactPerson" value=""></div>
-        <div class="form-group"><label>Dirección</label><input name="address" value=""></div>
-        <div class="form-group"><label>Ciudad</label><input name="city" value=""></div>
-        <div class="form-group"><label>Teléfono</label><input name="phone" value=""></div>`;
+        <div class="form-group"><label>Nombre de Sede</label><input name="name" value="${sede?.name || ''}" required placeholder="Ej. Principal, Sucursal Norte..."></div>
+        <div class="form-group"><label>Encargado</label><input name="contactPerson" value="${sede?.contact_person || ''}"></div>
+        <div class="form-group"><label>Dirección</label><input name="address" value="${sede?.address || ''}"></div>
+        <div class="form-group"><label>Ciudad</label><select name="city" required class="form-control">${citySelectOptions}</select></div>
+        <div class="form-group"><label>Teléfono</label><input name="phone" value="${sede?.phone || ''}"></div>`;
     } else { // technician
         const tech = id ? State.getTechnicians().find(t => t.id === id) : null;
         title = tech ? 'Editar Técnico' : 'Nuevo Técnico';
@@ -1408,7 +1510,7 @@ export async function handleModalFormSubmit(e: Event) {
 
         } else if (type === 'sede') {
             const companyId = data.get('companyId') as string;
-            const saved = await API.upsertSedeFull(id || generateId(), data.get('name') as string, companyId, data.get('address') as string, null, data.get('phone') as string, data.get('contactPerson') as string);
+            const saved = await API.upsertSedeFull(id || generateId(), data.get('name') as string, companyId, data.get('address') as string, data.get('city') as string || null, data.get('phone') as string, data.get('contactPerson') as string);
             State.setSedes([...State.getSedes().filter(s => s.id !== saved.id), saved]);
             if (D.orderWorkspacePage.classList.contains('active')) {
                 renderOrderWorkspace(State.getCurrentOrder());
@@ -1746,7 +1848,8 @@ export function renderOrderWorkspace(order: Order | null) {
     D.orderClientSearchInput.value = client ? `[${client.manualId}] ${client.name}` : '';
     renderClientDetails(order.clientId, 'order');
     D.orderEditClientBtn.style.display = order.clientId ? 'inline-flex' : 'none';
-    D.orderClientCityInput.value = client?.city || '';
+    const currentSede = order.sede_id ? State.getSedes().find(s => s.id === order.sede_id) : null;
+    D.orderClientCityInput.value = currentSede?.cityName || client?.city || '';
 
     D.orderTimeInput.value = order.service_time || '';
 
@@ -1968,9 +2071,9 @@ export async function handleSaveOrder(): Promise<boolean> {
         return false;
     }
 
-    // Logic to update client's city if it's not set
+    // Logic to update client's city if it's not set (only for residencial clients)
     const client = State.getClients().find(c => c.id === order.clientId);
-    if (client && !client.city && cityFromInput) {
+    if (client && client.category === 'residencial' && !client.city && cityFromInput) {
         try {
             const updatedClientData = { ...client, city: cityFromInput };
             const savedClient = await API.upsertClient(updatedClientData);
@@ -3553,7 +3656,7 @@ export async function handleAddSedeClick(context: 'quote' | 'order', companyId: 
         showNotification('Debe seleccionar primero un cliente tipo Empresa', 'error');
         return;
     }
-    openEntityModal('sede', companyId);
+    openEntityModal('sede', null, companyId);
 }
 
 

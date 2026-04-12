@@ -661,32 +661,37 @@
             <div class="form-group">
               <label for="report-company">Empresa:</label>
               <div class="input-with-button">
-                <select id="report-company" name="company_id"></select>
-                <button
-                  type="button"
-                  class="btn btn-add-inline"
-                  data-entity-type="company"
-                  title="Agregar Nueva Empresa"
-                >
-                  <i class="fas fa-plus"></i>
-                </button>
+                <select id="report-company" name="client_id"></select>
+                <!-- Add Empresa button removed as per requirements -->
               </div>
             </div>
             <div class="form-group">
-              <label for="report-city-empresa">Ciudad (Automático):</label>
+              <label for="report-city-empresa">Ciudad:</label>
               <div class="input-with-button">
                 <select
                   id="report-city-empresa"
                   name="city_id_empresa"
                   required
-                  disabled
-                ></select>
+                >
+                  <option value="">Seleccione una ciudad...</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="report-sede">Sede:</label>
+              <div class="input-with-button">
+                <select id="report-sede" name="company_id" required disabled>
+                  <option value="">Seleccione una sede...</option>
+                </select>
+                <!-- Add Sede button removed as per requirements -->
               </div>
             </div>
             <div class="form-group">
               <label for="report-dependency">Dependencia:</label>
               <div class="input-with-button">
-                <select id="report-dependency" name="dependency_id"></select>
+                <select id="report-dependency" name="dependency_id" required disabled>
+                  <option value="">Seleccione una dependencia...</option>
+                </select>
                 <button
                   type="button"
                   class="btn btn-add-inline"
@@ -1201,22 +1206,26 @@
           <!-- Fields for Empresa Category -->
           <div id="edit-assignment-empresa-fields" style="display: none">
             <div class="form-group">
-              <label for="edit-report-company">Empresa:</label>
-              <select id="edit-report-company" name="company_id"></select>
+              <label for="edit-report-company">Empresa (Cliente):</label>
+              <select id="edit-report-company" name="client_id"></select>
             </div>
             <div class="form-group">
-              <label for="edit-report-city">Ciudad (Automático):</label>
-              <input
-                type="text"
-                id="edit-report-city"
-                name="city_name"
-                readonly
-                disabled
-              />
+              <label for="edit-report-city">Ciudad:</label>
+              <select id="edit-report-city" name="city_id" disabled>
+                <option value="">Primero seleccione una empresa</option>
+              </select>
             </div>
             <div class="form-group">
-              <label for="edit-report-dependency">Dependencia:</label>
-              <select id="edit-report-dependency" name="dependency_id"></select>
+              <label for="edit-report-sede">Sede (Empresa en sistema):</label>
+              <select id="edit-report-sede" name="company_id" required disabled>
+                 <option value="">Primero seleccione una ciudad</option>
+              </select>
+            </div>
+            <div class="form-group" style="display: flex; gap: 10px; align-items: flex-end;">
+              <div style="flex-grow: 1;">
+                 <label for="edit-report-dependency">Dependencia:</label>
+                 <select id="edit-report-dependency" name="dependency_id" disabled></select>
+              </div>
             </div>
             <p
               id="edit-report-dependency-warning"

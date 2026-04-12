@@ -44,12 +44,14 @@ let isBusy = false;
 let duplicateGroups: DuplicateGroup[] = [];
 let duplicateGroupIndex = 0;
 let statsByCompany = new Map<string, CompanyStats>();
+let isManualMode = false;
 
 export function initCompanyMerge() {
     const openBtn = document.getElementById('company-merge-btn');
     const modal = document.getElementById('company-merge-modal');
     const closeBtn = document.getElementById('close-company-merge-modal');
     const scanBtn = document.getElementById('company-merge-scan') as HTMLButtonElement | null;
+    const manualBtn = document.getElementById('company-merge-manual') as HTMLButtonElement | null;
 
     openBtn?.addEventListener('click', () => {
         if (modal) modal.style.display = 'flex';
@@ -60,9 +62,22 @@ export function initCompanyMerge() {
     });
 
     scanBtn?.addEventListener('click', async () => {
+        isManualMode = false;
         await scanForDuplicates();
     });
 
+    manualBtn?.addEventListener('click', () => {
+        isManualMode = true;
+        initManualMode();
+    });
+}
+
+function initManualMode() {
+    duplicateGroups = [{ ids: [] }];
+    duplicateGroupIndex = 0;
+    statsByCompany.clear();
+    clearDashboard();
+    renderDuplicateGroup(0);
 }
 
 function setBusyState(next: boolean) {
@@ -457,10 +472,12 @@ function renderDuplicateGroup(index: number, keepSearchQuery?: string) {
 
     duplicateGroupIndex = Math.max(0, Math.min(index, duplicateGroups.length - 1));
     const group = duplicateGroups[duplicateGroupIndex];
+    if (!group) return;
+
     const companyMap = new Map(State.companies.map(c => [c.id, c]));
     const companies = group.ids.map(id => companyMap.get(id)).filter(Boolean) as Company[];
 
-    if (companies.length < 2) {
+    if (!isManualMode && companies.length < 2) {
         syncGroupsWithState();
         if (duplicateGroups.length === 0) {
             clearDashboard();
@@ -473,18 +490,18 @@ function renderDuplicateGroup(index: number, keepSearchQuery?: string) {
 
     container.innerHTML = '';
     
-    // Header Navigation
     const headerDiv = document.createElement('div');
     headerDiv.innerHTML = `
         <div style="background: var(--bg-card); padding: 15px; border-radius: 8px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <div>
-                <span style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">Fase ${duplicateGroupIndex + 1} de ${duplicateGroups.length}</span>
-                <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 5px;">Revisa las empresas y elige cuál conservar.</div>
+                <span style="font-size: 1.2rem; font-weight: 700; color: var(--primary);">${isManualMode ? 'Modo de Fusión Manual' : `Fase ${duplicateGroupIndex + 1} de ${duplicateGroups.length}`}</span>
+                <div style="font-size: 0.8rem; color: var(--text-dim); margin-top: 5px;">${isManualMode ? 'Busca y agrega las empresas(sedes) que deseas unificar.' : 'Revisa las empresas y elige cuál conservar.'}</div>
             </div>
+            ${!isManualMode ? `
             <div style="display: flex; gap: 10px;">
                 <button class="btn btn-secondary merge-prev-btn" ${duplicateGroupIndex === 0 ? 'disabled' : ''}><i class="fas fa-chevron-left"></i> Anterior</button>
                 <button class="btn btn-secondary merge-next-btn" ${duplicateGroupIndex === duplicateGroups.length - 1 ? 'disabled' : ''}>Siguiente <i class="fas fa-chevron-right"></i></button>
-            </div>
+            </div> ` : ''}
         </div>
     `;
     container.appendChild(headerDiv);
@@ -495,28 +512,34 @@ function renderDuplicateGroup(index: number, keepSearchQuery?: string) {
         return c ? ` - <span style="opacity: 0.7;">${c.name}</span>` : '';
     };
 
-    const preferredTarget = group.preferredTargetId ? companyMap.get(group.preferredTargetId) : undefined;
-    const target = preferredTarget || pickTargetFromGroup(companies, statsByCompany);
-    group.preferredTargetId = target.id;
-    const targetName = group.preferredTargetName || target.name;
-    group.preferredTargetName = targetName;
-    const targetOptions = companies.map(c => `<option value="${c.id}" ${c.id === target.id ? 'selected' : ''}>${c.name}${c.cityId ? ` - ${State.cities.find(city => city.id === c.cityId)?.name || ''}` : ''}</option>`).join('');
-    
-    const sourceCompanies = companies.filter(c => c.id !== target.id);
-    const sourceRows = sourceCompanies.map(c => {
-        const stats = statsByCompany.get(c.id) || { reports: 0, equipment: 0, dependencies: 0 };
-        return `
-            <div style="background: rgba(255,165,0,0.05); border: 1px solid rgba(255,165,0,0.3); padding: 12px; border-radius: 8px; position: relative;">
-                <div style="position: absolute; top: -10px; right: 10px; background: var(--bg-body); padding: 0 5px; font-size: 0.65rem; color: #ff9800; border: 1px solid rgba(255,165,0,0.3); border-radius: 4px;">Se descartará</div>
-                <div style="font-weight: 600; font-size: 0.95rem; color: #ffad33;">${c.name}${getCityName(c.cityId)}</div>
-                <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 4px;">
-                    <i class="fas fa-file-alt"></i> ${stats.reports} Rep · <i class="fas fa-tools"></i> ${stats.equipment} Eq · <i class="fas fa-building"></i> ${stats.dependencies} Dep
-                </div>
-            </div>
-        `;
-    }).join('');
+    let target, targetName = '', targetOptions = '', sourceRows = '';
+    const canMergeAll = companies.length >= 2;
 
-    const canMergeAll = sourceCompanies.length > 0;
+    if (companies.length > 0) {
+        const preferredTarget = group.preferredTargetId ? companyMap.get(group.preferredTargetId) : undefined;
+        target = preferredTarget || pickTargetFromGroup(companies, statsByCompany);
+        group.preferredTargetId = target.id;
+        targetName = group.preferredTargetName || target.name;
+        group.preferredTargetName = targetName;
+        targetOptions = companies.map(c => `<option value="${c.id}" ${c.id === target.id ? 'selected' : ''}>${c.name}${c.cityId ? ` - ${State.cities.find(city => city.id === c.cityId)?.name || ''}` : ''}</option>`).join('');
+        
+        const sourceCompanies = companies.filter(c => c.id !== target.id);
+        sourceRows = sourceCompanies.map(c => {
+            const stats = statsByCompany.get(c.id) || { reports: 0, equipment: 0, dependencies: 0 };
+            return `
+                <div style="background: rgba(255,165,0,0.05); border: 1px solid rgba(255,165,0,0.3); padding: 12px; border-radius: 8px; position: relative;">
+                    <div style="position: absolute; top: -10px; right: 10px; background: var(--bg-body); padding: 0 5px; font-size: 0.65rem; color: #ff9800; border: 1px solid rgba(255,165,0,0.3); border-radius: 4px;">Se descartará</div>
+                    <button class="remove-source-btn" data-id="${c.id}" style="position: absolute; top: 12px; right: 12px; background: rgba(255,60,60,0.15); border: 1px solid rgba(255,60,60,0.3); color: #ff6b6b; width: 24px; height: 24px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; padding: 0;" onmouseover="this.style.background='rgba(255,60,60,0.3)'" onmouseout="this.style.background='rgba(255,60,60,0.15)'" title="Sacar de esta lista">
+                        <i class="fas fa-times" style="font-size: 0.75rem;"></i>
+                    </button>
+                    <div style="font-weight: 600; font-size: 0.95rem; color: #ffad33; padding-right: 35px;">${c.name}${getCityName(c.cityId)}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 4px;">
+                        <i class="fas fa-file-alt"></i> ${stats.reports} Rep · <i class="fas fa-tools"></i> ${stats.equipment} Eq · <i class="fas fa-building"></i> ${stats.dependencies} Dep
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
 
     const groupWrapper = document.createElement('div');
     groupWrapper.className = 'dashboard-merge-group';
@@ -530,6 +553,15 @@ function renderDuplicateGroup(index: number, keepSearchQuery?: string) {
             <button class="btn btn-success btn-compact merge-all-btn" ${canMergeAll ? '' : 'disabled'} style="font-weight: bold; background: var(--primary); border:none; padding: 8px 15px;"><i class="fas fa-layer-group"></i> Unificar todas -> Principal</button>
         </div>
         
+        <div style="margin-bottom: 20px; position: relative; background: rgba(255,255,255,0.02); padding: 15px; border-radius: 8px; border: 1px dashed var(--border);">
+            <div style="display: flex; gap: 8px;">
+                <span style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; display:flex; align-items: center; color: var(--text-dim);"><i class="fas fa-search"></i></span>
+                <input type="text" class="manual-add-search" value="${keepSearchQuery || ''}" placeholder="Buscar y agregar empresa(sede) para unificar..." style="flex:1; font-size:0.85rem; background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 8px 12px; border-radius: 6px;" autocomplete="off" />
+            </div>
+            <div class="manual-add-results" style="display:none; position: absolute; top: calc(100% - 10px); left: 15px; right: 15px; background: var(--bg-card); border: 1px solid var(--border); max-height: 200px; overflow-y: auto; overflow-x: hidden; border-radius: 6px; z-index: 10; box-shadow: 0 5px 15px rgba(0,0,0,0.3);"></div>
+        </div>
+
+        ${companies.length > 0 ? `
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
             <!-- SECCIÓN IZQUIERDA: TARJETA PRINCIPAL (TARGET) -->
             <div>
@@ -546,7 +578,7 @@ function renderDuplicateGroup(index: number, keepSearchQuery?: string) {
                         <input class="merge-target-name-input" type="text" value="${targetName}" style="margin-top: 5px; width: 100%; background: var(--bg-input); border: 1px solid var(--border); padding: 10px; border-radius: 6px; font-weight: bold; color: var(--primary); font-size: 0.85rem;" />
                     </div>
                     <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 15px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px;">
-                        <i class="fas fa-info-circle"></i> Las dependencias similares (>82%) de los carteles derechos pasarán orgánicamente a este destino.
+                        <i class="fas fa-info-circle"></i> Las dependencias similares (>82%) pasarán orgánicamente a este destino.
                     </div>
                 </div>
             </div>
@@ -554,22 +586,15 @@ function renderDuplicateGroup(index: number, keepSearchQuery?: string) {
             <!-- SECCIÓN DERECHA: EMPRESAS FUENTE (SE DESCARTAN) -->
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <span style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: #ffad33;"><i class="fas fa-arrow-down"></i> Empresas Analizadas a Destruir</span>
+                    <span style="font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: #ffad33;"><i class="fas fa-arrow-down"></i> Sedes a Destruir</span>
                 </div>
                 
-                <div style="margin-bottom: 15px; position: relative;">
-                    <div style="display: flex; gap: 8px;">
-                        <span style="background: rgba(255,255,255,0.05); border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; display:flex; align-items: center; color: var(--text-dim);"><i class="fas fa-search"></i></span>
-                        <input type="text" class="manual-add-search" value="${keepSearchQuery || ''}" placeholder="Buscar y agregar otra empresa repetida manualmente..." style="flex:1; font-size:0.85rem; background: var(--bg-input); border: 1px solid var(--border); color: white; padding: 8px 12px; border-radius: 6px;" />
-                    </div>
-                    <div class="manual-add-results" style="display:none; position: absolute; top: 100%; left: 0; width: 100%; background: var(--bg-card); border: 1px solid var(--border); max-height: 200px; overflow-y: auto; overflow-x: hidden; border-radius: 6px; margin-top: 5px; z-index: 10; box-shadow: 0 5px 15px rgba(0,0,0,0.3);"></div>
-                </div>
-
                 <div style="display: grid; gap: 12px;">
-                    ${sourceRows || '<div style="font-size: 0.8rem; color: var(--text-dim); text-align: center; padding: 20px; border: 1px dashed var(--border); border-radius: 8px;">No hay otras empresas para unificar.</div>'}
+                    ${sourceRows || '<div style="font-size: 0.8rem; color: var(--text-dim); text-align: center; padding: 20px; border: 1px dashed var(--border); border-radius: 8px;">No hay sedes suficientes para unificar. Agrega otra sede desde el buscador superior.</div>'}
                 </div>
             </div>
         </div>
+        ` : `<div style="text-align: center; color: var(--text-dim); padding: 30px;">Busca una empresa (Sede) para comenzar la fusión.</div>`}
     `;
 
     // Event Listeners for this group
@@ -578,6 +603,7 @@ function renderDuplicateGroup(index: number, keepSearchQuery?: string) {
     const mergeAllBtn = groupWrapper.querySelector('.merge-all-btn') as HTMLButtonElement | null;
 
     const setTargetName = (nextName: string, forceUpdateUi: boolean = false) => {
+        if (!target) return;
         const cleaned = sanitizeCompanyName(nextName);
         const resolved = cleaned || sanitizeCompanyName(target.name);
         group.preferredTargetName = resolved;
@@ -602,6 +628,25 @@ function renderDuplicateGroup(index: number, keepSearchQuery?: string) {
     targetNameInput?.addEventListener('blur', () => {
         if (!targetNameInput || isBusy) return;
         setTargetName(targetNameInput.value, true);
+    });
+
+    groupWrapper.querySelectorAll('.remove-source-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            if (isBusy) return;
+            const id = (e.currentTarget as HTMLElement).getAttribute('data-id');
+            if (id) {
+                group.ids = group.ids.filter(gid => gid !== id);
+                
+                // If we removed the currently selected target, clear the preferred target
+                if (group.preferredTargetId === id) {
+                    group.preferredTargetId = undefined;
+                    group.preferredTargetName = undefined;
+                }
+
+                const currentQ = searchInput ? searchInput.value : undefined;
+                renderDuplicateGroup(duplicateGroupIndex, currentQ);
+            }
+        });
     });
 
     // Lógica para agregar manualmente
@@ -670,7 +715,7 @@ function renderDuplicateGroup(index: number, keepSearchQuery?: string) {
     });
 
     mergeAllBtn?.addEventListener('click', async () => {
-        if (isBusy) return;
+        if (isBusy || !target) return;
         const currentTargetName = resolveTargetName(group, target);
         const sources = companies.filter(c => c.id !== target.id);
         if (sources.length === 0) {
