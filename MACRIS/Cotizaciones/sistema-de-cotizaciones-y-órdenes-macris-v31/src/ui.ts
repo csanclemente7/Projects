@@ -2480,6 +2480,29 @@ export function handleAgendaNavNext() {
     renderAgendaPage();
 }
 
+export async function handleAgendaManualRefresh(buttonEl: HTMLButtonElement) {
+    const originalText = buttonEl.innerHTML;
+    buttonEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    buttonEl.disabled = true;
+
+    try {
+        const { getOrdersFromSupabase } = await import('./api');
+        const newOrders = await getOrdersFromSupabase();
+        const State = await import('./state');
+        State.setOrders(newOrders);
+        renderAgendaPage();
+        const notification = (window as any).UI?.showNotification || showNotification;
+        notification('Agenda sincronizada con el servidor', 'success');
+    } catch (e) {
+        console.error("Manual agenda fetch failed:", e);
+        const notification = (window as any).UI?.showNotification || showNotification;
+        notification('Error al sincronizar la agenda', 'error');
+    } finally {
+        buttonEl.innerHTML = originalText;
+        buttonEl.disabled = false;
+    }
+}
+
 export function handleAgendaViewChange(view: 'month' | 'week' | 'day') {
     State.setAgendaView(view);
     if (D.agendaViewSwitcher) {

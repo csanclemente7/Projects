@@ -4177,3 +4177,11 @@ body.dark-theme .custom-select-container {
 #image-viewer-close:hover {
     background: rgba(255, 0, 0, 1);
 }
+
+@keyframes fadeOutGreen {
+    0% { background-color: rgba(40, 167, 69, 0.4); }
+    100% { background-color: transparent; }
+}
+.row-new-highlight {
+    animation: fadeOutGreen 10s forwards;
+}

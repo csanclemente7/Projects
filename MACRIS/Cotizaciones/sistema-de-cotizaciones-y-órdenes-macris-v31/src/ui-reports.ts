@@ -11,6 +11,7 @@ let selectedReportIds: Set<string> = new Set();
 let currentPage = 1;
 let pageSize = 10;
 let totalRecords = 0;
+let highlightedReportIds: Set<string> = new Set();
 
 // Reference Data
 let cachedCities: City[] = [];
@@ -40,6 +41,17 @@ function setupEventListeners() {
     DOM.reportsSearchInput.addEventListener('input', debounce(async () => {
         await resetAndLoadReports();
     }, 500));
+
+    DOM.reportsRefreshBtn.addEventListener('click', async () => {
+        const icon = DOM.reportsRefreshBtn.querySelector('i');
+        if (icon) icon.classList.add('fa-spin');
+        DOM.reportsRefreshBtn.disabled = true;
+        
+        await resetAndLoadReports(true);
+        
+        if (icon) icon.classList.remove('fa-spin');
+        DOM.reportsRefreshBtn.disabled = false;
+    });
 
     DOM.reportsDateFrom.addEventListener('change', async () => {
         await resetAndLoadReports();
@@ -355,15 +367,16 @@ async function handleExport(type: string) {
     }
 }
 
-async function resetAndLoadReports() {
+async function resetAndLoadReports(highlightNew: boolean = false) {
     currentPage = 1;
     // NO vaciamos los seleccionados para permitir que seleccionen en multiples paginas
     // selectedReportIds.clear(); 
     DOM.reportsSelectAll.checked = false;
-    await loadPage(1);
+    await loadPage(1, highlightNew);
 }
 
-async function loadPage(page: number) {
+async function loadPage(page: number, highlightNew: boolean = false) {
+    const prevIds = new Set(currentReports.map(r => r.id));
     currentPage = page;
     DOM.reportsLoadingIndicator.style.display = 'inline-block';
     
@@ -383,6 +396,15 @@ async function loadPage(page: number) {
 
     totalRecords = count;
     currentReports = data;
+    
+    if (highlightNew && prevIds.size > 0) {
+        currentReports.forEach(r => {
+            if (!prevIds.has(r.id)) {
+                highlightedReportIds.add(r.id);
+                setTimeout(() => highlightedReportIds.delete(r.id), 10000);
+            }
+        });
+    }
     
     DOM.reportsTbody.innerHTML = '';
     renderReportRows(data);
@@ -415,6 +437,11 @@ function renderReportRows(reports: Report[]) {
         // Highlight slight red if missing signature
         if (!r.clientSignature) {
             tr.style.backgroundColor = 'rgba(220, 53, 69, 0.15)'; // Darker light red
+        }
+        
+        // Green highlight for new realtime reports
+        if (highlightedReportIds.has(r.id)) {
+            tr.classList.add('row-new-highlight');
         }
         
         const isChecked = selectedReportIds.has(r.id);
@@ -785,5 +812,27 @@ function showReportDetailsModal(report: Report) {
         newClose.addEventListener('click', () => {
              modal.classList.remove('active');
         });
+    }
+}
+
+export async function handleRealtimeReportUpdate(newReportId?: string) {
+    if (newReportId) {
+        highlightedReportIds.add(newReportId);
+        // Remove highlight after animation duration (10s) to prevent re-triggering randomly
+        setTimeout(() => {
+            highlightedReportIds.delete(newReportId);
+        }, 11000); 
+    }
+    
+    const reportsPage = document.querySelector("#page-reports");
+    if (reportsPage && reportsPage.classList.contains("active")) {
+        // If they are on page 1 and have no active search filters, reload softly
+        const searchInput = DOM.reportsSearchInput.value.trim();
+        const dateFrom = DOM.reportsDateFrom.value;
+        const dateTo = DOM.reportsDateTo.value;
+        
+        if (currentPage === 1 && !searchInput && !dateFrom && !dateTo) {
+            await resetAndLoadReports();
+        }
     }
 }

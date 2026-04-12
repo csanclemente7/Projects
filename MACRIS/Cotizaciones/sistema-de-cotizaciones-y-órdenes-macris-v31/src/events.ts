@@ -550,6 +550,7 @@ function setupPdfDownloadListener() {
 function setupAgendaEventListeners() {
     D.agendaPrevBtn?.addEventListener('click', UI.handleAgendaNavPrev);
     D.agendaNextBtn?.addEventListener('click', UI.handleAgendaNavNext);
+    D.agendaRefreshBtn?.addEventListener('click', () => UI.handleAgendaManualRefresh(D.agendaRefreshBtn));
     D.agendaViewSwitcher?.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
         const btn = target.closest('button');

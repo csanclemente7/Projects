@@ -222,9 +222,11 @@ export const recoveryUserError = document.getElementById('recovery-user-error') 
 export const notificationArea = document.getElementById('notification-area') as HTMLDivElement;
 
 export const agendaTechDropdown = document.getElementById('agenda-tech-dropdown') as HTMLDivElement;
+export const agendaRefreshBtn = document.getElementById('agenda-refresh-btn') as HTMLButtonElement;
 
 // Reports Page exports
 export const reportsSearchInput = document.getElementById('reports-search') as HTMLInputElement;
+export const reportsRefreshBtn = document.getElementById('reports-refresh-btn') as HTMLButtonElement;
 export const reportsDateFrom = document.getElementById('reports-date-from') as HTMLInputElement;
 export const reportsDateTo = document.getElementById('reports-date-to') as HTMLInputElement;
 export const reportsPageSize = document.getElementById('reports-page-size') as HTMLSelectElement;

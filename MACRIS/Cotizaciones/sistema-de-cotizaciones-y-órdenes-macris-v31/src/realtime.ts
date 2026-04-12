@@ -10,7 +10,7 @@ let itemReloadTimeout: any = null;
 
 export function setupRealtimeSubscriptions() {
     console.log("Setting up Supabase Realtime subscriptions...");
-    
+
     // ==========================================
     // QUOTES & SAVED QUOTES SYNC
     // ==========================================
@@ -43,7 +43,7 @@ export function setupRealtimeSubscriptions() {
                 console.log("Realtime: Fetching new orders state from Supabase...");
                 const newOrders = await API.getOrdersFromSupabase();
                 State.setOrders(newOrders);
-                
+
                 // Re-render UI if Active
                 const ordersPage = document.querySelector("#page-orders");
                 if (ordersPage && ordersPage.classList.contains("active")) {
@@ -79,7 +79,7 @@ export function setupRealtimeSubscriptions() {
                     if (clientsPage && clientsPage.classList.contains("active")) {
                         UI.renderClientsList();
                     }
-                } catch (e) {}
+                } catch (e) { }
             }, 800);
         }).subscribe();
 
@@ -97,7 +97,7 @@ export function setupRealtimeSubscriptions() {
                     if (dbPage && dbPage.classList.contains("active")) {
                         UI.renderCatalogItemsList();
                     }
-                } catch (e) {}
+                } catch (e) { }
             }, 800);
         }).subscribe();
 }
