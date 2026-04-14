@@ -52,28 +52,28 @@ export async function fetchCities(): Promise<City[]> {
 }
 
 export async function fetchCompanies(): Promise<Company[]> {
-    const { data, error } = await supabaseOrders.from('maintenance_companies').select('*').order('name');
+    const { data, error } = await supabaseClients.from('clients').select('*').eq('category', 'empresa').order('name');
     if (error) throw error;
     if (data) {
         return data.map((dbCompany) => ({
             id: dbCompany.id,
             name: dbCompany.name,
-            cityId: dbCompany.city_id,
+            cityId: dbCompany.city || '',
         }));
     }
     return [];
 }
 
 export async function fetchSedes(): Promise<Sede[]> {
-    const { data, error } = await supabaseOrders.from('maintenance_sede').select('*').order('name');
+    const { data, error } = await supabaseOrders.from('maintenance_companies').select('*').order('name');
     if (error) throw error;
     if (data) {
         return data.map((dbSede) => ({
             id: dbSede.id,
             name: dbSede.name,
-            companyId: dbSede.company_id,
-            cityId: dbSede.city_id,
-            address: dbSede.address
+            companyId: dbSede.client_id || dbSede.id, // Fallback to its own ID if it's a legacy company acting as a sede
+            cityId: dbSede.city_id || null,
+            address: dbSede.address || null
         }));
     }
     return [];
@@ -86,8 +86,8 @@ export async function fetchDependencies(): Promise<Dependency[]> {
         return data.map((dbDependency) => ({
             id: dbDependency.id,
             name: dbDependency.name,
-            companyId: dbDependency.company_id,
-            sedeId: dbDependency.sede_id,
+            companyId: dbDependency.client_id || dbDependency.company_id,
+            sedeId: dbDependency.sede_id || null,
         }));
     }
     return [];
@@ -117,12 +117,12 @@ export async function fetchEquipment(): Promise<Equipment[]> {
             periodicityMonths: dbEquipment.periodicity_months,
             lastMaintenanceDate: dbEquipment.last_maintenance_date,
             cityId: dbEquipment.city_id,
-            companyId: dbEquipment.company_id,
-            sedeId: dbEquipment.sede_id,
+            companyId: dbEquipment.client_id || dbEquipment.company_id,
             dependencyId: dbEquipment.dependency_id,
             category: dbEquipment.category || 'empresa',
             address: dbEquipment.address,
             client_name: dbEquipment.client_name,
+            sedeId: dbEquipment.sede_id || (dbEquipment.client_id ? dbEquipment.company_id : null),
         }));
     }
     return [];
@@ -376,42 +376,38 @@ export async function saveEntity(type: EntityType, id: string, formData: FormDat
             const companyName = (formData.get('name') as string).trim();
             const cityId = formData.get('city_id') as string;
             
-            // VALIDACIÓN: Evitar duplicados exactos en la misma ciudad
-            const { data: existing, error: checkError } = await supabaseOrders
-                .from('maintenance_companies')
-                .select('id, name, city:maintenance_cities(name)')
-                .eq('city_id', cityId)
-                .ilike('name', companyName);
-            
-            if (existing && existing.length > 0 && (!isEditing || (isEditing && existing[0].id !== id))) {
-                const existingComp = existing[0];
-                const cityObj = existingComp.city as any;
-                const cityName = cityObj?.name || 'la ciudad seleccionada';
-                throw new Error(`La empresa "${existingComp.name}" ya existe en "${cityName}". Por favor, cancéle la creación y selecciónela del listado existente.`);
-            }
+            // To properly create a client in the clients CRM database.
+            // City in clients DB is typically just a string name, but we will store the ID or fetch the name to be safe.
+            let cityNameForClient = cityId;
+            try {
+                const { data: cityData } = await supabaseOrders.from('maintenance_cities').select('name').eq('id', cityId).single();
+                if (cityData) cityNameForClient = cityData.name;
+            } catch (e) { }
 
-            const companyData = { name: companyName, city_id: cityId };
+            const companyData = { name: companyName, city: cityNameForClient, category: 'empresa' };
             result = isEditing
-                ? await supabaseOrders.from('maintenance_companies').update(companyData).eq('id', id).select().single()
-                : await supabaseOrders.from('maintenance_companies').insert(companyData).select().single();
+                ? await supabaseClients.from('clients').update(companyData).eq('id', id).select().single()
+                : await supabaseClients.from('clients').insert(companyData).select().single();
             break;
 
         case 'sede':
             const sedeData = {
                 name: formData.get('name') as string,
-                company_id: formData.get('company_id') as string,
+                client_id: formData.get('company_id') as string, // map form's company_id to client_id in maintenance_companies
                 city_id: (formData.get('city_id') as string) || null,
                 address: (formData.get('address') as string) || null
             };
             result = isEditing
-                ? await supabaseOrders.from('maintenance_sede').update(sedeData).eq('id', id).select().single()
-                : await supabaseOrders.from('maintenance_sede').insert(sedeData).select().single();
+                ? await supabaseOrders.from('maintenance_companies').update(sedeData).eq('id', id).select().single()
+                : await supabaseOrders.from('maintenance_companies').insert(sedeData).select().single();
             break;
 
         case 'dependency':
+            const uiCompanyDependencyId = (formData.get('company_id') as string) || null;
             const dependencyData = { 
                 name: formData.get('name') as string, 
-                company_id: (formData.get('company_id') as string) || null,
+                client_id: uiCompanyDependencyId, 
+                company_id: (formData.get('sede_id') as string) || uiCompanyDependencyId, // Satisfy FK
                 sede_id: (formData.get('sede_id') as string) || null
             };
             result = isEditing
@@ -444,7 +440,8 @@ export async function saveEntity(type: EntityType, id: string, formData: FormDat
             break;
 
         case 'equipment':
-            const equipData = {
+            const category = formData.get('category') as string;
+            const equipData: any = {
                 manual_id: (formData.get('manual_id') as string) || null,
                 brand: formData.get('brand') as string,
                 model: formData.get('model') as string,
@@ -454,14 +451,23 @@ export async function saveEntity(type: EntityType, id: string, formData: FormDat
                 capacity: (formData.get('capacity') as string) || null,
                 periodicity_months: Number(formData.get('periodicityMonths')),
                 last_maintenance_date: (formData.get('lastMaintenanceDate') as string) || null,
-                category: formData.get('category') as string,
+                category: category,
                 city_id: formData.get('city_id') as string,
-                company_id: formData.get('category') === 'empresa' ? (formData.get('company_id') as string) : null,
-                sede_id: formData.get('category') === 'empresa' ? (formData.get('sede_id') as string) : null,
-                dependency_id: formData.get('category') === 'empresa' ? (formData.get('dependency_id') as string) : null,
-                client_name: formData.get('category') === 'residencial' ? (formData.get('client_name') as string) : null,
-                address: formData.get('category') === 'residencial' ? (formData.get('address') as string) : null,
             };
+            
+            if (category === 'empresa') {
+                const uiCompanyEquipId = formData.get('company_id') as string;
+                const uiSedeEquipId = formData.get('sede_id') as string;
+                
+                equipData.client_id = uiCompanyEquipId || null;
+                equipData.company_id = uiSedeEquipId || uiCompanyEquipId || null;
+                equipData.sede_id = uiSedeEquipId || null;
+                equipData.dependency_id = (formData.get('dependency_id') as string) || null;
+            } else {
+                equipData.client_name = formData.get('client_name') as string;
+                equipData.address = formData.get('address') as string;
+            }
+
             result = isEditing
                 ? await supabaseOrders.from('maintenance_equipment').update(equipData).eq('id', id).select().single()
                 : await supabaseOrders.from('maintenance_equipment').insert(equipData).select().single();
@@ -485,7 +491,8 @@ export async function saveMultipleEquipments(equipments: any[]): Promise<{ data:
         refrigerant_type_id: eq.refrigerant_type_id,
         category: eq.category,
         city_id: eq.cityId,
-        company_id: eq.companyId,
+        client_id: eq.companyId,
+        company_id: eq.sedeId || eq.companyId, // To satisfy fk in maintenance_companies
         sede_id: eq.sedeId,
         dependency_id: eq.dependencyId,
         client_name: eq.client_name,
@@ -501,8 +508,25 @@ export async function saveMultipleEquipments(equipments: any[]): Promise<{ data:
 }
 
 export async function deleteEntity(type: EntityType, id: string) {
-    let table = type === 'city' ? 'maintenance_cities' : type === 'company' ? 'maintenance_companies' : type === 'sede' ? 'maintenance_sede' : type === 'dependency' ? 'maintenance_dependencies' : 'maintenance_equipment';
-    return await supabaseOrders.from(table).delete().eq('id', id);
+    switch (type) {
+        case 'city':
+            return await supabaseOrders.from('maintenance_cities').delete().eq('id', id);
+        case 'company':
+            // Company is managed in clients CRM
+            return await supabaseClients.from('clients').delete().eq('id', id);
+        case 'sede':
+            // Sede is managed in orders maintenance_companies
+            return await supabaseOrders.from('maintenance_companies').delete().eq('id', id);
+        case 'dependency':
+            return await supabaseOrders.from('maintenance_dependencies').delete().eq('id', id);
+        case 'equipmentType':
+            return await supabaseOrders.from('maintenance_equipment_types').delete().eq('id', id);
+        case 'refrigerant':
+            return await supabaseOrders.from('maintenance_refrigerant_types').delete().eq('id', id);
+        case 'equipment':
+        default:
+            return await supabaseOrders.from('maintenance_equipment').delete().eq('id', id);
+    }
 }
 
 export async function deleteReport(id: string) {

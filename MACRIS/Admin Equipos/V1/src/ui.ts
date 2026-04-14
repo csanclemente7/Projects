@@ -260,7 +260,18 @@ export function openEquipmentForm(id?: string) {
         const isRes = D.formCategorySelector.value === 'residencial';
         D.formEmpresaFields.style.display = isRes ? 'none' : 'grid';
         D.formResidencialFields.style.display = isRes ? 'grid' : 'none';
-        if (D.formCityId) D.formCityId.disabled = !isRes;
+        
+        const cityGroup = document.getElementById('form-group-city');
+        const sedeGroup = document.getElementById('form-group-sede');
+        if (cityGroup) {
+            if (isRes) {
+                D.formResidencialFields.appendChild(cityGroup);
+            } else if (sedeGroup && sedeGroup.parentNode) {
+                sedeGroup.parentNode.insertBefore(cityGroup, sedeGroup);
+            }
+        }
+
+        if (D.formCityId) D.formCityId.disabled = false; // Never disable so user can change it
         if (!isRes && D.formCompanyId?.value) {
             syncCityForCompany(D.formCompanyId.value);
         }
@@ -276,11 +287,13 @@ export function openEquipmentForm(id?: string) {
     };
 
     const updateDependencies = (sedeId: string, companyId: string, selectedDepId?: string) => {
-        // Fallback: If sede is selected, filter by sede. If no sede is selected, filter by company (if supported or show all for company)
-        // Note: Our types now support sedeId on Dependency. If dependency.sedeId is null, it might just belong to the company globally.
-        let filtered = State.dependencies.filter(d => d.companyId === companyId);
+        let filtered = State.dependencies;
         if (sedeId) {
-             filtered = filtered.filter(d => d.sedeId === sedeId || !d.sedeId); // allow global dependencies
+             // For legacy dependencies, companyId might actually hold the Sede ID
+             filtered = filtered.filter(d => d.sedeId === sedeId || d.companyId === sedeId);
+        } else {
+             // If no sede is selected, filter by the company ID
+             filtered = filtered.filter(d => d.companyId === companyId && !d.sedeId);
         }
         populateDropdown(D.formDependencyId, filtered, selectedDepId, 'Seleccione dependencia...');
     };

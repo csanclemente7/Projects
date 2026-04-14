@@ -6,7 +6,7 @@
           content="default-src 'self'; 
                    script-src 'self' 'unsafe-inline' https://esm.sh https://cdn.jsdelivr.net data:;
                    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; 
-                   img-src 'self' data: blob:; 
+                   img-src 'self' data: blob: https://www.macrisrefrigeracion.com; 
                    font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; 
                    connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://data.jsdelivr.net;
                    worker-src 'self' blob:;">
@@ -217,7 +217,7 @@
                             <div id="form-company-results" class="search-results-container" role="listbox"></div>
                             <select name="company_id" id="form-company-id" class="visually-hidden" aria-hidden="true" tabindex="-1"></select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" id="form-group-sede">
                             <label>Sede:</label>
                             <div class="input-with-button">
                                 <select name="sede_id" id="form-sede-id"></select>
@@ -246,8 +246,8 @@
                     </div>
 
                     <!-- SECCIÓN: UBICACIÓN -->
-                    <div class="form-group">
-                        <label>Ciudad:</label>
+                    <div class="form-group" id="form-group-city">
+                        <label id="city-label">Ciudad:</label>
                         <div class="input-with-button">
                             <select name="city_id" id="form-city-id" required></select>
                             <button type="button" id="btn-quick-add-city" class="btn-add-inline" title="Agregar Ciudad"><i class="fas fa-plus"></i></button>
