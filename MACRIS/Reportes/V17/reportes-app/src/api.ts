@@ -261,7 +261,7 @@ const mapDbReportToReport = (dbReport: any): Report => ({
     equipmentSnapshot: dbReport.equipment_snapshot as Report['equipmentSnapshot'],
     itemsSnapshot: (dbReport.items_snapshot as Report['itemsSnapshot']) || null,
     cityId: dbReport.city_id,
-    companyId: dbReport.company_id,
+    companyId: dbReport.company_id || dbReport.client_id,
     clientId: dbReport.client_id || null,
     dependencyId: dbReport.dependency_id,
     workerId: dbReport.worker_id,

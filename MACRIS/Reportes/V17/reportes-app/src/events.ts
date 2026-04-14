@@ -797,6 +797,10 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
         // --- ONLINE PATH (with fallback) ---
 
         // Step 2: Create a DB-compatible object (snake_case) from our canonical object.
+        // Validar que el company_id exista en la tabla legacy 'maintenance_companies' (las "sedes" del state local)
+        // Esto previene el constraint failure 409 cuando la empresa viene sola de la BD unificada de 'clients'.
+        const isCompanyLegacy = reportForState.companyId ? State.sedes.some(s => s.id === reportForState.companyId) : false;
+
         const reportForDb = {
             id: reportForState.id,
             timestamp: reportForState.timestamp,
@@ -805,8 +809,8 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             equipment_snapshot: reportForState.equipmentSnapshot as any,
             items_snapshot: reportForState.itemsSnapshot,
             city_id: reportForState.cityId,
-            company_id: reportForState.companyId,
-            client_id: reportForState.clientId || null,
+            company_id: isCompanyLegacy ? reportForState.companyId : null,
+            client_id: reportForState.clientId || (!isCompanyLegacy ? reportForState.companyId : null),
             sede_id: reportForState.sedeId || null,
             dependency_id: reportForState.dependencyId,
             worker_id: reportForState.workerId,
