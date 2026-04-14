@@ -34,7 +34,7 @@ export function initQrScanner(deps: QrScannerDependencies) {
 
         deps.cameraScanModal.style.display = 'flex';
         deps.cameraScanFeedback.textContent = 'Apuntando a la cámara...';
-        
+
         // Inicializar BarcodeDetector si está soportado nativamente
         let barcodeDetector: any = null;
         if ('BarcodeDetector' in window) {
@@ -44,7 +44,7 @@ export function initQrScanner(deps: QrScannerDependencies) {
                 console.warn('BarcodeDetector no se pudo inicializar', e);
             }
         }
-        
+
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
             .then(stream => {
                 currentCameraStream = stream;
@@ -72,25 +72,25 @@ export function initQrScanner(deps: QrScannerDependencies) {
                 if (now - lastScanTime >= SCAN_INTERVAL_MS) {
                     lastScanTime = now;
                     deps.cameraScanFeedback.textContent = 'Buscando código QR...';
-                    
+
                     const canvas = deps.qrHiddenCanvasElement;
                     const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                    
+
                     if (!ctx) {
                         qrScanFrameId = requestAnimationFrame(tick);
                         return;
                     }
-                    
+
                     // Escalar imagen para optimizar jsQR (aprox 400px de ancho es ideal)
                     const MAX_WIDTH = 400;
                     let width = deps.qrVideoElement.videoWidth;
                     let height = deps.qrVideoElement.videoHeight;
-                    
+
                     if (width > MAX_WIDTH) {
                         height = Math.floor((height * MAX_WIDTH) / width);
                         width = MAX_WIDTH;
                     }
-                    
+
                     canvas.width = width;
                     canvas.height = height;
                     ctx.drawImage(deps.qrVideoElement, 0, 0, width, height);
@@ -193,7 +193,7 @@ export function initQrScanner(deps: QrScannerDependencies) {
 
                 canvas.width = width;
                 canvas.height = height;
-                
+
                 ctx.drawImage(image, 0, 0, width, height);
                 const imageData = ctx.getImageData(0, 0, width, height);
                 const data = imageData.data;
@@ -204,10 +204,10 @@ export function initQrScanner(deps: QrScannerDependencies) {
                 for (let i = 0; i < data.length; i += 4) {
                     // Cálculo de luminancia estándar
                     const grayscale = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
-                    
+
                     // Aplicar umbral
                     const value = grayscale < threshold ? 0 : 255;
-                    
+
                     // Asignar blanco o negro al píxel
                     data[i] = value;     // R
                     data[i + 1] = value; // G
@@ -217,7 +217,7 @@ export function initQrScanner(deps: QrScannerDependencies) {
                 const code = jsQR(imageData.data, imageData.width, imageData.height, {
                     inversionAttempts: "attemptBoth",
                 });
-                
+
                 deps.hideLoader();
 
                 if (code) {
