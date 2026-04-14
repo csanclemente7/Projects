@@ -35,6 +35,16 @@ export function initQrScanner(deps: QrScannerDependencies) {
         deps.cameraScanModal.style.display = 'flex';
         deps.cameraScanFeedback.textContent = 'Apuntando a la cámara...';
         
+        // Inicializar BarcodeDetector si está soportado nativamente
+        let barcodeDetector: any = null;
+        if ('BarcodeDetector' in window) {
+            try {
+                barcodeDetector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+            } catch (e) {
+                console.warn('BarcodeDetector no se pudo inicializar', e);
+            }
+        }
+        
         navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
             .then(stream => {
                 currentCameraStream = stream;
@@ -50,28 +60,82 @@ export function initQrScanner(deps: QrScannerDependencies) {
                 closeCameraScanModal();
             });
 
-        function tick() {
-            if (deps.qrVideoElement.readyState === deps.qrVideoElement.HAVE_ENOUGH_DATA) {
-                deps.cameraScanFeedback.textContent = 'Buscando código QR...';
-                const canvas = deps.qrHiddenCanvasElement;
-                const ctx = canvas.getContext('2d');
-                canvas.height = deps.qrVideoElement.videoHeight;
-                canvas.width = deps.qrVideoElement.videoWidth;
-                if (!ctx) return;
-                ctx.drawImage(deps.qrVideoElement, 0, 0, canvas.width, canvas.height);
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert",
-                });
+        let lastScanTime = 0;
+        const SCAN_INTERVAL_MS = 250; // Limitar scaneo a 4 veces por segundo
 
-                if (code) {
-                    deps.cameraScanFeedback.textContent = '¡Código QR encontrado!';
-                    closeCameraScanModal();
-                    deps.handleQrCodeResult(code.data); // Usa el callback
-                    return; // Detiene el bucle
+        function tick() {
+            // Si el stream ya se detuvo (ej: el usuario cerró el modal), no continuar
+            if (!currentCameraStream) return;
+
+            if (deps.qrVideoElement.readyState === deps.qrVideoElement.HAVE_ENOUGH_DATA) {
+                const now = Date.now();
+                if (now - lastScanTime >= SCAN_INTERVAL_MS) {
+                    lastScanTime = now;
+                    deps.cameraScanFeedback.textContent = 'Buscando código QR...';
+                    
+                    const canvas = deps.qrHiddenCanvasElement;
+                    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                    
+                    if (!ctx) {
+                        qrScanFrameId = requestAnimationFrame(tick);
+                        return;
+                    }
+                    
+                    // Escalar imagen para optimizar jsQR (aprox 400px de ancho es ideal)
+                    const MAX_WIDTH = 400;
+                    let width = deps.qrVideoElement.videoWidth;
+                    let height = deps.qrVideoElement.videoHeight;
+                    
+                    if (width > MAX_WIDTH) {
+                        height = Math.floor((height * MAX_WIDTH) / width);
+                        width = MAX_WIDTH;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(deps.qrVideoElement, 0, 0, width, height);
+
+                    const processQrResult = (qrText: string | null) => {
+                        if (!currentCameraStream) return; // Abortar si el modal se cerró
+                        if (qrText) {
+                            deps.cameraScanFeedback.textContent = '¡Código QR encontrado!';
+                            closeCameraScanModal();
+                            deps.handleQrCodeResult(qrText);
+                        } else {
+                            qrScanFrameId = requestAnimationFrame(tick);
+                        }
+                    };
+
+                    if (barcodeDetector) {
+                        barcodeDetector.detect(canvas)
+                            .then((barcodes: any[]) => {
+                                if (barcodes.length > 0) {
+                                    processQrResult(barcodes[0].rawValue);
+                                } else {
+                                    processQrResult(null);
+                                }
+                            })
+                            .catch(() => {
+                                // Fallback a jsQR si BarcodeDetector falla
+                                fallbackToJsQr(ctx, width, height, processQrResult);
+                            });
+                        return; // El bucle se reanudará en forma asíncrona
+                    } else {
+                        // Usar directamente jsQR
+                        fallbackToJsQr(ctx, width, height, processQrResult);
+                        return;
+                    }
                 }
             }
             qrScanFrameId = requestAnimationFrame(tick);
+        }
+
+        function fallbackToJsQr(ctx: CanvasRenderingContext2D, width: number, height: number, callback: (res: string | null) => void) {
+            const imageData = ctx.getImageData(0, 0, width, height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert",
+            });
+            callback(code ? code.data : null);
         }
     }
 

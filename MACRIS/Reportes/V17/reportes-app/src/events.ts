@@ -279,13 +279,13 @@ async function handleDeleteEntity(type: EntityType, id: string, name: string) {
             if (error) {
                 console.error("Supabase Deletion Error:", error);
                 if (error.code === '23503') { // Foreign Key violation
-                     let entityName = '';
-                     switch(type) {
+                    let entityName = '';
+                    switch (type) {
                         case 'city': entityName = 'la ciudad'; break;
                         case 'company': entityName = 'la empresa'; break;
                         case 'dependency': entityName = 'la dependencia'; break;
                         default: entityName = 'este elemento'; break;
-                     }
+                    }
                     throw new Error(`No se puede eliminar ${entityName} porque tiene otros registros asociados (p. ej., equipos, reportes).`);
                 }
                 throw error; // Rethrow other DB errors
@@ -297,7 +297,7 @@ async function handleDeleteEntity(type: EntityType, id: string, name: string) {
         UI.showAppNotification(`${type.charAt(0).toUpperCase() + type.slice(1)} eliminado con éxito.`, 'success');
 
         // Refresh data and UI
-        switch(type) {
+        switch (type) {
             case 'city': State.setCities(await fetchCities()); UI.renderCitiesTable(); break;
             case 'company': State.setCompanies(await fetchCompanies()); UI.renderCompaniesTable(); break;
             case 'dependency':
@@ -385,7 +385,7 @@ async function handleEntityFormSubmit(e: SubmitEvent) {
         if (type === 'equipment') {
             const equipmentTypeId = formData.get('equipment_type_id') as string;
             const equipmentTypeName = State.equipmentTypes.find(et => et.id === equipmentTypeId)?.name;
-            
+
             if (equipmentTypeName) {
                 formData.set('type', equipmentTypeName); // Satisfies the NOT NULL constraint
             } else if (!id) {
@@ -411,9 +411,9 @@ async function handleEntityFormSubmit(e: SubmitEvent) {
         const { data, error } = await saveEntity(type, id, formData);
 
         if (error) throw error;
-        
+
         const isOfflineCreation = data.id && data.id.startsWith('local_');
-        const successMessage = isOfflineCreation ? 
+        const successMessage = isOfflineCreation ?
             `${type.charAt(0).toUpperCase() + type.slice(1)} guardado localmente. Se sincronizará al conectar.` :
             `${type.charAt(0).toUpperCase() + type.slice(1)} guardado con éxito.`;
         UI.showAppNotification(successMessage, isOfflineCreation ? 'info' : 'success');
@@ -421,47 +421,47 @@ async function handleEntityFormSubmit(e: SubmitEvent) {
 
         // --- POST-SUBMISSION DATA REFRESH & UI UPDATE ---
         let shouldCloseCurrentModal = true;
-        
-        switch(type) {
-            case 'city': 
+
+        switch (type) {
+            case 'city':
                 if (isOfflineCreation) {
                     State.setCities([...State.cities, data]);
                 } else {
-                    State.setCities(await fetchCities()); 
+                    State.setCities(await fetchCities());
                 }
-                UI.renderCitiesTable(); 
+                UI.renderCitiesTable();
                 if (State.entityFormContext?.source === 'reportForm') {
                     UI.populateDropdown(D.reportCitySelectResidencial, State.cities, data.id);
                 }
                 break;
-            case 'company': 
+            case 'company':
                 if (isOfflineCreation) {
                     const newCompany: Company = { id: data.id, name: data.name, cityId: data.city_id };
                     State.setCompanies([...State.companies, newCompany]);
                 } else {
                     State.setCompanies(await fetchCompanies());
                 }
-                UI.renderCompaniesTable(); 
+                UI.renderCompaniesTable();
                 if (State.entityFormContext?.source === 'reportForm') {
                     UI.populateDropdown(D.reportCompanySelect, State.companies, data.id);
                     UI.setReportCompanySelection(data.id);
                 } else if (State.entityFormContext?.source === 'entityForm') {
-                     // Came from equipment form, re-open it and select the new company
+                    // Came from equipment form, re-open it and select the new company
                     const originalEquipmentId = State.entityFormContext.originalEntityId;
                     shouldCloseCurrentModal = false;
                     UI.openEntityFormModal('equipment', originalEquipmentId, { source: 'entityForm' });
                     // We need to wait for the modal to be rendered, then set the value
                     setTimeout(() => {
                         const companySelect = D.entityFormFieldsContainer.querySelector('#equipment-company') as HTMLSelectElement;
-                        if(companySelect) {
-                           companySelect.value = data.id;
-                           companySelect.dispatchEvent(new Event('change')); // Trigger dependency update
+                        if (companySelect) {
+                            companySelect.value = data.id;
+                            companySelect.dispatchEvent(new Event('change')); // Trigger dependency update
                         }
                     }, 100);
                 }
                 break;
-            case 'dependency': 
-                 if (isOfflineCreation) {
+            case 'dependency':
+                if (isOfflineCreation) {
                     const newDependency: Dependency = { id: data.id, name: data.name, companyId: data.company_id || data.client_id };
                     const duplicateInState = findDependencyMatch(newDependency.companyId, newDependency.name);
                     if (!duplicateInState) {
@@ -479,27 +479,27 @@ async function handleEntityFormSubmit(e: SubmitEvent) {
                     const filteredDependencies = State.dependencies.filter(d => d.companyId === companyId);
                     UI.populateDropdown(D.reportDependencySelect, filteredDependencies, data.id);
                 } else if (State.entityFormContext?.source === 'entityForm') {
-                     const originalEquipmentId = State.entityFormContext.originalEntityId;
-                     shouldCloseCurrentModal = false;
-                     UI.openEntityFormModal('equipment', originalEquipmentId, { source: 'entityForm' });
-                     setTimeout(() => {
+                    const originalEquipmentId = State.entityFormContext.originalEntityId;
+                    shouldCloseCurrentModal = false;
+                    UI.openEntityFormModal('equipment', originalEquipmentId, { source: 'entityForm' });
+                    setTimeout(() => {
                         const companySelect = D.entityFormFieldsContainer.querySelector('#equipment-company') as HTMLSelectElement;
                         const dependencySelect = D.entityFormFieldsContainer.querySelector('#equipment-dependency') as HTMLSelectElement;
-                        if(companySelect && dependencySelect) {
-                           companySelect.value = data.company_id || data.client_id;
-                           companySelect.dispatchEvent(new Event('change'));
-                           setTimeout(() => dependencySelect.value = data.id, 50);
+                        if (companySelect && dependencySelect) {
+                            companySelect.value = data.company_id || data.client_id;
+                            companySelect.dispatchEvent(new Event('change'));
+                            setTimeout(() => dependencySelect.value = data.id, 50);
                         }
                     }, 100);
                 }
                 break;
-            case 'employee': 
-                State.setUsers(await fetchUsers()); 
-                UI.renderEmployeesTable(); 
+            case 'employee':
+                State.setUsers(await fetchUsers());
+                UI.renderEmployeesTable();
                 UI.populateLoginWorkerSelect();
                 break;
             case 'equipment':
-                 if (isOfflineCreation) {
+                if (isOfflineCreation) {
                     // This case is more complex and not implemented for offline yet.
                     // For now, assume it's online.
                     State.setEquipmentList(await fetchAllEquipment());
@@ -507,7 +507,7 @@ async function handleEntityFormSubmit(e: SubmitEvent) {
                     State.setEquipmentList(await fetchAllEquipment());
                 }
                 UI.renderAdminEquipmentTable();
-                
+
                 if (State.entityFormContext?.source === 'equipmentSelectionModal' && !id) {
                     const newEquipment = State.equipmentList.find(eq => eq.id === data.id);
                     if (newEquipment) {
@@ -519,8 +519,8 @@ async function handleEntityFormSubmit(e: SubmitEvent) {
             case 'equipmentType':
             case 'refrigerant':
                 if (isOfflineCreation) {
-                     if (type === 'equipmentType') State.setEquipmentTypes([...State.equipmentTypes, data]);
-                     else State.setRefrigerantTypes([...State.refrigerantTypes, data]);
+                    if (type === 'equipmentType') State.setEquipmentTypes([...State.equipmentTypes, data]);
+                    else State.setRefrigerantTypes([...State.refrigerantTypes, data]);
                 } else {
                     if (type === 'equipmentType') State.setEquipmentTypes(await fetchEquipmentTypes());
                     else State.setRefrigerantTypes(await fetchRefrigerantTypes());
@@ -534,7 +534,7 @@ async function handleEntityFormSubmit(e: SubmitEvent) {
                     }
                 } else if (State.entityFormContext?.source === 'entityForm') {
                     const originalEquipmentId = State.entityFormContext.originalEntityId;
-                    if(originalEquipmentId !== undefined){ // Check if it's new or editing
+                    if (originalEquipmentId !== undefined) { // Check if it's new or editing
                         shouldCloseCurrentModal = false;
                         UI.openEntityFormModal('equipment', originalEquipmentId, { source: 'entityForm' });
                     }
@@ -595,7 +595,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
     const isSimplifiedReport = serviceType === 'Montaje/Instalación' || serviceType.startsWith('Otro');
     const isManualEntry = D.reportEquipmentIdHidden.value === 'MANUAL_NO_ID' && !isSimplifiedReport;
     const selectedCategory = D.reportLocationResidencialContainer.style.display === 'block' ? 'residencial' : 'empresa';
-    
+
     let signatureData: string | null = State.currentReportSignatureDataUrl;
 
     if (!signatureData) {
@@ -612,7 +612,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
     }
 
     if (!serviceType) validationErrors.push('Debe seleccionar un Tipo de Servicio.');
-    
+
     const cityId = selectedCategory === 'residencial' ? D.reportCitySelectResidencial.value : D.reportCitySelectEmpresa.value;
     if (cityId === 'otra') {
         validationErrors.push('Para la Ciudad ha seleccionado "Otra". Esta opción no es válida para guardar. Por favor, contacte a un administrador para que agregue la ciudad que necesita y luego selecciónela de la lista.');
@@ -628,13 +628,13 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
         if (!D.reportClientNameInput.value.trim()) validationErrors.push('El Nombre del Cliente es obligatorio.');
         if (!D.reportAddressInput.value.trim()) validationErrors.push('La Dirección es obligatoria.');
     }
-    
+
     if (isManualEntry) {
         if (!D.reportEquipmentModelInput.value.trim()) validationErrors.push('El Modelo del equipo es obligatorio.');
         if (!D.reportEquipmentBrandInput.value.trim()) validationErrors.push('La Marca del equipo es obligatoria.');
         if (!D.reportEquipmentTypeSelect.value) validationErrors.push('El Tipo de Equipo es obligatorio.');
     }
-    
+
     if (validationErrors.length > 0) {
         const errorListHtml = `- ${validationErrors.join('<br>- ')}`;
         UI.showAppNotification(`<strong>Por favor, corrija lo siguiente:</strong><br>${errorListHtml}`, 'warning', 7000);
@@ -658,11 +658,11 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
         const isEditing = !!D.reportIdInput.value;
         const reportId = isEditing ? D.reportIdInput.value : crypto.randomUUID();
         const originalReport = isEditing ? State.reports.find(r => r.id === reportId) : null;
-        
+
         let equipmentSnapshot: Report['equipmentSnapshot'];
 
         if (isSimplifiedReport) {
-             equipmentSnapshot = {
+            equipmentSnapshot = {
                 id: 'INSTALL_NO_ID', manualId: null, model: 'N/A', brand: 'N/A', type: 'N/A', refrigerant: 'N/A',
                 category: selectedCategory,
                 address: selectedCategory === 'residencial' ? D.reportAddressInput.value : State.sedes.find(s => s.id === (D.reportSedeSelect as HTMLSelectElement).value)?.address,
@@ -712,7 +712,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
         if (serviceType === 'Mantenimiento Preventivo' && !observations) {
             finalObservations = 'Se realiza mantenimiento preventivo.';
         }
-        
+
         const itemsSnapshot = isSimplifiedReport ? Array.from(D.reportInstallationItemsTableBody.querySelectorAll('tr')).map(row => ({
             description: row.cells[0]?.textContent || '',
             quantity: parseInt((row.cells[1]?.querySelector('input') as HTMLInputElement)?.value || '0', 10)
@@ -730,7 +730,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             itemsSnapshot: itemsSnapshot,
             cityId: cityId,
             companyId: selectedCategory === 'empresa' ? (D.reportCompanySelect.value || null) : null,
-            clientId: selectedCategory === 'empresa' ? (D.reportCompanySelect.value || null)  : null,
+            clientId: selectedCategory === 'empresa' ? (D.reportCompanySelect.value || null) : null,
             sedeId: selectedCategory === 'empresa' ? ((D.reportSedeSelect as HTMLSelectElement).value || null) : null,
             dependencyId: selectedCategory === 'empresa' ? (D.reportDependencySelect.value || null) : null,
             workerId: State.currentUser.id,
@@ -743,9 +743,9 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             photo_external_unit_url: isSimplifiedReport ? (State.currentReportPhotoExternalBase64 || 'PENDING_PHOTO') : null,
             orderId: orderIdValue || undefined,
         };
-        
+
         // --- OFFLINE-FIRST LOGIC ---
-        
+
         if (!navigator.onLine) {
             if (isEditing) {
                 // Editing offline is complex and not part of this step's scope.
@@ -753,10 +753,10 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
                 await updateLocalReport(reportId, reportForState);
 
             } else {
-                 // Save new to local queue
+                // Save new to local queue
                 await addReportToQueue(reportForState);
             }
-            
+
             if (orderIdValue) {
                 const orderItemIdValue = D.reportOrderItemIdHidden?.value;
                 if (orderItemIdValue) {
@@ -764,7 +764,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
                     if (assignedOrder && assignedOrder.items) {
                         const itemToUpdate = assignedOrder.items.find(i => i.id === orderItemIdValue);
                         if (itemToUpdate) itemToUpdate.completed_quantity = (itemToUpdate.completed_quantity || 0) + 1;
-                        
+
                         const isOrderComplete = assignedOrder.items.every(i => (i.completed_quantity || 0) >= i.quantity);
                         if (isOrderComplete) {
                             State.updateOrderInState(orderIdValue, { status: 'completed' });
@@ -787,7 +787,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             }
             UI.renderMyReportsTable();
             if (State.currentUser.role === 'admin') UI.renderAdminReportsTable();
-            
+
             FormAutosave.clearDraft(); // LIMPIAR AUTOGUARDADO TRAS GUARDAR
             UI.showAppNotification('Reporte guardado localmente. Se sincronizará cuando haya conexión.', 'info');
             UI.closeReportFormModal();
@@ -795,7 +795,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
         }
 
         // --- ONLINE PATH (with fallback) ---
-        
+
         // Step 2: Create a DB-compatible object (snake_case) from our canonical object.
         const reportForDb = {
             id: reportForState.id,
@@ -842,7 +842,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
                 const orderItemIdValue = D.reportOrderItemIdHidden?.value;
                 if (orderItemIdValue) {
                     await incrementOrderItemCompletedQuantity(orderItemIdValue);
-                    
+
                     const assignedOrder = State.assignedOrders.find(o => o.id === orderIdValue) || State.allServiceOrders.find(o => o.id === orderIdValue);
                     if (assignedOrder && assignedOrder.items) {
                         const itemToUpdate = assignedOrder.items.find(i => i.id === orderItemIdValue);
@@ -860,7 +860,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
                     const assignedOrder = State.assignedOrders.find(o => o.id === orderIdValue) || State.allServiceOrders.find(o => o.id === orderIdValue);
                     const isServiceItem = (desc: string) => /mano de obra|montaje|instalaci[oó]n|desmonte|mantenimiento/i.test(desc);
                     const hasServiceItems = assignedOrder?.items && assignedOrder.items.some(i => isServiceItem(i.description));
-                    
+
                     if (!hasServiceItems) {
                         await updateOrderStatus(orderIdValue, 'completed');
                         State.updateOrderInState(orderIdValue, { status: 'completed' });
@@ -882,12 +882,12 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             if (isNetworkError && !isEditing) {
                 console.warn("Online submission failed, falling back to offline queue.", onlineError);
                 await addReportToQueue(reportForState);
-                
+
                 // Manually update local state if server refresh isn't possible
                 State.setReports([reportForState, ...State.reports]);
                 UI.renderMyReportsTable();
                 if (State.currentUser.role === 'admin') UI.renderAdminReportsTable();
-                
+
                 FormAutosave.clearDraft(); // LIMPIAR AUTOGUARDADO TRAS GUARDAR
                 UI.showAppNotification('Sin conexión. Reporte guardado localmente para sincronización.', 'info');
                 UI.closeReportFormModal();
@@ -914,7 +914,7 @@ async function handleEditReportAssignmentSubmit(e: SubmitEvent) {
         if (!originalReport) throw new Error('No se encontró el reporte original.');
 
         const newCategory = D.editCategoryEmpresaRadio.checked ? 'empresa' : 'residencial';
-        
+
         const reportUpdateData: Database['public']['Tables']['maintenance_reports']['Update'] = {};
         let updatedSnapshot = { ...originalReport.equipmentSnapshot };
 
@@ -923,11 +923,11 @@ async function handleEditReportAssignmentSubmit(e: SubmitEvent) {
             const newCityId = D.editReportCitySelect.value;
             const newSedeId = D.editReportSedeSelect.value;
             let newDependencyId = D.editReportDependencySelect.value;
-            
+
             const newClient = State.companies.find(c => c.id === newClientId);
             const newCity = State.cities.find(c => c.id === newCityId);
             const newSede = State.sedes.find(s => s.id === newSedeId);
-            
+
             if (!newClient) throw new Error('La empresa seleccionada no es válida.');
             if (!newSede) throw new Error('La sede seleccionada no es válida.');
 
@@ -941,7 +941,7 @@ async function handleEditReportAssignmentSubmit(e: SubmitEvent) {
                 State.setDependencies(await fetchDependencies());
                 await cacheAllData('dependencies', State.dependencies);
             }
-            
+
             const newDependency = State.dependencies.find(d => d.id === newDependencyId);
             if (!newDependency) throw new Error('La dependencia seleccionada no es válida.');
 
@@ -950,7 +950,7 @@ async function handleEditReportAssignmentSubmit(e: SubmitEvent) {
             reportUpdateData.sede_id = newSedeId;
             reportUpdateData.dependency_id = newDependencyId;
             reportUpdateData.city_id = newCityId;
-            
+
             updatedSnapshot = {
                 ...updatedSnapshot,
                 category: 'empresa',
@@ -988,7 +988,7 @@ async function handleEditReportAssignmentSubmit(e: SubmitEvent) {
 
         UI.closeEditReportAssignmentModal();
         UI.showAppNotification('Asignación del reporte actualizada con éxito.', 'success');
-        
+
         UI.openViewReportDetailsModal(reportId);
 
     } catch (err: any) {
@@ -1007,7 +1007,7 @@ async function handleRedeemPointsSubmit(e: SubmitEvent) {
     const userId = D.redeemPointsUserId.value;
     const pointsToRedeem = parseInt(D.pointsToRedeemInput.value, 10);
     const user = State.users.find(u => u.id === userId);
-    
+
     if (!user) {
         UI.showAppNotification('Error: Usuario no encontrado.', 'error');
         return;
@@ -1026,11 +1026,11 @@ async function handleRedeemPointsSubmit(e: SubmitEvent) {
     }
 
     const newTotalPoints = currentPoints - pointsToRedeem;
-    
+
     UI.showLoader('Actualizando puntos...');
     try {
         await updateUserPoints(userId, newTotalPoints);
-        
+
         // Update local state to avoid a full refetch
         const userInState = State.users.find(u => u.id === userId);
         if (userInState) {
@@ -1050,54 +1050,54 @@ async function handleRedeemPointsSubmit(e: SubmitEvent) {
 
 
 export function setupEventListeners() {
-        // --- Capacitor: Detect network and app state ---
-let lastNetworkStatus: boolean | null = null;
-let networkListenerActive = false;
-let networkHandledByCapacitor = false;
+    // --- Capacitor: Detect network and app state ---
+    let lastNetworkStatus: boolean | null = null;
+    let networkListenerActive = false;
+    let networkHandledByCapacitor = false;
 
-if (!networkListenerActive) {
-  networkListenerActive = true;
+    if (!networkListenerActive) {
+        networkListenerActive = true;
 
-  Network.addListener('networkStatusChange', async (status) => {
-    console.log('[Network]', status);
+        Network.addListener('networkStatusChange', async (status) => {
+            console.log('[Network]', status);
 
-    // Evitar mensajes repetidos si no cambió el estado real
-    if (status.connected === lastNetworkStatus) return;
-    lastNetworkStatus = status.connected;
+            // Evitar mensajes repetidos si no cambió el estado real
+            if (status.connected === lastNetworkStatus) return;
+            lastNetworkStatus = status.connected;
 
-    // P3: Señalizar que Capacitor manejó el evento, para suprimir el duplicado del Web API
-    networkHandledByCapacitor = true;
-    setTimeout(() => { networkHandledByCapacitor = false; }, 500);
+            // P3: Señalizar que Capacitor manejó el evento, para suprimir el duplicado del Web API
+            networkHandledByCapacitor = true;
+            setTimeout(() => { networkHandledByCapacitor = false; }, 500);
 
-    if (status.connected) {
-      // 🟢 Cuando vuelve la conexión
-      if (!currentUser || currentUser.role !== 'admin') {
-        UI.showAppNotification('✅ Conexión restablecida. Sincronizando reportes...', 'success');
-        await synchronizeQueue();
-      } else {
-        // Si es admin pero ya se había deslogueado antes
-        UI.showAppNotification('🔐 Conexión restablecida. Inicie sesión nuevamente.', 'info');
-      }
-    } else {
-      // 🔴 Cuando se pierde la conexión
-      if (currentUser && currentUser.role === 'admin') {
-        // Mostrar aviso de cierre automático
-        UI.showAppNotification(
-          '⚠️ Conexión perdida. Por seguridad, la sesión de administrador se ha cerrado automáticamente.',
-          'warning'
-        );
+            if (status.connected) {
+                // 🟢 Cuando vuelve la conexión
+                if (!currentUser || currentUser.role !== 'admin') {
+                    UI.showAppNotification('✅ Conexión restablecida. Sincronizando reportes...', 'success');
+                    await synchronizeQueue();
+                } else {
+                    // Si es admin pero ya se había deslogueado antes
+                    UI.showAppNotification('🔐 Conexión restablecida. Inicie sesión nuevamente.', 'info');
+                }
+            } else {
+                // 🔴 Cuando se pierde la conexión
+                if (currentUser && currentUser.role === 'admin') {
+                    // Mostrar aviso de cierre automático
+                    UI.showAppNotification(
+                        '⚠️ Conexión perdida. Por seguridad, la sesión de administrador se ha cerrado automáticamente.',
+                        'warning'
+                    );
 
-        // Esperar un poco para mostrar el mensaje antes de cerrar sesión
-        setTimeout(() => {
-          autoLogoutAdmin();
-        }, 2000);
-      } else {
-        // Usuarios normales
-        UI.showAppNotification('Sin conexión. Guardando reportes localmente...', 'warning');
-      }
+                    // Esperar un poco para mostrar el mensaje antes de cerrar sesión
+                    setTimeout(() => {
+                        autoLogoutAdmin();
+                    }, 2000);
+                } else {
+                    // Usuarios normales
+                    UI.showAppNotification('Sin conexión. Guardando reportes localmente...', 'warning');
+                }
+            }
+        });
     }
-  });
-}
 
 
     App.addListener('appStateChange', (state) => {
@@ -1121,7 +1121,7 @@ if (!networkListenerActive) {
 
     // --- Main UI ---
     D.toggleFullscreenButton?.addEventListener('click', toggleFullscreen);
-    
+
     // --- Online/Offline Status ---
     window.addEventListener('online', () => {
         if (networkHandledByCapacitor) return; // P3: Capacitor ya manejó este evento
@@ -1169,7 +1169,7 @@ if (!networkListenerActive) {
     D.closeAiReconciliationBtn?.addEventListener('click', UI.closeAiReconciliationModal);
     D.closeRedeemPointsModal?.addEventListener('click', UI.closeRedeemPointsModal);
     D.cancelRedeemPointsButton?.addEventListener('click', UI.closeRedeemPointsModal);
-    
+
     // New unified edit assignment modal listeners
     D.editReportAssignmentForm?.addEventListener('submit', handleEditReportAssignmentSubmit);
     D.closeEditReportAssignmentModal?.addEventListener('click', UI.closeEditReportAssignmentModal);
@@ -1193,7 +1193,7 @@ if (!networkListenerActive) {
         if (!State.currentUser) return;
         const icon = D.btnRefreshOrders.querySelector('i');
         if (icon) icon.classList.add('fa-spin');
-        
+
         try {
             await Auth.refreshAssignedOrdersForWorker(State.currentUser, { notifyOnNew: true, onlyIfChanged: false });
             UI.showAppNotification('Órdenes actualizadas exitosamente', 'success');
@@ -1203,7 +1203,7 @@ if (!networkListenerActive) {
             if (icon) icon.classList.remove('fa-spin');
         }
     });
-    
+
     D.createManualReportButton?.addEventListener('click', () => UI.openCategorySelectionModal('manual'));
     D.searchByIdButton?.addEventListener('click', () => UI.openCategorySelectionModal('search'));
     D.toggleMyReportsViewButton?.addEventListener('click', async () => {
@@ -1265,7 +1265,7 @@ if (!networkListenerActive) {
             }
         });
     }
-    
+
     // --- Category & Equipment Selection ---
     D.selectCategoryEmpresaButton?.addEventListener('click', () => {
         State.manualReportCreationState.category = 'empresa';
@@ -1279,17 +1279,17 @@ if (!networkListenerActive) {
         else UI.openReportFormModal({ category: 'residencial' });
         D.categorySelectionModal.style.display = 'none';
     });
-    
+
     document.getElementById('repeat-client-data-button')?.addEventListener('click', (e) => {
         const btn = e.currentTarget as HTMLButtonElement;
         const reportId = btn.dataset.reportId;
         if (!reportId) return;
-        
+
         const latestReport = State.reports.find(r => r.id === reportId);
         if (!latestReport || !latestReport.equipmentSnapshot) return;
-        
+
         // Copiar solo datos del cliente, vaciando los campos de equipo como pidió el usuario
-        const clientDataOnly: any = { 
+        const clientDataOnly: any = {
             ...latestReport.equipmentSnapshot,
             cityId: latestReport.cityId,
             companyId: latestReport.companyId,
@@ -1302,9 +1302,9 @@ if (!networkListenerActive) {
         clientDataOnly.type = '';
         clientDataOnly.capacity = '';
         clientDataOnly.refrigerant = '';
-        
-        UI.openReportFormModal({ 
-            category: latestReport.equipmentSnapshot.category, 
+
+        UI.openReportFormModal({
+            category: latestReport.equipmentSnapshot.category,
             equipment: clientDataOnly,
             serviceType: latestReport.serviceType
         });
@@ -1353,10 +1353,10 @@ if (!networkListenerActive) {
             // A timeout is crucial to prevent the app from hanging on a slow network.
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 3000); // 3-second timeout
-            
-            await fetch('https://fzcalgofrhbqvowazdpk.supabase.co', { 
-                method: 'HEAD', 
-                mode: 'no-cors', 
+
+            await fetch('https://fzcalgofrhbqvowazdpk.supabase.co', {
+                method: 'HEAD',
+                mode: 'no-cors',
                 cache: 'no-store',
                 signal: controller.signal
             });
@@ -1380,19 +1380,19 @@ if (!networkListenerActive) {
     // Photo Capture
     D.takeInternalUnitPhotoButton?.addEventListener('click', () => UI.triggerPhotoCapture('internal', 'CAMERA'));
     D.uploadInternalUnitPhotoButton?.addEventListener('click', () => UI.triggerPhotoCapture('internal', 'PHOTOS'));
-    
+
     D.takeExternalUnitPhotoButton?.addEventListener('click', () => UI.triggerPhotoCapture('external', 'CAMERA'));
     D.uploadExternalUnitPhotoButton?.addEventListener('click', () => UI.triggerPhotoCapture('external', 'PHOTOS'));
-    
+
     D.closePhotoCaptureModalButton?.addEventListener('click', UI.closePhotoCaptureModal);
     D.cancelPhotoCaptureButton?.addEventListener('click', UI.closePhotoCaptureModal);
     D.capturePhotoButton?.addEventListener('click', UI.handlePhotoCaptured);
-    
+
     // Inputs file change events
     const handleUploadInput = async (e: Event) => {
         const input = e.target as HTMLInputElement;
         if (!input.files || input.files.length === 0) return;
-        
+
         UI.showLoader("Procesando imagen...");
         try {
             const file = input.files[0];
@@ -1408,10 +1408,10 @@ if (!networkListenerActive) {
             UI.hideLoader();
         }
     };
-    
+
     D.uploadInternalUnitInput?.addEventListener('change', handleUploadInput);
     D.uploadExternalUnitInput?.addEventListener('change', handleUploadInput);
-    
+
     D.photoCaptureUploadButton?.addEventListener('click', () => {
         D.photoCaptureUploadInput?.click();
     });
@@ -1419,7 +1419,7 @@ if (!networkListenerActive) {
     D.photoCaptureUploadInput?.addEventListener('change', async (e) => {
         const input = e.target as HTMLInputElement;
         if (!input.files || input.files.length === 0) return;
-        
+
         UI.showLoader("Procesando imagen...");
         try {
             const file = input.files[0];
@@ -1432,7 +1432,7 @@ if (!networkListenerActive) {
             UI.hideLoader();
         }
     });
-    
+
     // --- Table/List Event Delegation ---
     document.body.addEventListener('click', async (e) => {
         const target = e.target as HTMLElement;
@@ -1458,7 +1458,7 @@ if (!networkListenerActive) {
         if (editPhotoBtn) {
             const reportId = editPhotoBtn.dataset.reportId;
             const photoType = editPhotoBtn.dataset.photoType as 'internal' | 'external';
-            
+
             if (!reportId || !photoType) return;
 
             // Store context for the handler
@@ -1512,7 +1512,7 @@ if (!networkListenerActive) {
                     }
                 }
 
-                await UI.openReportFormModal({ 
+                await UI.openReportFormModal({
                     category: determinedCategory,
                     isFromOrder: true,
                     serviceType: sTypeToPass,
@@ -1527,8 +1527,8 @@ if (!networkListenerActive) {
         if (btn.matches('.link-report-btn')) {
             const orderId = btn.dataset.orderId!;
             const reportId = btn.dataset.reportId!;
-            
-            const confirmed = await UI.showConfirmationModal(`¿Vincular reporte #${reportId.substring(0,8)} con la orden #${orderId.substring(0,8)}? Esta acción marcará la orden como 'Completada'.`, 'Vincular');
+
+            const confirmed = await UI.showConfirmationModal(`¿Vincular reporte #${reportId.substring(0, 8)} con la orden #${orderId.substring(0, 8)}? Esta acción marcará la orden como 'Completada'.`, 'Vincular');
             if (confirmed) {
                 UI.showLoader('Vinculando...');
                 try {
@@ -1536,20 +1536,20 @@ if (!networkListenerActive) {
                     await updateMaintenanceReport(reportId, { order_id: orderId });
                     // Update order status to completed
                     await updateOrderStatus(orderId, 'completed');
-                    
+
                     // Refresh local state
                     State.updateOrderInState(orderId, { status: 'completed' });
                     const report = State.reports.find(r => r.id === reportId);
-                    if(report) report.orderId = orderId;
+                    if (report) report.orderId = orderId;
                     await cacheAllData('orders', State.allServiceOrders);
-                    
+
                     // Re-render relevant views
                     UI.renderAdminOrdersList();
                     await refreshReportsState();
-                    
+
                     // Remove the card from the AI modal
                     btn.closest('.reconciliation-card')?.remove();
-                    
+
                     UI.showAppNotification('Orden y reporte vinculados exitosamente.', 'success');
                 } catch (error: any) {
                     console.error("Error linking report and order:", error);
@@ -1578,21 +1578,21 @@ if (!networkListenerActive) {
             }
         }
         if (btn.matches('.edit-report-btn')) {
-             const report = State.reports.find(r => r.id === btn.dataset.reportId);
-             if (report) UI.openReportFormModal({ report });
+            const report = State.reports.find(r => r.id === btn.dataset.reportId);
+            if (report) UI.openReportFormModal({ report });
         }
         if (btn.matches('.delete-report-btn')) {
             const reportId = btn.dataset.reportId!;
-            const confirmed = await UI.showConfirmationModal(`¿Eliminar reporte ${reportId.substring(0,8)}? Esto también anulará el punto otorgado al técnico.`, 'Eliminar');
+            const confirmed = await UI.showConfirmationModal(`¿Eliminar reporte ${reportId.substring(0, 8)}? Esto también anulará el punto otorgado al técnico.`, 'Eliminar');
             if (confirmed) {
                 UI.showLoader('Eliminando y ajustando puntos...');
                 try {
                     // Find the report to identify the worker and deduct points
                     const reportToDelete = State.reports.find(r => r.id === reportId);
-                    
+
                     if (reportToDelete && reportToDelete.workerId) {
                         const worker = State.users.find(u => u.id === reportToDelete.workerId);
-                        
+
                         // If worker exists and has points, deduct one point
                         if (worker && worker.points && worker.points > 0) {
                             const newPointTotal = worker.points - 1;
@@ -1628,7 +1628,7 @@ if (!networkListenerActive) {
         }
         if (btn.matches('.create-report-from-schedule-btn')) {
             const equipment = State.equipmentList.find(eq => eq.id === btn.dataset.equipmentId);
-            if(equipment) UI.openReportFormModal({ equipment, category: equipment.category as any });
+            if (equipment) UI.openReportFormModal({ equipment, category: equipment.category as any });
         }
 
         // --- Entity Actions ---
@@ -1676,19 +1676,19 @@ if (!networkListenerActive) {
             const context: any = {
                 source: 'reportForm', // Default source
             };
-            
+
             // Determine the context more accurately
             if (addBtn.closest('#report-form-modal')) {
                 context.source = 'reportForm';
                 if (entityType === 'dependency') {
                     const selectedSedeId = D.reportSedeSelect.value;
                     const selectedCompanyId = D.reportCompanySelect.value;
-                    
+
                     if (!selectedCompanyId) {
                         UI.showAppNotification('Seleccione una empresa primero', 'warning');
                         return;
                     }
-                    
+
                     const companySedes = State.sedes.filter(s => s.companyId === selectedCompanyId);
                     if (companySedes.length > 0 && !selectedSedeId) {
                         UI.showAppNotification('Seleccione una sede primero', 'warning');
@@ -1700,9 +1700,9 @@ if (!networkListenerActive) {
             } else if (addBtn.closest('#entity-form-modal')) {
                 context.source = 'entityForm';
                 context.originalEntityId = D.entityIdInput.value;
-                 if (entityType === 'dependency') {
+                if (entityType === 'dependency') {
                     const companySelect = D.entityFormFieldsContainer.querySelector('#equipment-company') as HTMLSelectElement | null;
-                    if(companySelect) context.selectedCompanyId = companySelect.value;
+                    if (companySelect) context.selectedCompanyId = companySelect.value;
                 }
             }
 
@@ -1748,7 +1748,7 @@ if (!networkListenerActive) {
             reader.onload = async () => {
                 try {
                     const base64Data = reader.result as string;
-                    
+
                     const updateData: any = {};
                     if (photoType === 'internal') {
                         updateData.photo_internal_unit_url = base64Data;
@@ -1829,7 +1829,7 @@ if (!networkListenerActive) {
         await syncAdminReportsDatasetForQuery();
         UI.renderAdminReportsTable();
     });
-    
+
     const adminOrdersFilterElements = [D.filterOrderDateStart, D.filterOrderDateEnd, D.filterOrderStatus, D.filterOrderType, D.filterOrderTechnician];
     adminOrdersFilterElements.forEach(el => el?.addEventListener('change', UI.renderAdminOrdersList));
     D.adminOrdersSearchInput?.addEventListener('input', () => { State.setTableSearchTerm('adminOrders', D.adminOrdersSearchInput.value); UI.renderAdminOrdersList(); });
@@ -1872,12 +1872,12 @@ if (!networkListenerActive) {
         }
     });
 
-     // Order Actions
+    // Order Actions
     D.startReportFromOrderButton?.addEventListener('click', async (e) => {
         const orderId = (e.currentTarget as HTMLButtonElement).dataset.orderId;
         // Check both worker's assigned orders and all orders (for admin)
         const order = State.assignedOrders.find(o => o.id === orderId) || State.allServiceOrders.find(o => o.id === orderId);
-        
+
         if (order) {
             D.orderDetailsModal.style.display = 'none';
 
@@ -1891,12 +1891,12 @@ if (!networkListenerActive) {
                 }
             }
 
-            await UI.openReportFormModal({ 
+            await UI.openReportFormModal({
                 category: determinedCategory,
                 isFromOrder: true,
                 serviceType: order.order_type || undefined,
                 order: order,
-             });
+            });
         }
     });
 }

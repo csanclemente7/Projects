@@ -850,7 +850,12 @@ export async function openReportFormModal(options: { report?: Report; equipment?
             const sedeIdToSelect = targetEquipment.sedeId;
             const dependencyIdToSelect = targetEquipment.dependencyId;
 
-            if (companyIdToSelect && !State.companies.find(c => c.id === companyIdToSelect)) {
+            const matchedSede = sedeIdToSelect ? State.sedes.find(s => s.id === sedeIdToSelect) : null;
+
+            // Prioridad a la empresa dictada por la sede (robusto contra fallos legacy)
+            if (matchedSede && matchedSede.companyId) {
+                companyIdToSelect = matchedSede.companyId;
+            } else if (companyIdToSelect && !State.companies.find(c => c.id === companyIdToSelect)) {
                 if (targetEquipment.companyName) {
                     const matched = State.companies.find(c => c.name === targetEquipment.companyName);
                     if (matched) companyIdToSelect = matched.id;
@@ -858,20 +863,28 @@ export async function openReportFormModal(options: { report?: Report; equipment?
             }
 
             if (companyIdToSelect) {
-                setReportCompanySelection(companyIdToSelect, { skipUpdate: true });
-                updateLocationDropdownsFromCompany(companyIdToSelect);
-                if (sedeIdToSelect) {
-                    const matchedSede = State.sedes.find(s => s.id === sedeIdToSelect);
-                    if (matchedSede && matchedSede.cityId) {
-                        D.reportCitySelectEmpresa.value = matchedSede.cityId;
-                        handleCitySelectionChange(matchedSede.cityId);
+                // Verificar si resolvimos a una empresa válida final
+                const validCompany = State.companies.find(c => c.id === companyIdToSelect);
+                if (validCompany) {
+                    setReportCompanySelection(companyIdToSelect, { skipUpdate: true });
+                    updateLocationDropdownsFromCompany(companyIdToSelect);
+
+                    const effectiveCityId = cityIdToSelect || (matchedSede ? matchedSede.cityId : undefined);
+
+                    if (effectiveCityId) {
+                        D.reportCitySelectEmpresa.value = effectiveCityId;
+                        handleCitySelectionChange(effectiveCityId);
                     }
+
+                if (sedeIdToSelect) {
                     D.reportSedeSelect.value = sedeIdToSelect;
                     handleSedeSelectionChange(sedeIdToSelect);
-                    if (dependencyIdToSelect) {
-                        D.reportDependencySelect.value = dependencyIdToSelect;
-                    }
                 }
+
+                if (dependencyIdToSelect) {
+                    D.reportDependencySelect.value = dependencyIdToSelect;
+                }
+                } // End validCompany
             }
         }
     }

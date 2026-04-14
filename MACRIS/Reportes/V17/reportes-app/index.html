@@ -115,7 +115,8 @@
                 <i class="fas fa-sync-alt"></i> RECARGAR
               </button>
             </div>
-            <p style="margin-bottom: 0; font-size: 0.85rem;">Revisa y gestiona las órdenes que te han sido asignadas.</p>
+            <p style="margin-bottom: 0; font-size: 0.85rem;">Revisa y gestiona las órdenes que te han sido asignadas.
+            </p>
           </div>
           <div class="actions-body">
             <div id="worker-orders-list-container" class="order-card-list">
@@ -182,7 +183,8 @@
           </div>
           <div class="actions-body">
 
-            <div class="modern-search-bar" style="margin-bottom: 15px; border-radius: 12px; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.02); padding: 5px 10px;">
+            <div class="modern-search-bar"
+              style="margin-bottom: 15px; border-radius: 12px; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.02); padding: 5px 10px;">
               <i class="fas fa-search search-icon" style="color: #00dfff; margin-left: 5px;"></i>
               <input type="search" id="my-reports-search" placeholder="Buscar en mis reportes..."
                 aria-label="Buscar en mis reportes" style="background: transparent; border: none; color: white;" />
@@ -575,48 +577,48 @@
 
 
           <!-- Wrapper for Empresa fields -->
-            <div id="report-location-empresa-container" style="display: none">
-              <div class="form-group">
-                <label for="report-company-search">Empresa:</label>
-                <div class="input-with-button company-search-row">
-                  <div class="company-search" id="report-company-search-container">
-                    <div class="company-search-field">
-                      <i class="fas fa-search"></i>
-                      <input type="search" id="report-company-search" placeholder="Escriba para buscar empresa..."
-                        autocomplete="off" />
-                    </div>
-                    <div id="report-company-search-results" class="company-search-results"></div>
-                    <div id="report-company-selected-badge" class="company-selected-badge" style="display: none">
-                      <i class="far fa-building"></i>
-                      <span class="company-badge-name"></span>
-                      <button type="button" id="report-company-badge-clear" class="company-badge-clear"
-                        title="Quitar empresa">
-                        <i class="fas fa-times"></i>
-                      </button>
-                    </div>
-                    <select id="report-company" name="company_id" class="visually-hidden" aria-hidden="true"
-                      tabindex="-1"></select>
+          <div id="report-location-empresa-container" style="display: none">
+            <div class="form-group">
+              <label for="report-company-search">Empresa:</label>
+              <div class="input-with-button company-search-row">
+                <div class="company-search" id="report-company-search-container">
+                  <div class="company-search-field">
+                    <i class="fas fa-search"></i>
+                    <input type="search" id="report-company-search" placeholder="Escriba para buscar empresa..."
+                      autocomplete="off" />
                   </div>
-                  <button type="button" class="btn btn-add-inline" data-entity-type="company"
-                    title="Agregar Nueva Empresa" style="display: none;">
-                    <i class="fas fa-plus"></i>
-                  </button>
+                  <div id="report-company-search-results" class="company-search-results"></div>
+                  <div id="report-company-selected-badge" class="company-selected-badge" style="display: none">
+                    <i class="far fa-building"></i>
+                    <span class="company-badge-name"></span>
+                    <button type="button" id="report-company-badge-clear" class="company-badge-clear"
+                      title="Quitar empresa">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <select id="report-company" name="company_id" class="visually-hidden" aria-hidden="true"
+                    tabindex="-1"></select>
                 </div>
+                <button type="button" class="btn btn-add-inline" data-entity-type="company"
+                  title="Agregar Nueva Empresa" style="display: none;">
+                  <i class="fas fa-plus"></i>
+                </button>
               </div>
-              <div class="form-group">
-                <label for="report-city-empresa">Ciudad:</label>
-                <div class="input-with-button">
-                  <select id="report-city-empresa" name="city_id_empresa" required></select>
-                </div>
+            </div>
+            <div class="form-group">
+              <label for="report-city-empresa">Ciudad:</label>
+              <div class="input-with-button">
+                <select id="report-city-empresa" name="city_id_empresa" required></select>
               </div>
-              <div class="form-group">
-                <label for="report-sede">Sede:</label>
-                <div class="input-with-button">
-                  <select id="report-sede" name="sede_id">
-                    <option value="">Seleccione una ciudad...</option>
-                  </select>
-                </div>
+            </div>
+            <div class="form-group">
+              <label for="report-sede">Sede:</label>
+              <div class="input-with-button">
+                <select id="report-sede" name="sede_id">
+                  <option value="">Seleccione una ciudad...</option>
+                </select>
               </div>
+            </div>
             <div class="form-group">
               <label for="report-dependency">Dependencia:</label>
               <div class="input-with-button">
@@ -1227,8 +1229,11 @@
         </button>
       </div>
       <div class="modal-actions">
-        <button id="repeat-client-data-button" class="btn-link" style="display: none; padding: 5px; font-size: 0.85rem; color: var(--color-accent-primary); text-decoration: underline; background: none; border: none; cursor: pointer; text-align: center; margin: 0 auto; width: auto; font-weight: 500;">Repetir datos de cliente</button>
-        <button id="cancel-category-selection-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Atrás</button>
+        <button id="repeat-client-data-button" class="btn-link"
+          style="display: none; padding: 5px; font-size: 0.85rem; color: var(--color-accent-primary); text-decoration: underline; background: none; border: none; cursor: pointer; text-align: center; margin: 0 auto; width: auto; font-weight: 500;">Repetir
+          datos de cliente</button>
+        <button id="cancel-category-selection-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i>
+          Atrás</button>
       </div>
     </div>
   </div>
