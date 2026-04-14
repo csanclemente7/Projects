@@ -39,16 +39,18 @@ let visibilityOrderHandler: (() => void) | null = null;
 const REQUEST_TIMEOUT_MS = 12000; // corta llamadas de red colgadas
 const ADMIN_RECENT_REPORTS_DAYS = 4;
 
+/** P4: Serializa solo los campos clave de las órdenes para comparación ligera sin clonar objetos completos. */
 const serializeOrders = (orders: Order[]) => {
     return JSON.stringify(
-        [...orders]
-            .map(o => ({
-                ...o,
-                assignedTechnicians: o.assignedTechnicians?.map(t => t.id).sort() || [],
-                // Sort items by id to avoid false positives caused by ordering differences.
-                items: (o.items || []).slice().sort((a, b) => a.id.localeCompare(b.id))
-            }))
-            .sort((a, b) => a.id.localeCompare(b.id))
+        orders.map(o => ({
+            id: o.id,
+            status: o.status,
+            manualId: o.manualId,
+            address: o.address,
+            techs: o.assignedTechnicians?.map(t => t.id).sort().join(',') || '',
+            items: (o.items || []).map(i => `${i.id}:${(i as any).quantity ?? ''}`).sort().join(','),
+            timestamp: o.timestamp,
+        })).sort((a, b) => `${a.id}`.localeCompare(`${b.id}`))
     );
 };
 
@@ -64,6 +66,18 @@ const getActiveManagementTabId = () => D.adminManagementSection?.querySelector('
 const getRecentAdminReportsOptions = () => ({ daysBack: ADMIN_RECENT_REPORTS_DAYS });
 const sortReportsByTimestampDesc = (reports: Report[]) =>
     [...reports].sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime());
+/** P1: Serializa reportes excluyendo base64 pesados (firmas/fotos) para comparación ligera y segura. */
+const serializeReportsForComparison = (reports: Report[]) => {
+    return JSON.stringify(reports.map(r => {
+        const { clientSignature, photo_internal_unit_url, photo_external_unit_url, ...rest } = r;
+        return {
+            ...rest,
+            hasSignature: !!clientSignature && clientSignature !== 'PENDING_SIGNATURE',
+            hasPhotoInt: !!photo_internal_unit_url && photo_internal_unit_url !== 'PENDING_PHOTO',
+            hasPhotoExt: !!photo_external_unit_url && photo_external_unit_url !== 'PENDING_PHOTO',
+        };
+    }));
+};
 const mergeReportsForDisplay = (reports: Report[]) => {
     const reportMap = new Map<string, Report>();
     reports.forEach((report) => {
@@ -473,7 +487,7 @@ async function refreshReportsInBackground() {
         }
 
         // Optimización: solo refrescar la UI si hubo cambios reales.
-        if (JSON.stringify(nextReports) !== JSON.stringify(State.reports)) {
+        if (serializeReportsForComparison(nextReports) !== serializeReportsForComparison(State.reports)) {
             console.log('[Auto Refresh] Se detectaron cambios en los reportes. Actualizando...');
             State.setReports(nextReports); // Actualizamos el estado global
             

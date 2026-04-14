@@ -1457,12 +1457,18 @@ export async function handlePhotoCaptured() {
         return;
     }
 
-    const width = video.videoWidth;
-    const height = video.videoHeight;
-    if (width === 0 || height === 0) {
+    const rawWidth = video.videoWidth;
+    const rawHeight = video.videoHeight;
+    if (rawWidth === 0 || rawHeight === 0) {
         showAppNotification('No se detectó imagen válida.', 'error');
         return;
     }
+
+    // P5: Limitar dimensiones para reducir peso en memoria (~60% menos en base64)
+    const MAX_PHOTO_DIM = 1024;
+    const scale = Math.min(MAX_PHOTO_DIM / rawWidth, MAX_PHOTO_DIM / rawHeight, 1);
+    const width = Math.round(rawWidth * scale);
+    const height = Math.round(rawHeight * scale);
 
     canvas.width = width;
     canvas.height = height;
@@ -1475,7 +1481,7 @@ export async function handlePhotoCaptured() {
         return;
     }
 
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.70);
 
     // Guardar contexto
     const context = State.contextForPhotoUpdate;
@@ -1502,19 +1508,18 @@ export async function handlePhotoUploadWeb(file: File) {
                 return;
             }
 
-            // Resize to max width 1280
-            const maxWidth = 1280;
+            // P5: Limitar dimensiones para reducir peso en memoria
+            const MAX_DIM = 1024;
             let width = img.width;
             let height = img.height;
-            if (width > maxWidth) {
-                height = Math.round((height * maxWidth) / width);
-                width = maxWidth;
-            }
+            const scale = Math.min(MAX_DIM / width, MAX_DIM / height, 1);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
 
             canvas.width = width;
             canvas.height = height;
             ctx.drawImage(img, 0, 0, width, height);
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.70);
 
             closePhotoCaptureModal();
             await processPhotoDataUrl(dataUrl, captureType, context);

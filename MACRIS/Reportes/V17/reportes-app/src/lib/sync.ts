@@ -217,6 +217,16 @@ export async function synchronizeQueue(): Promise<void> {
         return;
     }
 
+    // P2: Salida temprana si no hay nada pendiente (evita adquirir el lock y hacer trabajo innecesario)
+    const [pendingReports, pendingEntities] = await Promise.all([
+        getQueuedReports(),
+        getQueuedEntities()
+    ]);
+    if (pendingReports.length === 0 && pendingEntities.length === 0) {
+        console.log('[Sync] Aborted: No pending items in queue.');
+        return;
+    }
+
     isSyncing = true;
     localToServerIdMap.clear(); // Clear the map at the start of each new sync process
     console.log('[Sync] Lock acquired. Starting synchronization process...');

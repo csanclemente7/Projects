@@ -1053,6 +1053,7 @@ export function setupEventListeners() {
         // --- Capacitor: Detect network and app state ---
 let lastNetworkStatus: boolean | null = null;
 let networkListenerActive = false;
+let networkHandledByCapacitor = false;
 
 if (!networkListenerActive) {
   networkListenerActive = true;
@@ -1063,6 +1064,10 @@ if (!networkListenerActive) {
     // Evitar mensajes repetidos si no cambió el estado real
     if (status.connected === lastNetworkStatus) return;
     lastNetworkStatus = status.connected;
+
+    // P3: Señalizar que Capacitor manejó el evento, para suprimir el duplicado del Web API
+    networkHandledByCapacitor = true;
+    setTimeout(() => { networkHandledByCapacitor = false; }, 500);
 
     if (status.connected) {
       // 🟢 Cuando vuelve la conexión
@@ -1119,32 +1124,28 @@ if (!networkListenerActive) {
     
     // --- Online/Offline Status ---
     window.addEventListener('online', () => {
+        if (networkHandledByCapacitor) return; // P3: Capacitor ya manejó este evento
         UI.showAppNotification('Conexión a internet restablecida.', 'success');
         if (D.reportFormModal.style.display === 'flex') {
             D.aiScanPlateButton.disabled = false;
         }
-        stopPeriodicSync(); // Detiene los intentos periódicos ya que estamos en línea
+        stopPeriodicSync();
         console.log('[Sync] Conexión restablecida. Activando sincronización inmediata.');
-        synchronizeQueue(); // Activa una sincronización inmediata
-        if (D.reportFormModal.style.display === 'flex') {
-        D.aiScanPlateButton.disabled = false;
-        }
+        synchronizeQueue();
         if (D.aiScanOfflineWarning) {
-        D.aiScanOfflineWarning.style.display = 'none';
+            D.aiScanOfflineWarning.style.display = 'none';
         }
     });
 
     window.addEventListener('offline', () => {
+        if (networkHandledByCapacitor) return; // P3: Capacitor ya manejó este evento
         if (D.reportFormModal.style.display === 'flex') {
             D.aiScanPlateButton.disabled = true;
         }
         UI.showAppNotification('Se ha perdido la conexión. Trabajando en modo offline.', 'warning');
-        startPeriodicSync(); // Inicia los intentos de sincronización periódicos
-        if (D.reportFormModal.style.display === 'flex') {
-        D.aiScanPlateButton.disabled = true;
-        }
+        startPeriodicSync();
         if (D.aiScanOfflineWarning) {
-        D.aiScanOfflineWarning.style.display = 'block';
+            D.aiScanOfflineWarning.style.display = 'block';
         }
     });
 
