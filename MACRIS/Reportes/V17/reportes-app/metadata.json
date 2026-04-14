@@ -1,0 +1,8 @@
+{
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "name": " reportes-app",
+  "description": "app móvil",
+  "prompt": ""
+}
