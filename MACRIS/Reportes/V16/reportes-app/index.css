@@ -2889,10 +2889,14 @@ input:checked+.slider:before {
   }
 
   table#my-reports-table td:nth-of-type(6):before {
+    content: 'Dependencia';
+  }
+
+  table#my-reports-table td:nth-of-type(7):before {
     content: 'Acciones';
   }
 
-  table#my-reports-table td:nth-of-type(6) {
+  table#my-reports-table td:nth-of-type(7) {
     display: flex;
     justify-content: flex-end;
     align-items: center;

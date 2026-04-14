@@ -140,6 +140,10 @@ function setupQuoteEventListeners() {
         if (quote) {
             quote.sede_id = (e.target as HTMLSelectElement).value || null;
             State.updateActiveQuote(quote);
+            if (quote.clientId) {
+                // Re-render blocks to show contact/address of new sede
+                UI.renderClientDetails(quote.clientId, 'quote', D.quoteCitySelect.value || null);
+            }
         }
     });
 
@@ -173,11 +177,14 @@ function setupManagementEventListeners() {
         const editBtn = target.closest('.edit-btn') as HTMLElement | null;
         const deleteBtn = target.closest('.delete-btn') as HTMLElement | null;
         const addSedeBtn = target.closest('.add-sede-client-btn') as HTMLElement | null;
+        const toggleCategoryBtn = target.closest('.toggle-category-btn') as HTMLElement | null;
 
         if (editBtn && editBtn.dataset.id) {
             UI.openEntityModal('client', editBtn.dataset.id);
         } else if (addSedeBtn && addSedeBtn.dataset.id) {
             UI.openEntityModal('sede', null, addSedeBtn.dataset.id);
+        } else if (toggleCategoryBtn && toggleCategoryBtn.dataset.id) {
+            UI.handleToggleClientCategory(toggleCategoryBtn.dataset.id);
         } else if (deleteBtn && deleteBtn.dataset.id) {
             UI.handleDeleteClient(deleteBtn.dataset.id);
         }
@@ -354,6 +361,10 @@ function setupOrderWorkspaceEventListeners() {
             const client = State.getClients().find(c => c.id === order.clientId);
             D.orderClientCityInput.value = sede?.cityName || client?.city || '';
             UI.handleOrderDetailsChange();
+            if (order.clientId) {
+                // Re-render block to show sede details immediately
+                UI.renderClientDetails(order.clientId, 'order', D.orderCitySelect.value || null);
+            }
         }
     });
 

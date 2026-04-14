@@ -167,7 +167,7 @@ export const populateDropdown = (
     if (!selectElement) return;
     const currentVal = selectElement.value;
     selectElement.innerHTML = `<option value="">${placeholder}</option>`;
-    
+
     // Deduplicate items based on a normalized name (ignoring case, accents, and extra spaces)
     const seen = new Set<string>();
     const uniqueItems = items.filter(item => {
@@ -213,14 +213,14 @@ export function updateLocationDropdownsFromCompany(selectedCompanyId: string) {
     if (company) {
         // Find sedes for this company
         const filteredSedes = State.sedes.filter(s => s.companyId === selectedCompanyId);
-        
+
         if (filteredSedes.length > 0) {
             // Get unique cities from those sedes
             const uniqueCityIds = Array.from(new Set(filteredSedes.map(s => s.cityId).filter(id => id)));
             const availableCities = State.cities.filter(city => uniqueCityIds.includes(city.id));
             populateDropdown(D.reportCitySelectEmpresa, availableCities, undefined, 'Seleccione...', false);
             D.reportCitySelectEmpresa.disabled = false;
-            
+
             D.reportSedeSelect.innerHTML = '<option value="">Seleccione una ciudad...</option>';
             D.reportSedeSelect.disabled = true;
             const sedeFormGroup = D.reportSedeSelect.closest('.form-group') as HTMLElement;
@@ -232,12 +232,12 @@ export function updateLocationDropdownsFromCompany(selectedCompanyId: string) {
             // Company has NO SEDES
             populateDropdown(D.reportCitySelectEmpresa, State.cities, undefined, 'Seleccione...', false);
             D.reportCitySelectEmpresa.disabled = false;
-            
+
             D.reportSedeSelect.innerHTML = '<option value="">Sin sedes disponibles</option>';
             D.reportSedeSelect.disabled = true;
             const sedeFormGroup = D.reportSedeSelect.closest('.form-group') as HTMLElement;
             if (sedeFormGroup) sedeFormGroup.style.display = 'none';
-            
+
             // Allow selecting dependencies directly for this company
             const filteredDependencies = State.dependencies.filter(d => d.companyId === selectedCompanyId);
             populateDropdown(D.reportDependencySelect, filteredDependencies);
@@ -263,7 +263,7 @@ export function updateLocationDropdownsFromCompany(selectedCompanyId: string) {
  */
 export function handleCitySelectionChange(selectedCityId: string) {
     const selectedCompanyId = D.reportCompanySelect?.value;
-    
+
     if (selectedCityId && selectedCompanyId) {
         const companySedes = State.sedes.filter(s => s.companyId === selectedCompanyId);
         if (companySedes.length === 0) return; // Do nothing if it's a sede-less company, let Dependency remain populated
@@ -272,7 +272,7 @@ export function handleCitySelectionChange(selectedCityId: string) {
         const filteredSedes = companySedes.filter(s => s.cityId === selectedCityId);
         populateDropdown(D.reportSedeSelect, filteredSedes, undefined, 'Seleccione...');
         D.reportSedeSelect.disabled = false;
-        
+
         D.reportDependencySelect.innerHTML = '<option value="">Seleccione una sede...</option>';
         D.reportDependencySelect.disabled = true;
     } else {
@@ -846,20 +846,28 @@ export async function openReportFormModal(options: { report?: Report; equipment?
             D.reportAddressInput.value = targetEquipment.address || '';
             if (cityIdToSelect) D.reportCitySelectResidencial.value = cityIdToSelect;
         } else { // empresa
-            const companyIdToSelect = targetEquipment.companyId;
+            let companyIdToSelect = targetEquipment.client_id || targetEquipment.companyId;
             const sedeIdToSelect = targetEquipment.sedeId;
             const dependencyIdToSelect = targetEquipment.dependencyId;
+
+            if (companyIdToSelect && !State.companies.find(c => c.id === companyIdToSelect)) {
+                if (targetEquipment.companyName) {
+                    const matched = State.companies.find(c => c.name === targetEquipment.companyName);
+                    if (matched) companyIdToSelect = matched.id;
+                }
+            }
+
             if (companyIdToSelect) {
                 setReportCompanySelection(companyIdToSelect, { skipUpdate: true });
                 updateLocationDropdownsFromCompany(companyIdToSelect);
                 if (sedeIdToSelect) {
-                     const matchedSede = State.sedes.find(s => s.id === sedeIdToSelect);
-                     if (matchedSede && matchedSede.cityId) {
-                         D.reportCitySelectEmpresa.value = matchedSede.cityId;
-                         handleCitySelectionChange(matchedSede.cityId);
-                     }
-                     D.reportSedeSelect.value = sedeIdToSelect;
-                     handleSedeSelectionChange(sedeIdToSelect);
+                    const matchedSede = State.sedes.find(s => s.id === sedeIdToSelect);
+                    if (matchedSede && matchedSede.cityId) {
+                        D.reportCitySelectEmpresa.value = matchedSede.cityId;
+                        handleCitySelectionChange(matchedSede.cityId);
+                    }
+                    D.reportSedeSelect.value = sedeIdToSelect;
+                    handleSedeSelectionChange(sedeIdToSelect);
                     if (dependencyIdToSelect) {
                         D.reportDependencySelect.value = dependencyIdToSelect;
                     }
@@ -1654,6 +1662,7 @@ export async function openViewReportDetailsModal(reportId: string) {
         details.push({ label: 'Dirección', value: report.equipmentSnapshot.address || 'N/A' });
     } else {
         details.push({ label: 'Empresa', value: report.equipmentSnapshot.companyName || 'N/A' });
+        details.push({ label: 'Sede', value: report.equipmentSnapshot.sedeName || 'N/A' });
         details.push({ label: 'Dependencia', value: report.equipmentSnapshot.dependencyName || 'N/A' });
     }
     const city = State.cities.find(c => c.id === report.cityId)?.name;
@@ -1886,7 +1895,7 @@ export function handleAssignmentCompanyChange() {
     State.editLocationState.newDependencyNameToCreate = null;
     D.editReportDependencyWarning.style.display = 'none';
     D.saveEditReportAssignmentButton.disabled = false;
-    
+
     D.editReportCitySelect.innerHTML = '<option value="">Primero seleccione una empresa</option>';
     D.editReportCitySelect.disabled = true;
     D.editReportSedeSelect.innerHTML = '<option value="">Primero seleccione una ciudad</option>';
@@ -1930,15 +1939,15 @@ export function handleAssignmentCityChange() {
 
     if (!selectedCompanyId || !selectedCityId) return;
 
-    const availableSedes = State.sedes.filter(s => 
-        s.clientId === selectedCompanyId && 
+    const availableSedes = State.sedes.filter(s =>
+        s.clientId === selectedCompanyId &&
         s.cityId === selectedCityId
     );
 
     if (availableSedes.length > 0) {
         populateDropdown(D.editReportSedeSelect, availableSedes, undefined, 'Seleccione...', false);
         D.editReportSedeSelect.disabled = false;
-        
+
         if (availableSedes.length === 1) {
             D.editReportSedeSelect.value = availableSedes[0].id;
             handleAssignmentSedeChange();
@@ -1967,7 +1976,7 @@ export function handleAssignmentSedeChange() {
     } else {
         D.editReportDependencySelect.innerHTML = '<option value="">Sin dependencias (Debe crear una)</option>';
     }
-    
+
     const originalReport = State.editLocationState.originalReport;
     if (!originalReport) return;
 
@@ -2007,7 +2016,7 @@ export function openEditReportAssignmentModal(reportId: string) {
     }
 
     populateDropdown(D.editReportCompanySelect, State.companies, actualClientId || undefined);
-    
+
     if (actualClientId) {
         handleAssignmentCompanyChange();
         if (actualCityId) {
@@ -2228,11 +2237,12 @@ export async function renderMyReportsTable() {
 
         return `
             <tr class="clickable-row ${rowClass}" data-report-id="${report.id}">
-                <td data-label="Fecha">${formatDate(report.timestamp)}</td>
-                <td data-label="ID Reporte">${pendingIndicators}${report.id.substring(0, 8)}...</td>
+                <td data-label="Fecha">${pendingIndicators}${formatDate(report.timestamp)}</td>
+                <td data-label="ID Reporte" style="display: none;">${report.id.substring(0, 8)}...</td>
                 <td data-label="Tipo Servicio">${report.serviceType}</td>
                 <td data-label="Equipo">${equipmentName}</td>
                 <td data-label="Empresa/Cliente">${clientName}</td>
+                <td data-label="Dependencia">${report.equipmentSnapshot.dependencyName || 'N/A'}</td>
                 <td data-label="Acciones">
                     <button class="action-btn view-report-btn btn-secondary" data-report-id="${report.id}" title="Ver Detalles"><i class="fas fa-eye"></i><span class="btn-label">Ver</span></button>
                     <button class="action-btn edit-signature-btn ${signatureButtonClass}" data-report-id="${report.id}" title="${signatureButtonText}"><i class="fas fa-signature"></i><span class="btn-label">Firma</span></button>
@@ -2790,12 +2800,15 @@ function createOrderCardHTML(order: Order): string {
     if (order.sede_id) {
         const sede = State.sedes.find(s => s.id === order.sede_id);
         if (sede) {
-            addressValue = sede.address || 'N/A';
-            contactValue = sede.phone || sede.contact_person || 'N/A';
+            addressValue = sede.address || order.clientDetails?.address || 'N/A';
+            contactValue = sede.phone || sede.contact_person || order.clientDetails?.phone || 'N/A';
             const cityObj = State.cities.find(c => c.id === sede.cityId);
             if (cityObj) {
                 cityValue = ` &bull; ${cityObj.name}`;
                 cityText = ` • ${cityObj.name}`;
+            } else if (order.clientDetails?.city) {
+                cityValue = ` &bull; ${order.clientDetails.city}`;
+                cityText = ` • ${order.clientDetails.city}`;
             }
             clientNameValue = `${order.clientDetails?.name || 'Desconocido'} - ${sede.name}`;
         }
@@ -2929,6 +2942,27 @@ export function renderAdminOrdersList() {
 
 export function openCategorySelectionModal(nextAction: 'manual' | 'search') {
     State.setManualReportCreationState({ category: null, nextAction });
+
+    const repeatBtn = document.getElementById('repeat-client-data-button') as HTMLButtonElement | null;
+    if (repeatBtn) {
+        const currentUser = State.currentUser;
+        const myReports = State.reports.filter(r => r.workerId === currentUser?.id);
+        const sortedReports = myReports.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+        let hasReportToday = false;
+        if (sortedReports.length > 0) {
+            const latest = sortedReports[0];
+            const latestDate = new Date(latest.timestamp);
+            const today = new Date();
+            if (latestDate.getDate() === today.getDate() && latestDate.getMonth() === today.getMonth() && latestDate.getFullYear() === today.getFullYear()) {
+                hasReportToday = true;
+                repeatBtn.dataset.reportId = latest.id;
+            }
+        }
+
+        repeatBtn.style.display = hasReportToday ? 'block' : 'none';
+    }
+
     if (D.categorySelectionModal) {
         D.categorySelectionModal.style.display = 'flex';
         resetModalScroll(D.categorySelectionModal);
@@ -3129,7 +3163,7 @@ export function openOrderDetailsModal(orderId: string) {
     if (!order || !D.orderDetailsModal) return;
 
     D.orderManualIdHeader.textContent = `${order.manualId || order.id.substring(0, 8)}`;
-    
+
     let clientName = order.clientDetails?.name || 'N/A';
     let clientAddress = order.clientDetails?.address || 'N/A';
     let clientCity = order.clientDetails?.city || 'N/A';
@@ -3159,7 +3193,7 @@ export function openOrderDetailsModal(orderId: string) {
     D.orderClientCity.textContent = clientCity;
     D.orderClientPhone.textContent = clientPhone;
     D.orderClientEmail.textContent = clientEmail;
-    
+
     D.orderServiceDate.textContent = `${formatDate(order.service_date, false)} a las ${formatTime(order.service_time)}`;
     D.orderType.textContent = order.order_type || 'N/A';
     D.orderNotes.textContent = order.notes || 'Sin notas.';
@@ -3383,7 +3417,7 @@ export function openEntityFormModal(type: EntityType, id?: string, context?: any
                     </div>`;
             } else { // Admin (always has add button)
                 fieldsHTML = getField('Nombre de la Empresa', 'name', 'text', company?.name)
-                    + getSelectWithAdd('Ciudad', 'city_id', State.cities, company?.cityId, true, 'city');
+                    + getSelectWithAdd('Ciudad', 'city_id', State.cities, company?.cityId, false, 'city');
             }
             break;
         case 'dependency':

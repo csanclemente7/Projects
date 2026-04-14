@@ -729,7 +729,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             equipmentSnapshot: equipmentSnapshot,
             itemsSnapshot: itemsSnapshot,
             cityId: cityId,
-            companyId: selectedCategory === 'empresa' ? ((D.reportSedeSelect as HTMLSelectElement).value || null) : null,
+            companyId: selectedCategory === 'empresa' ? (D.reportCompanySelect.value || null) : null,
             clientId: selectedCategory === 'empresa' ? (D.reportCompanySelect.value || null)  : null,
             sedeId: selectedCategory === 'empresa' ? ((D.reportSedeSelect as HTMLSelectElement).value || null) : null,
             dependencyId: selectedCategory === 'empresa' ? (D.reportDependencySelect.value || null) : null,
@@ -834,7 +834,7 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
                         State.currentUser.points++;
                         UI.updateUserPointsDisplay(State.currentUser.points);
                     }
-                    UI.showAppNotification('¡Reporte guardado con éxito y has ganado 1 punto!', 'success');
+                    UI.showAppNotification('¡Reporte guardado con éxito!', 'success');
                 }
             }
 
@@ -1276,6 +1276,37 @@ if (!networkListenerActive) {
         State.manualReportCreationState.category = 'residencial';
         if (State.manualReportCreationState.nextAction === 'search') UI.openEquipmentSelectionModal();
         else UI.openReportFormModal({ category: 'residencial' });
+        D.categorySelectionModal.style.display = 'none';
+    });
+    
+    document.getElementById('repeat-client-data-button')?.addEventListener('click', (e) => {
+        const btn = e.currentTarget as HTMLButtonElement;
+        const reportId = btn.dataset.reportId;
+        if (!reportId) return;
+        
+        const latestReport = State.reports.find(r => r.id === reportId);
+        if (!latestReport || !latestReport.equipmentSnapshot) return;
+        
+        // Copiar solo datos del cliente, vaciando los campos de equipo como pidió el usuario
+        const clientDataOnly: any = { 
+            ...latestReport.equipmentSnapshot,
+            cityId: latestReport.cityId,
+            companyId: latestReport.companyId,
+            sedeId: latestReport.sedeId,
+            dependencyId: latestReport.dependencyId,
+            client_id: latestReport.clientId || latestReport.equipmentSnapshot.client_id
+        };
+        clientDataOnly.model = '';
+        clientDataOnly.brand = '';
+        clientDataOnly.type = '';
+        clientDataOnly.capacity = '';
+        clientDataOnly.refrigerant = '';
+        
+        UI.openReportFormModal({ 
+            category: latestReport.equipmentSnapshot.category, 
+            equipment: clientDataOnly,
+            serviceType: latestReport.serviceType
+        });
         D.categorySelectionModal.style.display = 'none';
     });
     D.equipmentSelectionSearchInput?.addEventListener('input', UI.renderEquipmentSelectionResults);

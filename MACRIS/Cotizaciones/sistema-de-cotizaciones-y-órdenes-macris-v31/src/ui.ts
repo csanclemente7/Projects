@@ -1027,7 +1027,7 @@ export function renderClientsList() {
     const clients = State.getClients().filter(c => c.name?.toLowerCase().includes(term) || c.contactPerson?.toLowerCase().includes(term) || c.manualId?.toLowerCase().includes(term));
     let html = `<table class="management-table"><thead><tr><th>Nombre</th><th>Contacto</th><th>Teléfono</th><th>Email</th><th class="actions">Acciones</th></tr></thead><tbody>`;
     if (clients.length > 0) {
-        html += clients.sort((a, b) => (parseInt(b.manualId) || 0) - (parseInt(a.manualId) || 0)).map(c => `<tr><td><strong>${c.name}</strong><br><small>ID: ${c.manualId}</small></td><td>${c.contactPerson || '-'}</td><td>${c.phone || '-'}</td><td>${c.email || '-'}</td><td class="actions"><button class="btn btn-icon-only btn-secondary edit-btn" data-id="${c.id}" title="Editar"><i class="fas fa-edit"></i></button>${c.category === 'empresa' ? `<button class="btn btn-icon-only add-sede-client-btn" data-id="${c.id}" title="Añadir Sede" style="background-color: #f1f8ff; border: 1px solid #c8e1ff; color: #0366d6; margin: 0 4px;"><i class="fas fa-building"></i></button>` : ''}<button class="btn btn-icon-only btn-danger delete-btn" data-id="${c.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        html += clients.sort((a, b) => (parseInt(b.manualId) || 0) - (parseInt(a.manualId) || 0)).map(c => `<tr><td><strong>${c.name}</strong><br><small>ID: ${c.manualId}</small></td><td>${c.contactPerson || '-'}</td><td>${c.phone || '-'}</td><td>${c.email || '-'}</td><td class="actions"><button class="btn btn-icon-only btn-secondary edit-btn" data-id="${c.id}" title="Editar"><i class="fas fa-edit"></i></button>${c.category === 'empresa' ? `<button class="btn btn-icon-only add-sede-client-btn" data-id="${c.id}" title="Añadir Sede" style="background-color: #f1f8ff; border: 1px solid #c8e1ff; color: #0366d6; margin: 0 4px;"><i class="fas fa-building"></i></button>` : ''}<button class="btn btn-icon-only toggle-category-btn" data-id="${c.id}" title="Cambiar a ${c.category === 'empresa' ? 'Residencial' : 'Empresa'}" style="background-color: ${c.category === 'empresa' ? '#fff3cd' : '#d4edda'}; border: 1px solid ${c.category === 'empresa' ? '#ffeeba' : '#c3e6cb'}; color: ${c.category === 'empresa' ? '#856404' : '#155724'}; margin: 0 4px;"><i class="fas ${c.category === 'empresa' ? 'fa-home' : 'fa-building'}"></i></button><button class="btn btn-icon-only btn-danger delete-btn" data-id="${c.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`).join('');
     } else {
         html += `<tr><td colspan="5" style="text-align: center; padding: 20px;">No hay clientes.</td></tr>`;
     }
@@ -1607,6 +1607,33 @@ export function handleDeleteAllItems() { showNotification('Función deshabilitad
 export function handleDeleteAllSavedQuotes() { showNotification('Función deshabilitada por seguridad.', 'error'); }
 
 // --- Single Delete Handlers ---
+export async function handleToggleClientCategory(id: string) {
+    const client = State.getClients().find(c => c.id === id);
+    if (!client) return;
+    try {
+        const newCategory = client.category === 'empresa' ? 'residencial' : 'empresa';
+        const btn = document.querySelector(`.toggle-category-btn[data-id="${id}"]`) as HTMLButtonElement;
+        if (btn) btn.disabled = true;
+        
+        await API.upsertClient({ ...client, category: newCategory });
+        client.category = newCategory;
+        
+        const clients = State.getClients();
+        const index = clients.findIndex(c => c.id === id);
+        if (index !== -1) {
+            clients[index] = client;
+            State.setClients(clients);
+        }
+        
+        renderClientsList();
+        showNotification(`Categoría cambiada a ${newCategory === 'empresa' ? 'Empresa' : 'Residencial'}.`, 'success');
+    } catch (e: any) {
+        showNotification('Error al cambiar la categoría.', 'error');
+        const btn = document.querySelector(`.toggle-category-btn[data-id="${id}"]`) as HTMLButtonElement;
+        if (btn) btn.disabled = false;
+    }
+}
+
 export function handleDeleteClient(id: string) {
     showConfirmationModal('Eliminar Cliente', '¿Desea eliminar este cliente?', async () => {
         try {
