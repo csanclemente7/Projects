@@ -97,6 +97,7 @@
                 <button id="export-pdf-btn" class="btn btn-primary btn-compact desktop-only"><i class="fas fa-file-pdf"></i> PDF</button>
                 <button id="company-merge-btn" class="btn btn-secondary btn-compact desktop-only"><i class="fas fa-code-branch"></i> Unificar</button>
                 <button id="sede-cleanup-btn" class="btn btn-secondary btn-compact desktop-only" style="background: rgba(255,165,0,0.15); border-color: rgba(255,165,0,0.4); color: #ffad33;"><i class="fas fa-sitemap"></i> Limpiar Sedes</button>
+                <button id="btn-qr-generator" class="btn btn-secondary btn-compact desktop-only" style="background: rgba(0, 223, 255, 0.1); border-color: rgba(0, 223, 255, 0.4); color: #00dfff;"><i class="fas fa-qrcode"></i> QRs</button>
                 <button id="db-backup-btn" class="btn btn-accent btn-compact desktop-only" style="background:var(--secondary); color:#fff"><i class="fas fa-database"></i> Copias</button>
                 <button id="toggle-chat-mobile" class="btn-drawer-toggle mobile-only">
                     <i class="fas fa-robot"></i>
@@ -452,6 +453,121 @@
                         <i class="fas fa-search"></i> Escanear Sedes
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Generador Masivo de Códigos QR -->
+    <div id="qr-generator-modal" class="modal">
+        <div class="modal-content" style="max-width: 650px;">
+            <span id="close-qr-generator-modal" class="close-button">&times;</span>
+            <div class="chat-header" style="padding: 0 0 15px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <div>
+                    <i class="fas fa-qrcode" style="color: #00dfff;"></i>
+                    <span>Generador Masivo de Códigos QR</span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start;">
+                <!-- Formulario -->
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <div>
+                        <label style="font-size: 0.85rem; color: var(--text-dim);">Imagen Central (Logo)</label>
+                        <input type="file" id="qr-logo-input" accept="image/*" class="custom-input" style="width: 100%; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.85rem; color: var(--text-dim);">Leyenda Superior</label>
+                        <input type="text" id="qr-legend-input" placeholder="Ej. By Macris" value="By Macris" class="custom-input" style="width: 100%; box-sizing: border-box;">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85rem; color: var(--text-dim);">Prefijo</label>
+                            <input type="text" id="qr-prefix-input" placeholder="mc" value="mc" class="custom-input" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85rem; color: var(--text-dim);">Padding (Ceros)</label>
+                            <input type="number" id="qr-padding-input" value="4" min="1" max="10" class="custom-input" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85rem; color: var(--text-dim);">Inicio</label>
+                            <input type="number" id="qr-start-input" value="1000" min="0" class="custom-input" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label style="font-size: 0.85rem; color: var(--text-dim);">Fin</label>
+                            <input type="number" id="qr-end-input" value="1500" min="0" class="custom-input" style="width: 100%; box-sizing: border-box;">
+                        </div>
+                    </div>
+                    
+                    <!-- Opciones de Estilo y Márgenes -->
+                    <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; border: 1px solid var(--border);">
+                        <label style="font-size: 0.8rem; color: var(--primary); display:block; margin-bottom:10px; text-transform:uppercase; font-weight:bold;">Ajustes de Diseño</label>
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.8rem; color: var(--text-dim);">Tamaño Leyenda</label>
+                                <input type="number" id="qr-font-legend-input" value="90" min="10" max="300" class="custom-input" style="width: 100%; box-sizing: border-box; padding: 6px;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.8rem; color: var(--text-dim);">Tamaño Código</label>
+                                <input type="number" id="qr-font-code-input" value="110" min="10" max="300" class="custom-input" style="width: 100%; box-sizing: border-box; padding: 6px;">
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.8rem; color: var(--text-dim); display:flex; justify-content:space-between;">
+                                    <span>Subir/Bajar Leyenda</span>
+                                </label>
+                                <input type="range" id="qr-posy-legend" value="120" min="20" max="500" step="10" style="width: 100%;">
+                            </div>
+                            <div style="flex: 1;">
+                                <label style="font-size: 0.8rem; color: var(--text-dim); display:flex; justify-content:space-between;">
+                                    <span>Subir/Bajar Código</span>
+                                </label>
+                                <input type="range" id="qr-posy-code" value="1080" min="700" max="1180" step="10" style="width: 100%;">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="font-size: 0.8rem; color: var(--text-dim); display:flex; justify-content:space-between;">
+                                <span>Margen QR (Bordes)</span>
+                                <span id="qr-margin-val">220px</span>
+                            </label>
+                            <input type="range" id="qr-margin-input" value="220" min="50" max="450" step="10" style="width: 100%;">
+                        </div>
+                    </div>
+
+                    <div>
+                         <label style="font-size: 0.85rem; color: var(--text-dim);">Formato de Imagen</label>
+                         <select id="qr-format-select" class="custom-input" style="width: 100%; box-sizing: border-box;">
+                             <option value="image/png" selected>PNG (Transparencia soportada)</option>
+                             <option value="image/jpeg">JPEG (Fondo blanco opaco)</option>
+                         </select>
+                    </div>
+                </div>
+
+                <!-- Preview / Progreso -->
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.2); border: 1px dashed var(--border); border-radius: 8px; padding: 20px; aspect-ratio: 1/1;">
+                     <canvas id="qr-preview-canvas" width="1200" height="1200" style="width: 100%; max-width: 250px; height: auto; background: white; border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.5);"></canvas>
+                     <p style="margin-top: 15px; font-size: 0.8rem; color: var(--text-muted); text-align: center;">Previsualización de Estructura<br>(La muestra no contiene patrón QR real aún)</p>
+                </div>
+            </div>
+
+            <div id="qr-generator-progress-container" style="display: none; margin-top: 20px; padding: 15px; background: rgba(0,223,255,0.05); border: 1px solid rgba(0,223,255,0.2); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; color: var(--text);">
+                    <span id="qr-progress-text">Procesando códigos...</span>
+                    <span id="qr-progress-percent">0%</span>
+                </div>
+                <div style="width: 100%; height: 8px; background: var(--bg-input); border-radius: 4px; overflow: hidden; border: 1px solid var(--border);">
+                    <div id="qr-progress-bar" style="height: 100%; width: 0%; background: #00dfff; transition: width 0.1s;"></div>
+                </div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 25px;">
+                <button id="btn-start-qr-generation" class="btn btn-primary btn-full-width" style="background: linear-gradient(135deg, #00dfff, #0088cc); color: #000; border: none; font-weight: 600;">
+                    <i class="fas fa-cogs"></i> Iniciar Generación en Lote
+                </button>
             </div>
         </div>
     </div>

@@ -1102,3 +1102,31 @@ tbody tr:hover {
 .widget-card.is-resizing {
     transition: none !important;
 }
+
+/* QR Generator Styles */
+.custom-input {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+}
+
+.custom-input:focus {
+    outline: none;
+    border-color: #00dfff;
+    box-shadow: 0 0 0 2px rgba(0, 223, 255, 0.2);
+}
+
+.btn-full-width {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 1.05rem;
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+}

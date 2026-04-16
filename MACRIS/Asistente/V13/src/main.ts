@@ -50,6 +50,7 @@ export async function loadSharedLookupData() {
 }
 
 import { setupDashboard } from './dashboard';
+import { initQrGenerator } from './qr-bulk-generator';
 
 export async function main() {
     setupEventListeners();
@@ -57,6 +58,7 @@ export async function main() {
     initSedeCleanup();
     initBackupRestore();
     setupDashboard();
+    initQrGenerator();
 
     D.logoutBtn?.addEventListener('click', () => {
         if (confirm('¿Cerrar sesión?')) Auth.handleLogout();

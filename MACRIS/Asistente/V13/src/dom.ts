@@ -211,3 +211,27 @@ export const filterOrderTechnician = document.getElementById('filter-order-techn
 export const adminPhotoUploadInput = document.getElementById('admin-photo-upload') as HTMLInputElement;
 export const redeemPointsUserId = document.getElementById('redeem-points-user-id') as HTMLInputElement;
 export const pointsToRedeemInput = document.getElementById('points-to-redeem') as HTMLInputElement;
+
+// QR Bulk Generator
+export const btnQrGenerator = document.getElementById('btn-qr-generator') as HTMLButtonElement | null;
+export const qrGeneratorModal = document.getElementById('qr-generator-modal') as HTMLElement | null;
+export const closeQrGeneratorModal = document.getElementById('close-qr-generator-modal') as HTMLElement | null;
+export const qrLogoInput = document.getElementById('qr-logo-input') as HTMLInputElement | null;
+export const qrLegendInput = document.getElementById('qr-legend-input') as HTMLInputElement | null;
+export const qrPrefixInput = document.getElementById('qr-prefix-input') as HTMLInputElement | null;
+export const qrPaddingInput = document.getElementById('qr-padding-input') as HTMLInputElement | null;
+export const qrStartInput = document.getElementById('qr-start-input') as HTMLInputElement | null;
+export const qrEndInput = document.getElementById('qr-end-input') as HTMLInputElement | null;
+export const qrFormatSelect = document.getElementById('qr-format-select') as HTMLSelectElement | null;
+export const qrFontLegendInput = document.getElementById('qr-font-legend-input') as HTMLInputElement | null;
+export const qrFontCodeInput = document.getElementById('qr-font-code-input') as HTMLInputElement | null;
+export const qrPosYLegend = document.getElementById('qr-posy-legend') as HTMLInputElement | null;
+export const qrPosYCode = document.getElementById('qr-posy-code') as HTMLInputElement | null;
+export const qrMarginInput = document.getElementById('qr-margin-input') as HTMLInputElement | null;
+export const qrMarginVal = document.getElementById('qr-margin-val') as HTMLElement | null;
+export const qrPreviewCanvas = document.getElementById('qr-preview-canvas') as HTMLCanvasElement | null;
+export const btnStartQrGeneration = document.getElementById('btn-start-qr-generation') as HTMLButtonElement | null;
+export const qrGeneratorProgressContainer = document.getElementById('qr-generator-progress-container') as HTMLElement | null;
+export const qrProgressText = document.getElementById('qr-progress-text') as HTMLElement | null;
+export const qrProgressPercent = document.getElementById('qr-progress-percent') as HTMLElement | null;
+export const qrProgressBar = document.getElementById('qr-progress-bar') as HTMLElement | null;
