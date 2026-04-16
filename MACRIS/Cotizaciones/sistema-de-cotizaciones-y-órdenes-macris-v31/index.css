@@ -761,6 +761,16 @@ body.dark-theme .tab-count-badge {
     padding-top: 14px;
 }
 
+.report-service-type-text {
+    font-style: normal;
+    font-weight: 400;
+}
+
+.report-service-type-separator,
+.report-service-type-empty {
+    color: var(--color-text-secondary);
+}
+
 /* Status Badge */
 .status-badge {
     padding: 3px 10px;

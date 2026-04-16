@@ -18,6 +18,37 @@ let cachedCities: City[] = [];
 let cachedCompanies: Company[] = [];
 let cachedDependencies: Dependency[] = [];
 
+function escapeHtml(value: unknown): string {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+    }[char] || char));
+}
+
+function getReportServiceTypeColor(type: string | undefined): string {
+    if (!type) return 'var(--color-text-secondary)';
+    const lowerType = type.toLowerCase();
+
+    if (lowerType.includes('preventivo')) return '#007bff';
+    if (lowerType.includes('montaje') || lowerType.includes('instalación') || lowerType.includes('instalacion')) return '#fd7e14';
+    if (lowerType.includes('correctivo')) return '#dc3545';
+    if (lowerType.includes('desmonte')) return '#6f42c1';
+    if (lowerType.includes('mano de obra')) return '#20c997';
+    return 'var(--color-accent-primary)';
+}
+
+function renderReportServiceType(serviceType: string | null | undefined): string {
+    const serviceTypes = (serviceType || '').split(' • ').map(type => type.trim()).filter(Boolean);
+    if (serviceTypes.length === 0) return '<span class="report-service-type-empty">N/A</span>';
+
+    return serviceTypes.map(type => (
+        `<span class="report-service-type-text" style="color: ${getReportServiceTypeColor(type)};">${escapeHtml(type)}</span>`
+    )).join('<span class="report-service-type-separator"> • </span>');
+}
+
 export async function initReportsUI() {
     setupEventListeners();
     await loadReferenceData();
@@ -492,7 +523,7 @@ function renderReportRows(reports: Report[]) {
             <td title="${clientOrCompany || ''}">${displayClient}</td>
             <td title="${rawSede}">${displaySede}</td>
             <td>${eqDep}</td>
-            <td>${r.serviceType || 'N/A'}</td>
+            <td title="${escapeHtml(r.serviceType || 'N/A')}">${renderReportServiceType(r.serviceType)}</td>
             <td>${eqBrand}</td>
             <td>${eqType}</td>
             <td>${r.workerName}</td>
