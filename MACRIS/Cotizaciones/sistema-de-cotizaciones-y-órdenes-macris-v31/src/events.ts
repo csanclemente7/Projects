@@ -279,6 +279,12 @@ function setupModalEventListeners() {
     });
 
     D.modalForm.addEventListener('submit', UI.handleModalFormSubmit);
+    D.modalForm.addEventListener('click', (e) => {
+        const deleteSedeBtn = (e.target as HTMLElement).closest('.delete-sede-modal-btn') as HTMLElement | null;
+        if (!deleteSedeBtn?.dataset.id) return;
+        UI.closeAllModals();
+        UI.handleDeleteSede(deleteSedeBtn.dataset.id);
+    });
     D.descriptionEditForm.addEventListener('submit', UI.handleDescriptionFormSubmit);
     D.valueEditForm.addEventListener('submit', UI.handleValueEditFormSubmit);
 

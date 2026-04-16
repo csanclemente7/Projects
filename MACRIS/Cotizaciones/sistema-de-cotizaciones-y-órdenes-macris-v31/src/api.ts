@@ -241,6 +241,17 @@ export async function deleteDependency(dependencyId: string): Promise<void> {
     if (error) throw error;
 }
 
+export async function deleteSede(sedeId: string): Promise<void> {
+    const { error: dependencyError } = await supabaseOrders
+        .from('maintenance_dependencies')
+        .delete()
+        .or(`sede_id.eq.${sedeId},company_id.eq.${sedeId}`);
+    if (dependencyError) throw dependencyError;
+
+    const { error } = await supabaseOrders.from('maintenance_companies').delete().eq('id', sedeId);
+    if (error) throw error;
+}
+
 export async function upsertTechnician(technician: TechnicianInsert): Promise<Technician> {
     const { data, error } = await supabaseOrders.from('maintenance_users').upsert([technician] as any, { onConflict: 'id' }).select().single();
     if (error) throw error;

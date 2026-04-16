@@ -753,6 +753,14 @@ body.dark-theme .tab-count-badge {
     color: var(--color-text-secondary);
 }
 
+.modal-danger-zone {
+    border-top: 1px solid var(--color-border-light);
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+    padding-top: 14px;
+}
+
 /* Status Badge */
 .status-badge {
     padding: 3px 10px;

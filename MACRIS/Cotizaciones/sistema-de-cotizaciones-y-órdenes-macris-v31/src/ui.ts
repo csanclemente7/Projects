@@ -1671,7 +1671,8 @@ export async function openEntityModal(type: 'client' | 'item' | 'technician' | '
         <div class="form-group"><label>Encargado</label><input name="contactPerson" value="${sede?.contact_person || ''}"></div>
         <div class="form-group"><label>Dirección</label><input name="address" value="${sede?.address || ''}"></div>
         <div class="form-group"><label>Ciudad</label><select name="city" required class="form-control">${citySelectOptions}</select></div>
-        <div class="form-group"><label>Teléfono</label><input name="phone" value="${sede?.phone || ''}"></div>`;
+        <div class="form-group"><label>Teléfono</label><input name="phone" value="${sede?.phone || ''}"></div>
+        ${sede ? `<div class="modal-danger-zone"><button type="button" class="btn btn-danger delete-sede-modal-btn" data-id="${escapeHtml(sede.id)}"><i class="fas fa-trash"></i> Eliminar sede</button></div>` : ''}`;
     } else if (type === 'dependency') {
         const dependency = id ? State.getDependencies().find(d => d.id === id) : null;
         const targetSedeId = dependency?.sede_id || sedeId || null;
@@ -1928,6 +1929,37 @@ export function handleDeleteDependency(id: string) {
             showNotification('Dependencia eliminada.', 'success');
         } catch (e: any) {
             showNotification('Error al eliminar la dependencia.', 'error');
+        }
+    });
+}
+
+export function handleDeleteSede(id: string) {
+    const sede = State.getSedes().find(s => s.id === id);
+    showConfirmationModal('Eliminar Sede', `¿Desea eliminar la sede "${sede?.name || 'seleccionada'}"?`, async () => {
+        try {
+            await API.deleteSede(id);
+            State.setSedes(State.getSedes().filter(s => s.id !== id));
+            State.setDependencies(State.getDependencies().filter(d => d.sede_id !== id && d.company_id !== id));
+            expandedSedeDependencyIds.delete(id);
+            if (sede?.client_id) {
+                expandedClientSedeIds.add(sede.client_id);
+            }
+            renderClientsList();
+            if (D.orderWorkspacePage.classList.contains('active')) {
+                const order = State.getCurrentOrder();
+                if (order?.sede_id === id) order.sede_id = null;
+                renderOrderWorkspace(order);
+            } else if (document.getElementById('page-quotes')?.classList.contains('active')) {
+                const quote = State.getActiveQuote();
+                if (quote?.sede_id === id) {
+                    quote.sede_id = null;
+                    State.updateActiveQuote(quote);
+                }
+                renderQuote(State.getActiveQuote());
+            }
+            showNotification('Sede eliminada.', 'success');
+        } catch (e: any) {
+            showNotification('Error al eliminar la sede.', 'error');
         }
     });
 }
