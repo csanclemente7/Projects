@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable';
 import type { Quote, Client } from '../types';
 import { formatCurrency } from '../utils';
 import * as State from '../state';
+import { getServiceLocationInfo } from './common';
 
 export function renderModernPDF(doc: jsPDF, quote: Quote, client: Client | undefined, logoUrl: string) {
     const pageWidth = doc.internal.pageSize.width;
@@ -67,16 +68,17 @@ export function renderModernPDF(doc: jsPDF, quote: Quote, client: Client | undef
     doc.setTextColor(textColor);
     
     if (client) {
+        const location = getServiceLocationInfo(quote, client);
         doc.text(client.name, margin, y);
         doc.setFontSize(9);
         y += 14;
-        
-        // Full address combining street and city
-        const fullAddr = [client.address, client.city].filter(Boolean).join(', ');
+
+        if (location.sedeName) { doc.text(`Sede: ${location.sedeName}`, margin, y); y += 14; }
+        const fullAddr = [location.address !== 'N/A' ? location.address : null, location.city !== 'N/A' ? location.city : null].filter(Boolean).join(', ');
         if (fullAddr) { doc.text(fullAddr, margin, y); y += 14; }
-        if (client.email) { doc.text(client.email, margin, y); y += 14; }
-        if (client.phone) { doc.text(client.phone, margin, y); y += 14; }
-        if (client.contactPerson) { doc.text(`Contacto: ${client.contactPerson}`, margin, y); y += 14; }
+        if (location.email !== 'N/A') { doc.text(location.email, margin, y); y += 14; }
+        if (location.phone !== 'N/A') { doc.text(location.phone, margin, y); y += 14; }
+        if (location.contactPerson !== 'N/A') { doc.text(`Contacto: ${location.contactPerson}`, margin, y); y += 14; }
     } else {
         doc.text('N/A', margin, y);
         y += 14;

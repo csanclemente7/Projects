@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import type { Quote } from '../types';
+import type { Client, Quote, Sede } from '../types';
 import * as State from '../state';
 
 const LOGO_CACHE_PREFIX = 'macris_logo_cache_';
@@ -13,6 +13,59 @@ export function getCompanyInfoBlock(): string {
         State.getCompanyEmail()
     ];
     return lines.filter(line => line).join('\n');
+}
+
+export type ServiceLocationInfo = {
+    clientName: string;
+    sedeName: string | null;
+    address: string;
+    city: string;
+    phone: string;
+    email: string;
+    contactPerson: string;
+    sede: Sede | undefined;
+};
+
+export function getServiceLocationInfo(record: { sede_id?: string | null }, client: Client | undefined): ServiceLocationInfo {
+    const sede = record.sede_id ? State.getSedes().find(s => s.id === record.sede_id) : undefined;
+
+    return {
+        clientName: client?.name || 'N/A',
+        sedeName: sede?.name || null,
+        address: sede?.address || client?.address || 'N/A',
+        city: sede?.cityName || client?.city || 'N/A',
+        phone: sede?.phone || client?.phone || 'N/A',
+        email: client?.email || 'N/A',
+        contactPerson: sede?.contact_person || client?.contactPerson || 'N/A',
+        sede,
+    };
+}
+
+export function addServiceLocationClientBlock(doc: jsPDF, record: { sede_id?: string | null }, client: Client | undefined, startY: number, titleColor: any = 0, textColor: any = 0): number {
+    let y = startY;
+    const info = getServiceLocationInfo(record, client);
+
+    if (client) {
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(titleColor);
+        doc.text('CLIENTE:', 40, y);
+        y += 15;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(textColor);
+        doc.text(info.clientName, 40, y);
+        y += 15;
+        if (info.sedeName) { doc.text(`Sede: ${info.sedeName}`, 40, y); y += 15; }
+        if (info.address !== 'N/A') { doc.text(`Direccion: ${info.address}`, 40, y); y += 15; }
+        if (info.city !== 'N/A') { doc.text(`Ciudad: ${info.city}`, 40, y); y += 15; }
+        if (info.phone !== 'N/A') { doc.text(`Telefono: ${info.phone}`, 40, y); y += 15; }
+        if (info.email !== 'N/A') { doc.text(`Email: ${info.email}`, 40, y); y += 15; }
+        if (info.contactPerson !== 'N/A') { doc.text(`Contacto: ${info.contactPerson}`, 40, y); y += 15; }
+        y += 5;
+    }
+
+    return y;
 }
 
 

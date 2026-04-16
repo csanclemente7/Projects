@@ -1,6 +1,6 @@
 import { supabaseQuotes, supabaseOrders } from './supabase';
 import type {
-    Item, Client, Quote, QuoteItem, Setting, Technician, Order, OrderItem, ServiceType, Sede,
+    Item, Client, Quote, QuoteItem, Setting, Technician, Order, OrderItem, ServiceType, Sede, Dependency,
     ClientInsert, ItemInsert, QuoteInsert, QuoteItemInsert, OrderInsert, OrderItemInsert, TechnicianInsert, OrderTechnicianInsert, SettingInsert, DatabaseQuotes
 } from './types';
 import { generateId } from './utils';
@@ -83,6 +83,21 @@ export async function fetchSedes(): Promise<Sede[]> {
         category: dbSede.category || null,
     }));
 }
+
+export async function fetchDependencies(): Promise<Dependency[]> {
+    const { data, error } = await supabaseOrders.from('maintenance_dependencies').select('*').order('name');
+    if (error) throw error;
+
+    return (data || []).map(dbDependency => ({
+        id: dbDependency.id,
+        name: dbDependency.name,
+        company_id: dbDependency.company_id,
+        sede_id: dbDependency.sede_id || null,
+        client_id: dbDependency.client_id || null,
+        created_at: dbDependency.created_at,
+    }));
+}
+
 export async function getTechniciansFromSupabase(): Promise<Technician[]> {
     const { data, error } = await supabaseOrders.from('maintenance_users').select('*');
     if (error) throw error;
@@ -179,16 +194,53 @@ export async function upsertSedeFull(sedeId: string, sedeName: string, companyId
     const { data, error } = await supabaseOrders.from('maintenance_companies').upsert([newSede] as any, { onConflict: 'id' }).select().single();
     if (error) throw error;
     if (!data) throw new Error('Sede upsert failed.');
+    const cities = await fetchCities();
+    const cityName = cities.find(c => c.id === (data as any).city_id)?.name || null;
     return {
         id: data.id,
         name: data.name,
         address: (data as any).address || null,
         client_id: data.client_id || null,
         city_id: data.city_id || null,
+        cityName,
         phone: (data as any).phone || null,
         contact_person: (data as any).contact_person || null,
     };
 }
+
+export async function upsertDependencyFull(dependencyId: string, name: string, companyId: string, sedeId: string | null): Promise<Dependency> {
+    const dependencyData = {
+        id: dependencyId,
+        name,
+        client_id: companyId,
+        company_id: sedeId || companyId,
+        sede_id: sedeId,
+    };
+
+    const { data, error } = await (supabaseOrders as any)
+        .from('maintenance_dependencies')
+        .upsert([dependencyData], { onConflict: 'id' })
+        .select()
+        .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('Dependency upsert failed.');
+
+    return {
+        id: data.id,
+        name: data.name,
+        company_id: data.company_id,
+        sede_id: data.sede_id || null,
+        client_id: data.client_id || null,
+        created_at: data.created_at,
+    };
+}
+
+export async function deleteDependency(dependencyId: string): Promise<void> {
+    const { error } = await supabaseOrders.from('maintenance_dependencies').delete().eq('id', dependencyId);
+    if (error) throw error;
+}
+
 export async function upsertTechnician(technician: TechnicianInsert): Promise<Technician> {
     const { data, error } = await supabaseOrders.from('maintenance_users').upsert([technician] as any, { onConflict: 'id' }).select().single();
     if (error) throw error;

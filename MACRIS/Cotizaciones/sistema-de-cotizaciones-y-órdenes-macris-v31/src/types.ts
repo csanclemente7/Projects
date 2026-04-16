@@ -171,6 +171,11 @@ export type DatabaseOrders = {
         Insert: { id?: string; name: string; city_id?: string | null; address?: string | null; client_id?: string | null; category?: string | null; };
         Update: { id?: string; name?: string; city_id?: string | null; address?: string | null; client_id?: string | null; category?: string | null; };
       };
+      maintenance_dependencies: {
+        Row: { id: string; name: string; company_id: string; sede_id: string | null; client_id: string | null; created_at?: string; };
+        Insert: { id?: string; name: string; company_id: string; sede_id?: string | null; client_id?: string | null; created_at?: string; };
+        Update: { id?: string; name?: string; company_id?: string; sede_id?: string | null; client_id?: string | null; created_at?: string; };
+      };
       maintenance_users: {
         Row: {
           id: string
@@ -344,6 +349,15 @@ export type Sede = {
     contact_person?: string | null;
     phone?: string | null;
     category?: 'empresa' | 'residencial' | string | null;
+};
+
+export type Dependency = {
+    id: string;
+    name: string;
+    company_id: string;
+    sede_id?: string | null;
+    client_id?: string | null;
+    created_at?: string;
 };
 
 // This is the composite object the app works with for quotes

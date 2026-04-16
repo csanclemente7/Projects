@@ -2,6 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Order, Client, Technician } from '../types';
 import { formatCurrency } from '../utils';
+import { getServiceLocationInfo } from './common';
 
 export function renderOrderPDF(doc: jsPDF, order: Order, client: Client | undefined, technicians: Technician[], logoUrl: string) {
     const pageWidth = doc.internal.pageSize.width;
@@ -36,8 +37,7 @@ export function renderOrderPDF(doc: jsPDF, order: Order, client: Client | undefi
     
     // FIX: Use a timezone-safe method to parse the date string.
     const serviceDate = new Date(order.service_date.replace(/-/g, '/')).toLocaleDateString('es-CO');
-    // FIX: Property 'city' does not exist on type 'Order'. The city for the service is stored on the client record.
-    const serviceCity = client?.city || 'N/A';
+    const serviceLocation = getServiceLocationInfo(order, client);
     
     autoTable(doc, {
         startY: y,
@@ -50,20 +50,26 @@ export function renderOrderPDF(doc: jsPDF, order: Order, client: Client | undefi
                 { content: `${serviceDate} ${order.service_time || ''}`, styles: {} },
             ],
             [
-                { content: 'DIRECCIÓN', styles: { fontStyle: 'bold' } },
-                { content: client?.address || 'N/A', styles: {} },
+                { content: 'SEDE', styles: { fontStyle: 'bold' } },
+                { content: serviceLocation.sedeName || 'N/A', styles: {} },
                 { content: 'TIPO DE ORDEN', styles: { fontStyle: 'bold' } },
                 { content: order.order_type, styles: {} },
             ],
-             [
-                { content: 'CIUDAD', styles: { fontStyle: 'bold' } },
-                { content: serviceCity, styles: {} },
+            [
+                { content: 'DIRECCIÓN', styles: { fontStyle: 'bold' } },
+                { content: serviceLocation.address, styles: {} },
                 { content: 'ESTADO', styles: { fontStyle: 'bold' } },
                 { content: statusText[order.status], styles: { textColor: accentColor, fontStyle: 'bold' } },
             ],
+             [
+                { content: 'CIUDAD', styles: { fontStyle: 'bold' } },
+                { content: serviceLocation.city, styles: {} },
+                { content: 'CONTACTO', styles: { fontStyle: 'bold' } },
+                { content: serviceLocation.contactPerson, styles: {} },
+            ],
             [
                 { content: 'TELÉFONO', styles: { fontStyle: 'bold' } },
-                { content: client?.phone || 'N/A', styles: {} },
+                { content: serviceLocation.phone, styles: {} },
                 { content: '', styles: {} },
                 { content: '', styles: {} },
             ],

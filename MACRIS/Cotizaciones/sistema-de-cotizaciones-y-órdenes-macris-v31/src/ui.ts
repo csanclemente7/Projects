@@ -2,7 +2,7 @@ import * as D from './dom';
 import * as State from './state';
 import * as API from './api';
 import { generateQuotePDFDoc, generateOrderPDFDoc, generatePreviewPDF, previewPdfInModal, generateBillPDFDoc } from './pdf';
-import type { Quote, QuoteItem, Client, Item, PdfTemplate, Order, Technician, OrderItem, ClientInsert, ItemInsert, TechnicianInsert } from './types';
+import type { Quote, QuoteItem, Client, Item, PdfTemplate, Order, Technician, OrderItem, ClientInsert, ItemInsert, TechnicianInsert, Sede, Dependency } from './types';
 import { formatCurrency, generateId, isMobileDevice, formatTime } from './utils';
 import { fetchCities } from './api-reports';
 import { getSessionUser } from './user-session';
@@ -13,7 +13,20 @@ let onConfirmCallback: (() => void) | null = null;
 let onCancelCallback: (() => void) | null = null;
 let currentEditingItemId: string | null = null;
 let currentEditingContext: 'quote' | 'order' | null = null;
+const expandedClientSedeIds = new Set<string>();
+const clientSedeCityFilters = new Map<string, string>();
+const expandedSedeDependencyIds = new Set<string>();
 const NO_ASIGNADO_TECHNICIAN_ID = '849dac95-99d8-4f43-897e-7565fec32382';
+
+function escapeHtml(value: unknown): string {
+    return String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;',
+    }[char] || char));
+}
 
 function formatCreatedTime(value?: string | null) {
     if (!value) return '-';
@@ -1021,17 +1034,211 @@ export function renderClientDetails(clientId: string | null, context: 'quote' | 
 }
 
 // --- Management Page List Rendering ---
+function getClientSedes(clientId: string): Sede[] {
+    return State.getSedes()
+        .filter(s => s.client_id === clientId)
+        .sort((a, b) => (a.cityName || '').localeCompare(b.cityName || '') || a.name.localeCompare(b.name));
+}
+
+function getSedeDependencies(sede: Sede): Dependency[] {
+    return State.getDependencies()
+        .filter(dependency => dependency.sede_id === sede.id || dependency.company_id === sede.id)
+        .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function renderSedeDependenciesDropdown(client: Client, sede: Sede, dependencies: Dependency[]): string {
+    if (!expandedSedeDependencyIds.has(sede.id)) return '';
+
+    const content = dependencies.length === 0 ? `
+        <div class="sede-dependencies-empty">
+            Esta sede no tiene dependencias registradas.
+        </div>` : `
+        <div class="sede-dependencies-list">
+            ${dependencies.map(dependency => `
+                <div class="sede-dependency-item">
+                    <span><i class="fas fa-sitemap"></i> ${escapeHtml(dependency.name)}</span>
+                    <div class="sede-dependency-actions">
+                        <button class="btn btn-sm btn-secondary edit-dependency-btn" data-id="${escapeHtml(dependency.id)}" data-parent-id="${escapeHtml(client.id)}" data-sede-id="${escapeHtml(sede.id)}">
+                            Editar
+                        </button>
+                        <button class="btn btn-sm btn-danger delete-dependency-btn" data-id="${escapeHtml(dependency.id)}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>`).join('')}
+        </div>`;
+
+    return `
+        <div class="sede-dependencies-dropdown">
+            <div class="sede-dependencies-header">
+                <strong>${escapeHtml(sede.name)}</strong>
+                <button class="btn btn-sm add-dependency-sede-btn" data-parent-id="${escapeHtml(client.id)}" data-sede-id="${escapeHtml(sede.id)}">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+            ${content}
+        </div>`;
+}
+
+function renderClientSedesRow(client: Client, sedes: Sede[]): string {
+    const selectedCityId = clientSedeCityFilters.get(client.id) || '';
+    const uniqueCities = Array.from(new Map(
+        sedes.map(sede => [
+            sede.city_id || '__no_city__',
+            sede.cityName || 'Sin ciudad definida'
+        ])
+    ).entries()).sort((a, b) => a[1].localeCompare(b[1]));
+    const filteredSedes = selectedCityId
+        ? sedes.filter(sede => (sede.city_id || '__no_city__') === selectedCityId)
+        : sedes;
+
+    const emptyState = `
+        <div class="client-sedes-empty">
+            Esta empresa no tiene sedes registradas.
+            <button class="btn btn-sm add-sede-client-btn" data-id="${escapeHtml(client.id)}">
+                <i class="fas fa-plus"></i> Añadir sede
+            </button>
+        </div>`;
+
+    const filteredEmptyState = `
+        <div class="client-sedes-empty">
+            No hay sedes registradas para la ciudad seleccionada.
+        </div>`;
+
+    const filterHtml = sedes.length > 0 ? `
+        <div class="client-sedes-filter">
+            <label for="client-sedes-city-${escapeHtml(client.id)}">Ciudad</label>
+            <select id="client-sedes-city-${escapeHtml(client.id)}" class="client-sedes-city-filter" data-id="${escapeHtml(client.id)}">
+                <option value="">Todas las ciudades (${sedes.length})</option>
+                ${uniqueCities.map(([cityId, cityName]) => {
+                    const count = sedes.filter(sede => (sede.city_id || '__no_city__') === cityId).length;
+                    return `<option value="${escapeHtml(cityId)}" ${cityId === selectedCityId ? 'selected' : ''}>${escapeHtml(cityName)} (${count})</option>`;
+                }).join('')}
+            </select>
+        </div>` : '';
+
+    const sedesList = sedes.length === 0 ? emptyState : filteredSedes.length === 0 ? filteredEmptyState : `
+        <div class="client-sedes-grid">
+            ${filteredSedes.map(sede => `
+                ${(() => {
+                    const dependencies = getSedeDependencies(sede);
+                    const isDependencyExpanded = expandedSedeDependencyIds.has(sede.id);
+                    return `
+                <div class="client-sede-item">
+                    <div class="client-sede-main">
+                        <strong>${escapeHtml(sede.name)}</strong>
+                        <span>${escapeHtml(sede.cityName || 'Ciudad sin definir')}</span>
+                    </div>
+                    <div class="client-sede-meta">
+                        <span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(sede.address || 'Sin direccion')}</span>
+                        <span><i class="fas fa-user-tie"></i> ${escapeHtml(sede.contact_person || 'Sin encargado')}</span>
+                        <span><i class="fas fa-phone"></i> ${escapeHtml(sede.phone || 'Sin telefono')}</span>
+                    </div>
+                    <button class="btn btn-sm btn-secondary edit-sede-btn" data-id="${escapeHtml(sede.id)}" data-parent-id="${escapeHtml(client.id)}">
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <div class="client-sede-actions">
+                        <button class="btn btn-sm view-dependencies-sede-btn" data-id="${escapeHtml(sede.id)}">
+                            <i class="fas ${isDependencyExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+                            ${dependencies.length} ${dependencies.length === 1 ? 'dependencia' : 'dependencias'}
+                        </button>
+                        <button class="btn btn-sm add-dependency-sede-btn" data-parent-id="${escapeHtml(client.id)}" data-sede-id="${escapeHtml(sede.id)}">
+                            <i class="fas fa-plus"></i> Crear dependencia
+                        </button>
+                    </div>
+                    ${renderSedeDependenciesDropdown(client, sede, dependencies)}
+                </div>`;
+                })()}`).join('')}
+        </div>`;
+
+    return `
+        <tr class="client-sedes-row">
+            <td colspan="6">
+                <div class="client-sedes-panel">
+                    <div class="client-sedes-header">
+                        <strong>Sedes de ${escapeHtml(client.name)}</strong>
+                        <button class="btn btn-sm add-sede-client-btn" data-id="${escapeHtml(client.id)}">
+                            <i class="fas fa-plus"></i> Añadir sede
+                        </button>
+                    </div>
+                    ${filterHtml}
+                    ${sedesList}
+                </div>
+            </td>
+        </tr>`;
+}
+
 export function renderClientsList() {
     D.clientCountBadge.textContent = State.getClients().length.toString();
     const term = D.clientListSearchInput.value.toLowerCase();
     const clients = State.getClients().filter(c => c.name?.toLowerCase().includes(term) || c.contactPerson?.toLowerCase().includes(term) || c.manualId?.toLowerCase().includes(term));
-    let html = `<table class="management-table"><thead><tr><th>Nombre</th><th>Contacto</th><th>Teléfono</th><th>Email</th><th class="actions">Acciones</th></tr></thead><tbody>`;
+    let html = `<table class="management-table clients-management-table"><thead><tr><th>Nombre</th><th>Tipo</th><th>Sedes</th><th>Contacto</th><th>Teléfono</th><th class="actions">Acciones</th></tr></thead><tbody>`;
     if (clients.length > 0) {
-        html += clients.sort((a, b) => (parseInt(b.manualId) || 0) - (parseInt(a.manualId) || 0)).map(c => `<tr><td><strong>${c.name}</strong><br><small>ID: ${c.manualId}</small></td><td>${c.contactPerson || '-'}</td><td>${c.phone || '-'}</td><td>${c.email || '-'}</td><td class="actions"><button class="btn btn-icon-only btn-secondary edit-btn" data-id="${c.id}" title="Editar"><i class="fas fa-edit"></i></button>${c.category === 'empresa' ? `<button class="btn btn-icon-only add-sede-client-btn" data-id="${c.id}" title="Añadir Sede" style="background-color: #f1f8ff; border: 1px solid #c8e1ff; color: #0366d6; margin: 0 4px;"><i class="fas fa-building"></i></button>` : ''}<button class="btn btn-icon-only toggle-category-btn" data-id="${c.id}" title="Cambiar a ${c.category === 'empresa' ? 'Residencial' : 'Empresa'}" style="background-color: ${c.category === 'empresa' ? '#fff3cd' : '#d4edda'}; border: 1px solid ${c.category === 'empresa' ? '#ffeeba' : '#c3e6cb'}; color: ${c.category === 'empresa' ? '#856404' : '#155724'}; margin: 0 4px;"><i class="fas ${c.category === 'empresa' ? 'fa-home' : 'fa-building'}"></i></button><button class="btn btn-icon-only btn-danger delete-btn" data-id="${c.id}" title="Eliminar"><i class="fas fa-trash"></i></button></td></tr>`).join('');
+        html += clients.sort((a, b) => (parseInt(b.manualId) || 0) - (parseInt(a.manualId) || 0)).map(c => {
+            const sedes = c.category === 'empresa' ? getClientSedes(c.id) : [];
+            const isExpanded = expandedClientSedeIds.has(c.id);
+            const typeLabel = c.category === 'empresa' ? 'Empresa' : 'Residencial';
+            const typeIcon = c.category === 'empresa' ? 'fa-building' : 'fa-home';
+            const typeClass = c.category === 'empresa' ? 'empresa' : 'residencial';
+            const row = `
+                <tr class="${isExpanded ? 'client-row-expanded' : ''}">
+                    <td>
+                        <strong>${escapeHtml(c.name)}</strong><br>
+                        <small>ID: ${escapeHtml(c.manualId)}</small>
+                        ${c.email ? `<br><small>${escapeHtml(c.email)}</small>` : ''}
+                    </td>
+                    <td><span class="client-type-badge ${typeClass}"><i class="fas ${typeIcon}"></i> ${typeLabel}</span></td>
+                    <td>
+                        ${c.category === 'empresa' ? `
+                            <button class="btn btn-sm view-sedes-client-btn" data-id="${escapeHtml(c.id)}" title="${isExpanded ? 'Ocultar sedes' : 'Ver sedes'}">
+                                <i class="fas ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}"></i>
+                                ${sedes.length} ${sedes.length === 1 ? 'sede' : 'sedes'}
+                            </button>` : '<span class="muted-text">No aplica</span>'}
+                    </td>
+                    <td>${escapeHtml(c.contactPerson || '-')}</td>
+                    <td>${escapeHtml(c.phone || '-')}</td>
+                    <td class="actions">
+                        <button class="btn btn-icon-only btn-secondary edit-btn" data-id="${escapeHtml(c.id)}" title="Editar"><i class="fas fa-edit"></i></button>
+                        ${c.category === 'empresa' ? `<button class="btn btn-icon-only add-sede-client-btn" data-id="${escapeHtml(c.id)}" title="Añadir Sede" style="background-color: #f1f8ff; border: 1px solid #c8e1ff; color: #0366d6; margin: 0 4px;"><i class="fas fa-building"></i></button>` : ''}
+                        <button class="btn btn-icon-only toggle-category-btn" data-id="${escapeHtml(c.id)}" title="Cambiar a ${c.category === 'empresa' ? 'Residencial' : 'Empresa'}" style="background-color: ${c.category === 'empresa' ? '#fff3cd' : '#d4edda'}; border: 1px solid ${c.category === 'empresa' ? '#ffeeba' : '#c3e6cb'}; color: ${c.category === 'empresa' ? '#856404' : '#155724'}; margin: 0 4px;"><i class="fas ${c.category === 'empresa' ? 'fa-home' : 'fa-building'}"></i></button>
+                        <button class="btn btn-icon-only btn-danger delete-btn" data-id="${escapeHtml(c.id)}" title="Eliminar"><i class="fas fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            return row + (isExpanded ? renderClientSedesRow(c, sedes) : '');
+        }).join('');
     } else {
-        html += `<tr><td colspan="5" style="text-align: center; padding: 20px;">No hay clientes.</td></tr>`;
+        html += `<tr><td colspan="6" style="text-align: center; padding: 20px;">No hay clientes.</td></tr>`;
     }
     D.clientsListContainer.innerHTML = html + `</tbody></table>`;
+}
+
+export function toggleClientSedes(clientId: string) {
+    if (expandedClientSedeIds.has(clientId)) {
+        expandedClientSedeIds.delete(clientId);
+    } else {
+        expandedClientSedeIds.add(clientId);
+    }
+    renderClientsList();
+}
+
+export function setClientSedesCityFilter(clientId: string, cityId: string) {
+    if (cityId) {
+        clientSedeCityFilters.set(clientId, cityId);
+    } else {
+        clientSedeCityFilters.delete(clientId);
+    }
+    expandedClientSedeIds.add(clientId);
+    renderClientsList();
+}
+
+export function toggleSedeDependencies(sedeId: string) {
+    if (expandedSedeDependencyIds.has(sedeId)) {
+        expandedSedeDependencyIds.delete(sedeId);
+    } else {
+        expandedSedeDependencyIds.clear();
+        expandedSedeDependencyIds.add(sedeId);
+    }
+    renderClientsList();
 }
 
 export function renderCatalogItemsList() {
@@ -1395,7 +1602,7 @@ export function handleValueEditFormSubmit(e: Event) {
     closeAllModals();
 }
 
-export async function openEntityModal(type: 'client' | 'item' | 'technician' | 'sede', id: string | null = null, parentId: string | null = null) {
+export async function openEntityModal(type: 'client' | 'item' | 'technician' | 'sede' | 'dependency', id: string | null = null, parentId: string | null = null, sedeId: string | null = null) {
     D.modalForm.dataset.type = type;
     D.modalForm.dataset.id = id || '';
     let fieldsHtml = '', title = '';
@@ -1434,6 +1641,20 @@ export async function openEntityModal(type: 'client' | 'item' | 'technician' | '
         <div class="form-group"><label>Dirección</label><input name="address" value="${sede?.address || ''}"></div>
         <div class="form-group"><label>Ciudad</label><select name="city" required class="form-control">${citySelectOptions}</select></div>
         <div class="form-group"><label>Teléfono</label><input name="phone" value="${sede?.phone || ''}"></div>`;
+    } else if (type === 'dependency') {
+        const dependency = id ? State.getDependencies().find(d => d.id === id) : null;
+        const targetSedeId = dependency?.sede_id || sedeId || null;
+        const targetSede = targetSedeId ? State.getSedes().find(s => s.id === targetSedeId) : null;
+        const targetCompanyId = dependency?.client_id || parentId || targetSede?.client_id || null;
+        const targetCompany = targetCompanyId ? State.getClients().find(c => c.id === targetCompanyId) : null;
+
+        title = dependency ? 'Editar Dependencia' : 'Nueva Dependencia';
+        fieldsHtml = `
+        <input type="hidden" name="companyId" value="${escapeHtml(targetCompanyId || '')}">
+        <input type="hidden" name="sedeId" value="${escapeHtml(targetSedeId || '')}">
+        <div class="form-group"><label>Empresa</label><input value="${escapeHtml(targetCompany?.name || 'Empresa no encontrada')}" readonly></div>
+        <div class="form-group"><label>Sede</label><input value="${escapeHtml(targetSede?.name || 'Sede no encontrada')}" readonly></div>
+        <div class="form-group"><label>Nombre de Dependencia</label><input name="name" value="${escapeHtml(dependency?.name || '')}" required placeholder="Ej. Urgencias, Farmacia, Sala 1..."></div>`;
     } else { // technician
         const tech = id ? State.getTechnicians().find(t => t.id === id) : null;
         title = tech ? 'Editar Técnico' : 'Nuevo Técnico';
@@ -1469,7 +1690,7 @@ export async function openEntityModal(type: 'client' | 'item' | 'technician' | '
 export async function handleModalFormSubmit(e: Event) {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
-    const type = form.dataset.type as 'client' | 'item' | 'technician' | 'sede';
+    const type = form.dataset.type as 'client' | 'item' | 'technician' | 'sede' | 'dependency';
     const id = form.dataset.id;
     const data = new FormData(form);
 
@@ -1512,11 +1733,22 @@ export async function handleModalFormSubmit(e: Event) {
             const companyId = data.get('companyId') as string;
             const saved = await API.upsertSedeFull(id || generateId(), data.get('name') as string, companyId, data.get('address') as string, data.get('city') as string || null, data.get('phone') as string, data.get('contactPerson') as string);
             State.setSedes([...State.getSedes().filter(s => s.id !== saved.id), saved]);
+            expandedClientSedeIds.add(companyId);
+            renderClientsList();
             if (D.orderWorkspacePage.classList.contains('active')) {
                 renderOrderWorkspace(State.getCurrentOrder());
             } else if (document.getElementById('page-quotes')?.classList.contains('active')) {
                 renderQuote(State.getActiveQuote());
             }
+        } else if (type === 'dependency') {
+            const companyId = data.get('companyId') as string;
+            const sedeId = data.get('sedeId') as string || null;
+            if (!companyId || !sedeId) throw new Error('La dependencia debe estar asociada a una empresa y una sede.');
+            const saved = await API.upsertDependencyFull(id || generateId(), data.get('name') as string, companyId, sedeId);
+            State.setDependencies([...State.getDependencies().filter(d => d.id !== saved.id), saved]);
+            expandedClientSedeIds.add(companyId);
+            expandedSedeDependencyIds.add(sedeId);
+            renderClientsList();
         } else if (type === 'item') {
             const itemData: ItemInsert = { id: id || generateId(), manualId: data.get('manualId') as string, name: data.get('name') as string, price: parseFloat(data.get('price') as string) };
             const saved = await API.upsertItem(itemData); State.setItems([...State.getItems().filter(i => i.id !== saved.id), saved]);
@@ -1652,6 +1884,20 @@ export function handleDeleteItem(id: string) {
             renderCatalogItemsList();
             showNotification('Insumo eliminado.', 'success');
         } catch (e: any) { showNotification('Error al eliminar el insumo.', 'error'); }
+    });
+}
+
+export function handleDeleteDependency(id: string) {
+    const dependency = State.getDependencies().find(d => d.id === id);
+    showConfirmationModal('Eliminar Dependencia', `¿Desea eliminar la dependencia "${dependency?.name || 'seleccionada'}"?`, async () => {
+        try {
+            await API.deleteDependency(id);
+            State.setDependencies(State.getDependencies().filter(d => d.id !== id));
+            renderClientsList();
+            showNotification('Dependencia eliminada.', 'success');
+        } catch (e: any) {
+            showNotification('Error al eliminar la dependencia.', 'error');
+        }
     });
 }
 

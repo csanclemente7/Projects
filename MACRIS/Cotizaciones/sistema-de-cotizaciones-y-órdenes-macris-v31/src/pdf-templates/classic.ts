@@ -2,7 +2,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Quote, Client } from '../types';
 import { formatCurrency } from '../utils';
-import { addStandardFooter, getCompanyInfoBlock } from './common';
+import { addServiceLocationClientBlock, addStandardFooter, getCompanyInfoBlock } from './common';
 
 // --- Reusable Component Functions (Local to this template) ---
 
@@ -20,25 +20,6 @@ function addHeaderQuoteInfo(doc: jsPDF, quote: Quote, client: Client | undefined
     if (client) doc.text(`CLIENTE ID: ${client.manualId}`, x, currentY, { align: 'right' });
 }
 
-
-function addClientInfoBlock(doc: jsPDF, client: Client | undefined, startY: number, titleColor: any = 0, textColor: any = 0): number {
-    let y = startY;
-     if (client) {
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(titleColor);
-        doc.text('CLIENTE:', 40, y);
-        y += 15;
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(textColor);
-        doc.text(client.name, 40, y); y += 15;
-        if (client.address) { doc.text(`Dirección: ${client.address}`, 40, y); y += 15; }
-        if (client.phone) { doc.text(`Teléfono: ${client.phone}`, 40, y); y += 15; }
-        if (client.email) { doc.text(`Email: ${client.email}`, 40, y); y += 15; }
-        y += 5;
-    }
-    return y;
-}
 
 // --- Template 1: Classic ---
 export function renderClassicPDF(doc: jsPDF, quote: Quote, client: Client | undefined, logoUrl: string) {
@@ -65,7 +46,7 @@ export function renderClassicPDF(doc: jsPDF, quote: Quote, client: Client | unde
     y += 20;
 
     // Client Info
-    y = addClientInfoBlock(doc, client, y, 0, 0);
+    y = addServiceLocationClientBlock(doc, quote, client, y, 0, 0);
     
     // Items Table
     const tableHeaders = [['Código', 'Descripción', 'Cant.', 'Vlr. Unitario', 'Vlr. Total']];

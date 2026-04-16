@@ -474,6 +474,10 @@ body.dark-theme .tab-count-badge {
     overflow: hidden;
 }
 
+.clients-management-table {
+    overflow: visible;
+}
+
 .management-table th,
 .management-table td {
     padding: 12px 15px;
@@ -514,6 +518,239 @@ body.dark-theme .tab-count-badge {
 
 .management-table td.actions .btn {
     margin-left: 5px;
+}
+
+.client-type-badge,
+.muted-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--color-text-secondary);
+}
+
+.client-type-badge {
+    padding: 4px 8px;
+    border: 1px solid var(--color-border-medium);
+    border-radius: 8px;
+}
+
+.client-type-badge.empresa {
+    color: #0366d6;
+    background-color: #f1f8ff;
+    border-color: #c8e1ff;
+}
+
+.client-type-badge.residencial {
+    color: #155724;
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+}
+
+.view-sedes-client-btn {
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border-medium);
+    color: var(--color-text-primary);
+}
+
+.client-row-expanded td {
+    border-bottom-color: transparent;
+}
+
+.client-sedes-row td {
+    padding: 0 15px 15px 15px;
+    background-color: var(--color-bg-medium);
+}
+
+.client-sedes-panel {
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+    background-color: var(--color-bg-light);
+    padding: 12px;
+    overflow: visible;
+}
+
+.client-sedes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.client-sedes-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.client-sedes-filter label {
+    color: var(--color-text-secondary);
+    font-size: 0.86rem;
+    font-weight: 700;
+}
+
+.client-sedes-filter select {
+    min-width: 220px;
+    padding: 7px 10px;
+    border: 1px solid var(--color-border-medium);
+    border-radius: 8px;
+    background-color: var(--color-bg-medium);
+    color: var(--color-text-primary);
+}
+
+.client-sedes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 10px;
+    overflow: visible;
+}
+
+.client-sede-item {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px 12px;
+    align-items: center;
+    border: 1px solid var(--color-border-light);
+    border-radius: 8px;
+    padding: 10px;
+    background-color: var(--color-bg-medium);
+    overflow: visible;
+}
+
+.client-sede-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.client-sede-main span,
+.client-sede-meta {
+    color: var(--color-text-secondary);
+    font-size: 0.85rem;
+}
+
+.client-sede-meta {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+}
+
+.client-sede-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.view-dependencies-sede-btn {
+    background: var(--color-bg-light);
+    border: 1px solid var(--color-border-medium);
+    color: var(--color-text-primary);
+}
+
+.sede-dependencies-dropdown {
+    position: absolute;
+    top: calc(100% - 4px);
+    right: 10px;
+    z-index: 30;
+    width: min(360px, calc(100vw - 48px));
+    border: 1px solid var(--color-border-medium);
+    border-radius: 8px;
+    padding: 12px;
+    background-color: var(--color-bg-light);
+    box-shadow: 0 14px 34px rgba(15, 23, 42, 0.24), 0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.sede-dependencies-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--color-border-light);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+}
+
+.sede-dependencies-header strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sede-dependencies-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sede-dependency-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    background-color: var(--color-bg-light);
+}
+
+.sede-dependency-item span {
+    color: var(--color-text-primary);
+    font-size: 0.9rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sede-dependency-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.sede-dependency-actions .btn {
+    min-height: 0;
+    padding: 3px 7px;
+    font-size: 0.72rem;
+    line-height: 1.1;
+    border-radius: 6px;
+}
+
+.sede-dependency-actions .delete-dependency-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    line-height: 1;
+}
+
+.sede-dependency-actions .delete-dependency-btn i {
+    display: block;
+    margin: 0;
+    font-size: 0.72rem;
+    line-height: 1;
+}
+
+.sede-dependencies-empty {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    padding: 8px 0;
+}
+
+.client-sedes-empty {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    color: var(--color-text-secondary);
 }
 
 /* Status Badge */
@@ -2773,6 +3010,12 @@ body.dark-theme .custom-select-container {
         /* Show only first cell and actions */
     }
 
+    .clients-management-table td:nth-child(2),
+    .clients-management-table td:nth-child(3),
+    .clients-management-table .client-sedes-row td {
+        display: block;
+    }
+
     .management-table td::before {
         display: none;
         /* Hide data-label */
@@ -2797,6 +3040,38 @@ body.dark-theme .custom-select-container {
         display: flex;
         gap: 8px;
         padding-left: 10px;
+    }
+
+    .client-sedes-row {
+        display: block !important;
+    }
+
+    .client-sedes-row td {
+        width: 100%;
+        padding: 0 !important;
+    }
+
+    .client-sedes-header,
+    .client-sedes-empty,
+    .client-sedes-filter {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .client-sedes-filter select {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .client-sede-item {
+        grid-template-columns: 1fr;
+    }
+
+    .client-sede-actions,
+    .sede-dependencies-header,
+    .sede-dependency-item {
+        align-items: flex-start;
+        flex-direction: column;
     }
 
     /* --- MOBILE ORDER CARD --- */

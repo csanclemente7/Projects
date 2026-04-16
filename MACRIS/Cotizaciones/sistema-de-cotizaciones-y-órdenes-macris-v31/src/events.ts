@@ -177,9 +177,27 @@ function setupManagementEventListeners() {
         const editBtn = target.closest('.edit-btn') as HTMLElement | null;
         const deleteBtn = target.closest('.delete-btn') as HTMLElement | null;
         const addSedeBtn = target.closest('.add-sede-client-btn') as HTMLElement | null;
+        const viewSedesBtn = target.closest('.view-sedes-client-btn') as HTMLElement | null;
+        const editSedeBtn = target.closest('.edit-sede-btn') as HTMLElement | null;
+        const viewDependenciesBtn = target.closest('.view-dependencies-sede-btn') as HTMLElement | null;
+        const addDependencyBtn = target.closest('.add-dependency-sede-btn') as HTMLElement | null;
+        const editDependencyBtn = target.closest('.edit-dependency-btn') as HTMLElement | null;
+        const deleteDependencyBtn = target.closest('.delete-dependency-btn') as HTMLElement | null;
         const toggleCategoryBtn = target.closest('.toggle-category-btn') as HTMLElement | null;
 
-        if (editBtn && editBtn.dataset.id) {
+        if (viewSedesBtn && viewSedesBtn.dataset.id) {
+            UI.toggleClientSedes(viewSedesBtn.dataset.id);
+        } else if (viewDependenciesBtn && viewDependenciesBtn.dataset.id) {
+            UI.toggleSedeDependencies(viewDependenciesBtn.dataset.id);
+        } else if (addDependencyBtn && addDependencyBtn.dataset.parentId && addDependencyBtn.dataset.sedeId) {
+            UI.openEntityModal('dependency', null, addDependencyBtn.dataset.parentId, addDependencyBtn.dataset.sedeId);
+        } else if (editDependencyBtn && editDependencyBtn.dataset.id) {
+            UI.openEntityModal('dependency', editDependencyBtn.dataset.id, editDependencyBtn.dataset.parentId || null, editDependencyBtn.dataset.sedeId || null);
+        } else if (deleteDependencyBtn && deleteDependencyBtn.dataset.id) {
+            UI.handleDeleteDependency(deleteDependencyBtn.dataset.id);
+        } else if (editSedeBtn && editSedeBtn.dataset.id) {
+            UI.openEntityModal('sede', editSedeBtn.dataset.id, editSedeBtn.dataset.parentId || null);
+        } else if (editBtn && editBtn.dataset.id) {
             UI.openEntityModal('client', editBtn.dataset.id);
         } else if (addSedeBtn && addSedeBtn.dataset.id) {
             UI.openEntityModal('sede', null, addSedeBtn.dataset.id);
@@ -187,6 +205,14 @@ function setupManagementEventListeners() {
             UI.handleToggleClientCategory(toggleCategoryBtn.dataset.id);
         } else if (deleteBtn && deleteBtn.dataset.id) {
             UI.handleDeleteClient(deleteBtn.dataset.id);
+        }
+    });
+    D.clientsListContainer.addEventListener('change', (e) => {
+        const target = e.target as HTMLElement;
+        const cityFilter = target.closest('.client-sedes-city-filter') as HTMLSelectElement | null;
+
+        if (cityFilter && cityFilter.dataset.id) {
+            UI.setClientSedesCityFilter(cityFilter.dataset.id, cityFilter.value);
         }
     });
 

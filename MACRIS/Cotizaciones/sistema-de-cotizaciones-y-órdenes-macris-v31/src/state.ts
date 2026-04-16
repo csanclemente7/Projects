@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import type { Item, Client, Quote, PdfTemplate, Order, Technician, ServiceType, Sede } from './types';
+import type { Item, Client, Quote, PdfTemplate, Order, Technician, ServiceType, Sede, Dependency } from './types';
 import * as API from './api';
 import { getQuoteAuthors as fetchQuoteAuthors, getOrderAuthors as fetchOrderAuthors, saveQuoteAuthors, saveOrderAuthors } from './user-data';
 
@@ -32,6 +32,7 @@ let orders: Order[] = [];
 let technicians: Technician[] = [];
 let serviceTypes: ServiceType[] = [];
 let sedes: Sede[] = [];
+let dependencies: Dependency[] = [];
 let openQuotes: Quote[] = [];
 let activeQuoteId: string | null = null;
 let openOrders: Order[] = [];
@@ -87,6 +88,7 @@ export const getOrders = () => orders;
 export const getTechnicians = () => technicians;
 export const getServiceTypes = () => serviceTypes;
 export const getSedes = () => sedes;
+export const getDependencies = () => dependencies;
 export const getOpenQuotes = () => openQuotes;
 export const getActiveQuoteId = () => activeQuoteId;
 export const getActiveQuote = (): Quote | null => {
@@ -153,6 +155,10 @@ export function setServiceTypes(newServiceTypes: ServiceType[]) {
 
 export function setSedes(newSedes: Sede[]) {
     sedes = newSedes;
+}
+
+export function setDependencies(newDependencies: Dependency[]) {
+    dependencies = newDependencies;
 }
 
 export function addOpenQuote(quote: Quote) {
@@ -368,7 +374,7 @@ export async function loadState() {
     console.log("Loading state from Supabase API.");
     
     // In online-only mode, we always fetch fresh from the API.
-    const [loadedItems, loadedClients, loadedQuotes, loadedOrders, loadedTechnicians, loadedServiceTypes, loadedQuoteAuthors, loadedOrderAuthors, loadedSedes] = await Promise.all([
+    const [loadedItems, loadedClients, loadedQuotes, loadedOrders, loadedTechnicians, loadedServiceTypes, loadedQuoteAuthors, loadedOrderAuthors, loadedSedes, loadedDependencies] = await Promise.all([
         API.getItemsFromSupabase(),
         API.getClientsFromSupabase(),
         API.getQuotesFromSupabase(),
@@ -377,7 +383,8 @@ export async function loadState() {
         API.getServiceTypesFromSupabase(),
         fetchQuoteAuthors(),
         fetchOrderAuthors(),
-        API.fetchSedes()
+        API.fetchSedes(),
+        API.fetchDependencies()
     ]);
 
     setItems(loadedItems);
@@ -387,11 +394,12 @@ export async function loadState() {
     setTechnicians(loadedTechnicians);
     setServiceTypes(loadedServiceTypes);
     setSedes(loadedSedes);
+    setDependencies(loadedDependencies);
     setFilteredCatalogItems([...items]);
     setQuoteAuthors(loadedQuoteAuthors);
     setOrderAuthors(loadedOrderAuthors);
     
-    console.log(`State loaded: ${items.length} items, ${clients.length} clients, ${quotes.length} quotes, ${orders.length} orders, ${technicians.length} technicians, ${serviceTypes.length} service types.`);
+    console.log(`State loaded: ${items.length} items, ${clients.length} clients, ${quotes.length} quotes, ${orders.length} orders, ${technicians.length} technicians, ${serviceTypes.length} service types, ${sedes.length} sedes, ${dependencies.length} dependencies.`);
 }
 
 export function loadSessionState() {
