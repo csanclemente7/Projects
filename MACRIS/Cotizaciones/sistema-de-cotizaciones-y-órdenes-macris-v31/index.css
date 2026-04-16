@@ -2110,6 +2110,77 @@ body.dark-theme .calendar-day.busy-day-high {
     box-shadow: var(--shadow-dark);
 }
 
+.agenda-sede-separator {
+    opacity: 0.75;
+}
+
+.agenda-sede-name {
+    color: #374151;
+    font-weight: 400;
+}
+
+.agenda-order-pill .agenda-sede-name {
+    background: rgba(255, 255, 255, 0.78);
+    border-radius: 3px;
+    padding: 0 2px;
+}
+
+body.dark-theme .agenda-sede-name {
+    color: #d1d5db;
+}
+
+body.dark-theme .agenda-order-pill .agenda-sede-name {
+    background: rgba(255, 255, 255, 0.16);
+    color: #f3f4f6;
+}
+
+.agenda-service-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.agenda-service-badges.inline {
+    display: inline-flex;
+    vertical-align: middle;
+}
+
+.agenda-service-with-qty {
+    align-items: center;
+    display: inline-flex;
+    gap: 3px;
+}
+
+.agenda-service-badge {
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.03);
+    border: 1px solid color-mix(in srgb, var(--agenda-service-color) 25%, transparent);
+    border-radius: 4px;
+    color: var(--agenda-service-color);
+    display: inline-flex;
+    font-style: normal;
+    font-weight: 500;
+    gap: 4px;
+    line-height: 1.2;
+    padding: 2px 6px;
+}
+
+.agenda-service-qty-badge {
+    align-items: center;
+    background-color: var(--agenda-service-color);
+    border-radius: 50%;
+    color: var(--corporate-white);
+    display: inline-flex;
+    font-size: 0.72em;
+    font-style: normal;
+    font-weight: 700;
+    height: 1.35em;
+    justify-content: center;
+    line-height: 1;
+    min-width: 1.35em;
+    padding: 0 3px;
+}
+
 .agenda-order-pill.status-pending {
     background-color: var(--color-text-secondary);
     color: var(--color-bg-medium);

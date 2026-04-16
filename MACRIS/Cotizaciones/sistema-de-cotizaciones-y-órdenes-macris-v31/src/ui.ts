@@ -44,6 +44,37 @@ function formatCreatedDateTime(value?: string | null) {
     return `${datePart} ${timePart}`;
 }
 
+function normalizeDisplayName(value?: string | null): string {
+    return (value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+function getOrderDisplayLocation(order: Order, client?: Client | null) {
+    const sede = order.sede_id ? State.getSedes().find(s => s.id === order.sede_id) : null;
+    const clientName = client?.name || 'Cliente';
+    const sedeName = sede?.name || '';
+    const shouldShowSede = !!sedeName && normalizeDisplayName(sedeName) !== normalizeDisplayName(clientName);
+    const fullName = shouldShowSede ? `${clientName} · ${sedeName}` : clientName;
+    const compactClient = clientName.split(' ')[0] || clientName;
+    const compactName = shouldShowSede ? `${compactClient} · ${sedeName}` : compactClient;
+    const addressParts = [sede?.address || client?.address, sede?.cityName || client?.city].filter(Boolean);
+
+    return {
+        clientName,
+        compactClient,
+        sedeName,
+        shouldShowSede,
+        fullName,
+        compactName,
+        addressString: addressParts.length > 0 ? addressParts.join(' - ') : 'Sin dirección',
+    };
+}
+
+function renderAgendaLocationName(location: ReturnType<typeof getOrderDisplayLocation>, compact = false): string {
+    const clientName = compact ? location.compactClient : location.clientName;
+    if (!location.shouldShowSede) return escapeHtml(clientName);
+    return `${escapeHtml(clientName)} <span class="agenda-sede-separator">·</span> <span class="agenda-sede-name">${escapeHtml(location.sedeName)}</span>`;
+}
+
 export function setAdminPortalLink() {
     if (!D.adminPortalBtn) return;
     const base = import.meta.env.BASE_URL || '/';
@@ -1955,7 +1986,8 @@ export function renderOrdersList() {
 
     const filteredOrders = ordersToDisplay.filter(order => {
         const client = State.getClients().find(c => c.id === order.clientId);
-        return order.manualId.toLowerCase().includes(term) || client?.name.toLowerCase().includes(term);
+        const location = getOrderDisplayLocation(order, client);
+        return order.manualId.toLowerCase().includes(term) || location.fullName.toLowerCase().includes(term);
     });
 
     const statusText = { pending: 'Pendiente', scheduled: 'Programada', in_progress: 'En Progreso', completed: 'Completada', cancelled: 'Cancelada' };
@@ -1966,6 +1998,7 @@ export function renderOrdersList() {
     } else {
         html += filteredOrders.sort((a, b) => parseInt(b.manualId) - parseInt(a.manualId)).map(order => {
             const client = State.getClients().find(c => c.id === order.clientId);
+            const location = getOrderDisplayLocation(order, client);
             const technicians = State.getTechnicians().filter(t => order.technicianIds.includes(t.id));
             const serviceDate = new Date(order.service_date.replace(/-/g, '/')).toLocaleDateString('es-CO');
             const duration = order.estimated_duration ? `${order.estimated_duration.toFixed(1)}h` : '-';
@@ -1975,7 +2008,7 @@ export function renderOrdersList() {
             return `
                 <tr>
                     <td class="desktop-cell">${order.manualId}</td>
-                    <td class="desktop-cell"><strong>${client?.name || 'N/A'}</strong><br><small class="order-author">Creada por: <span style="color: ${getAuthorColor(author)}; font-weight: 500;">${author}</span> &bull; ${createdAt}</small></td>
+                    <td class="desktop-cell"><strong>${location.fullName}</strong><br><small class="order-author">Creada por: <span style="color: ${getAuthorColor(author)}; font-weight: 500;">${author}</span> &bull; ${createdAt}</small></td>
                     <td class="desktop-cell">${serviceDate}</td>
                     <td class="desktop-cell">${order.service_time || '-'}</td>
                     <td class="desktop-cell">${duration}</td>
@@ -1991,7 +2024,7 @@ export function renderOrdersList() {
                                 <span>#${order.manualId}</span>
                                 <span class="status-badge ${order.status}">${statusText[order.status]}</span>
                             </div>
-                            <div class="card-subtitle">${client?.name || 'N/A'}<br><small class="order-author">Creada por: <span style="color: ${getAuthorColor(author)}; font-weight: 500;">${author}</span> &bull; ${createdAt}</small></div>
+                            <div class="card-subtitle">${location.fullName}<br><small class="order-author">Creada por: <span style="color: ${getAuthorColor(author)}; font-weight: 500;">${author}</span> &bull; ${createdAt}</small></div>
                         </div>
                         <div class="card-body">
                             <div class="card-info-item"><i class="fas fa-calendar-alt"></i> ${serviceDate}</div>
@@ -2792,7 +2825,12 @@ function checkTechnicianConflict(technicianId: string, orderToCheck?: Order): { 
 
 export const isServiceItem = (desc: string) => /mantenimiento|montaje|instalaci[oó]n|desmonte|mano de obra|servicio/i.test(desc);
 
-function getServiceTypeStyle(type: string | undefined): string {
+type AgendaServiceSummary = {
+    name: string;
+    quantity: number;
+};
+
+function getServiceTypeColor(type: string | undefined): string {
     if (!type) return '';
     const lowerType = type.toLowerCase();
     let color = 'var(--color-text-secondary)';
@@ -2811,7 +2849,101 @@ function getServiceTypeStyle(type: string | undefined): string {
         color = 'var(--color-accent-primary)'; // default teal-ish
     }
 
-    return `color: ${color}; font-weight: 500; font-style: normal; display: inline-block; padding: 2px 6px; border-radius: 4px; background-color: rgba(0,0,0,0.03); border: 1px solid ${color}40; line-height: 1.2;`;
+    return color;
+}
+
+function getOrderTypeNames(order: Order): string[] {
+    return order.order_type ? order.order_type.split(' • ').map((s: string) => s.trim()).filter(Boolean) : [];
+}
+
+function findMatchingAgendaServiceName(description: string, serviceNames: string[]): string | null {
+    const normalizedDescription = normalizeDisplayName(description);
+    const exactMatch = serviceNames.find(name => normalizeDisplayName(name) === normalizedDescription);
+    if (exactMatch) return exactMatch;
+
+    const containsMatch = serviceNames.find(name => {
+        const normalizedName = normalizeDisplayName(name);
+        return normalizedName && (normalizedDescription.includes(normalizedName) || normalizedName.includes(normalizedDescription));
+    });
+    if (containsMatch) return containsMatch;
+
+    const keywordGroups = [
+        ['preventivo'],
+        ['correctivo', 'reparaci'],
+        ['montaje', 'instalaci', 'instalacion'],
+        ['desmonte'],
+        ['mano de obra'],
+        ['revis', 'diagn'],
+    ];
+
+    return serviceNames.find(name => {
+        const normalizedName = normalizeDisplayName(name);
+        return keywordGroups.some(group =>
+            group.some(keyword => normalizedDescription.includes(keyword)) &&
+            group.some(keyword => normalizedName.includes(keyword))
+        );
+    }) || null;
+}
+
+function getAgendaServiceSummaries(order: Order): AgendaServiceSummary[] {
+    const serviceNames = getOrderTypeNames(order);
+    const summaries = new Map<string, AgendaServiceSummary>();
+
+    const ensureSummary = (name: string) => {
+        const key = normalizeDisplayName(name);
+        if (!summaries.has(key)) {
+            summaries.set(key, { name, quantity: 0 });
+        }
+        return summaries.get(key)!;
+    };
+
+    serviceNames.forEach(name => ensureSummary(name));
+
+    (order.items || []).forEach(item => {
+        const description = (item.description || '').trim();
+        if (!description) return;
+
+        const matchedName = findMatchingAgendaServiceName(description, serviceNames);
+        if (!matchedName && !isServiceItem(description)) return;
+
+        const summary = ensureSummary(matchedName || description);
+        const quantity = Number(item.quantity);
+        summary.quantity += Number.isFinite(quantity) && quantity > 0 ? quantity : 1;
+    });
+
+    if (summaries.size === 0) {
+        summaries.set('servicio', { name: 'Servicio', quantity: 1 });
+    }
+
+    return Array.from(summaries.values()).map(summary => ({
+        ...summary,
+        quantity: summary.quantity > 0 ? summary.quantity : 1,
+    }));
+}
+
+function formatAgendaServiceQuantity(quantity: number): string {
+    return Number.isInteger(quantity) ? String(quantity) : quantity.toFixed(2).replace(/\.?0+$/, '');
+}
+
+function renderAgendaServiceBadges(order: Order, options: { truncate?: number; inline?: boolean } = {}): string {
+    const inlineClass = options.inline ? ' inline' : '';
+    const services = getAgendaServiceSummaries(order);
+
+    return `<span class="agenda-service-badges${inlineClass}">${services.map(service => {
+        const color = getServiceTypeColor(service.name);
+        const label = options.truncate ? service.name.substring(0, options.truncate) : service.name;
+        const quantityHtml = service.quantity > 1
+            ? `<span class="agenda-service-qty-badge">${formatAgendaServiceQuantity(service.quantity)}</span>`
+            : '';
+
+        return `<span class="agenda-service-with-qty" style="--agenda-service-color: ${color};"><span class="agenda-service-badge">${escapeHtml(label)}</span>${quantityHtml}</span>`;
+    }).join('')}</span>`;
+}
+
+function getAgendaServiceTitle(order: Order): string {
+    return getAgendaServiceSummaries(order)
+        .map(service => service.quantity > 1 ? `${service.name} x${formatAgendaServiceQuantity(service.quantity)}` : service.name)
+        .join(' • ');
 }
 
 /**
@@ -2976,23 +3108,16 @@ function renderMonthView() {
         html += `<div class="day-orders">`;
         dailyOrders.forEach(order => {
             const client = State.getClients().find(c => c.id === order.clientId);
-            let serviceNames = order.order_type ? order.order_type.split(' • ').map((s: string) => s.trim().substring(0, 15)).filter((s: string) => s) : ['Servicio'];
-            if (order.items && order.items.length > 0) {
-                const sItems = order.items.filter((i: any) => isServiceItem(i.description));
-                if (sItems.length > 0) {
-                    serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description.substring(0, 15))].filter(Boolean))];
-                }
-            }
-            const serviceTypeHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px; display: inline-flex;">${serviceNames.map((name: string) => `<span style="${getServiceTypeStyle(name)}">${name}</span>`).join('')}</div>`;
+            const location = getOrderDisplayLocation(order, client);
+            const serviceTypeHtml = renderAgendaServiceBadges(order, { truncate: 15, inline: true });
+            const serviceTitle = getAgendaServiceTitle(order);
             const needsTech = order.technicianIds.length === 0 || (order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID);
             const techWarningIcon = needsTech ? `<i class="fas fa-user-slash" style="color: var(--color-warning); margin-right: 3px;" title="Sin técnico asignado"></i>` : '';
 
-            const addressParts = [client?.address, client?.city].filter(Boolean);
-            const addressString = addressParts.length > 0 ? addressParts.join(' - ') : 'Sin dirección';
-            const pillTitle = `#${order.manualId} - ${client?.name}\n${addressString}\nTipo: ${serviceNames.join(' • ')}`;
+            const pillTitle = `#${order.manualId} - ${location.fullName}\n${location.addressString}\nTipo: ${serviceTitle}`;
             const formattedTime = formatTime(order.service_time) || '';
 
-            html += `<div class="agenda-order-pill status-${order.status}" data-order-id="${order.id}" title="${pillTitle}">${techWarningIcon}${formattedTime} ${client?.name?.split(' ')[0] || ''} <span style="margin-left: 3px;">${serviceTypeHtml}</span></div>`;
+            html += `<div class="agenda-order-pill status-${order.status}" data-order-id="${order.id}" title="${escapeHtml(pillTitle)}">${techWarningIcon}${formattedTime} ${renderAgendaLocationName(location, true)} <span style="margin-left: 3px;">${serviceTypeHtml}</span></div>`;
         });
         html += `</div></div>`;
 
@@ -3042,24 +3167,17 @@ function renderTimelineView(days: Date[]) {
         let allDayHtml = '';
         allDayOrders.forEach(order => {
             const client = State.getClients().find(c => c.id === order.clientId);
-            let serviceNames = order.order_type ? order.order_type.split(' • ').map((s: string) => s.trim().substring(0, 15)).filter((s: string) => s) : ['Servicio'];
-            if (order.items && order.items.length > 0) {
-                const sItems = order.items.filter((i: any) => isServiceItem(i.description));
-                if (sItems.length > 0) {
-                    serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description.substring(0, 15))].filter(Boolean))];
-                }
-            }
-            const serviceTypeHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px; display: inline-flex;">${serviceNames.map((name: string) => `<span style="${getServiceTypeStyle(name)}">${name.substring(0, 15)}</span>`).join('')}</div>`;
+            const location = getOrderDisplayLocation(order, client);
+            const serviceTypeHtml = renderAgendaServiceBadges(order, { truncate: 15, inline: true });
+            const serviceTitle = getAgendaServiceTitle(order);
 
             const needsTech = order.technicianIds.length === 0 || (order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID);
             const techWarningIcon = needsTech ? `<i class="fas fa-user-slash" style="color: var(--color-warning); margin-right: 3px;" title="Sin técnico asignado"></i>` : '';
 
-            const addressParts = [client?.address, client?.city].filter(Boolean);
-            const addressString = addressParts.length > 0 ? addressParts.join(' - ') : 'Sin dirección';
-            const pillTitle = `#${order.manualId} - ${client?.name}\n${addressString}\nTipo: ${serviceNames.join(' • ')}`;
+            const pillTitle = `#${order.manualId} - ${location.fullName}\n${location.addressString}\nTipo: ${serviceTitle}`;
             const formattedTime = formatTime(order.service_time) || '';
 
-            allDayHtml += `<div class="agenda-order-pill status-${order.status}" data-order-id="${order.id}" title="${pillTitle}">${techWarningIcon}${formattedTime} ${client?.name?.split(' ')[0] || ''} <span style="margin-left: 3px;">${serviceTypeHtml}</span></div>`;
+            allDayHtml += `<div class="agenda-order-pill status-${order.status}" data-order-id="${order.id}" title="${escapeHtml(pillTitle)}">${techWarningIcon}${formattedTime} ${renderAgendaLocationName(location, true)} <span style="margin-left: 3px;">${serviceTypeHtml}</span></div>`;
         });
 
         headerHtml += `<div class="header-day ${isToday ? 'today' : ''}">
@@ -3116,28 +3234,20 @@ function renderTimelineView(days: Date[]) {
             const left = col * width;
 
             const client = State.getClients().find(c => c.id === order.clientId);
+            const location = getOrderDisplayLocation(order, client);
             const techs = State.getTechnicians().filter(t => order.technicianIds.includes(t.id));
             const formattedTime = formatTime(order.service_time);
 
             const needsTech = order.technicianIds.length === 0 || (order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID);
             const techWarningIcon = needsTech ? `<i class="fas fa-user-slash" style="color: var(--color-warning);" title="Sin técnico asignado"></i> ` : '';
 
-            const addressParts = [client?.address, client?.city].filter(Boolean);
-            const addressString = addressParts.join(' - ');
-            const addressHtml = addressString ? `<span class="event-address">${addressString}</span>` : '';
+            const addressHtml = location.addressString !== 'Sin dirección' ? `<span class="event-address">${location.addressString}</span>` : '';
 
 
-            let serviceNames = order.order_type ? order.order_type.split(' • ').map((s: string) => s.trim().substring(0, 15)).filter((s: string) => s) : ['Servicio'];
-            if (order.items && order.items.length > 0) {
-                const sItems = order.items.filter((i: any) => isServiceItem(i.description));
-                if (sItems.length > 0) {
-                    serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description.substring(0, 15))].filter(Boolean))];
-                }
-            }
-            const serviceTypeHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px;">${serviceNames.map((name: string) => `<span style="${getServiceTypeStyle(name)}">${name}</span>`).join('')}</div>`;
+            const serviceTypeHtml = renderAgendaServiceBadges(order, { truncate: 15 });
 
             timedOrdersHtml += `<div class="order-event status-${order.status}" style="top: ${top}px; height: ${height}px; left: ${left}%; width: calc(${width}% - 2px);" data-order-id="${order.id}">
-                <strong class="event-title">${techWarningIcon}${client?.name || 'Cliente'}</strong>
+                <strong class="event-title">${techWarningIcon}${renderAgendaLocationName(location)}</strong>
                 ${addressHtml}
                 <span class="event-time">${formattedTime} - #${order.manualId}</span>
                 <span class="event-type">${serviceTypeHtml}</span>
@@ -3220,14 +3330,13 @@ function renderListWeekView() {
         if (dailyOrders.length > 0) {
             dailyOrders.forEach(order => {
                 const client = State.getClients().find(c => c.id === order.clientId);
+                const location = getOrderDisplayLocation(order, client);
                 const techs = State.getTechnicians().filter(t => order.technicianIds.includes(t.id));
                 const formattedTime = formatTime(order.service_time);
                 const needsTech = order.technicianIds.length === 0 || (order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID);
                 const techWarningIcon = needsTech ? ` <i class="fas fa-user-slash" style="color: var(--color-warning);" title="Sin técnico asignado"></i>` : '';
 
-                const addressParts = [client?.address, client?.city].filter(Boolean);
-                const addressString = addressParts.join(' - ');
-                const addressHtml = addressString ? `<div class="order-address-mobile"><i class="fas fa-map-marker-alt"></i> ${addressString}</div>` : '';
+                const addressHtml = location.addressString !== 'Sin dirección' ? `<div class="order-address-mobile"><i class="fas fa-map-marker-alt"></i> ${location.addressString}</div>` : '';
 
                 let pillsHtml = '';
                 const displayTechs = techs.filter(t => t.id !== NO_ASIGNADO_TECHNICIAN_ID);
@@ -3237,14 +3346,7 @@ function renderListWeekView() {
                     pillsHtml = `<span style="font-size: 0.9rem; font-weight: 500; color: var(--color-text-light);">No asignado</span>`;
                 }
 
-                let serviceNames = order.order_type ? order.order_type.split(' • ').map(s => s.trim()).filter(Boolean) : ['Servicio'];
-                if (order.items && order.items.length > 0) {
-                    const sItems = order.items.filter((i: any) => isServiceItem(i.description));
-                    if (sItems.length > 0) {
-                        serviceNames = [...new Set([...serviceNames, ...sItems.map((i: any) => i.description)].filter(Boolean))];
-                    }
-                }
-                const serviceTypeHtml = `<div style="display: flex; flex-wrap: wrap; gap: 4px;">${serviceNames.map((name: string) => `<span style="${getServiceTypeStyle(name)}">${name}</span>`).join('')}</div>`;
+                const serviceTypeHtml = renderAgendaServiceBadges(order);
 
                 html += `
                     <div class="order-item order-item-two-col" data-order-id="${order.id}" style="display: flex; justify-content: space-between; align-items: flex-start; cursor: default;">
@@ -3252,7 +3354,7 @@ function renderListWeekView() {
                             <div class="order-status-dot status-${order.status}"></div>
                             <div class="order-time">${formattedTime || 'Todo Día'}</div>
                             <div class="order-details" style="flex-grow: 1;">
-                                <div class="order-client">${client?.name || 'Cliente'} (#${order.manualId})${techWarningIcon}</div>
+                                <div class="order-client">${renderAgendaLocationName(location)} (#${order.manualId})${techWarningIcon}</div>
                                 ${addressHtml}
                                 <div class="order-type-mobile">${serviceTypeHtml}</div>
                                 
