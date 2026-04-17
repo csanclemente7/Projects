@@ -26,6 +26,7 @@ export interface Client {
   name: string;
   address: string | null;
   city:    string | null;
+  phone:   string | null;
 }
 
 export interface Sede {

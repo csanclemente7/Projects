@@ -110,6 +110,24 @@ function getRealTechNames(order: Order): string[] {
     .filter(Boolean) as string[];
 }
 
+function setupCopyButtons(container: HTMLElement) {
+  container.querySelectorAll<HTMLButtonElement>('.od-copy-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const value = btn.dataset.copyValue;
+      if (!value) return;
+
+      try {
+        await navigator.clipboard.writeText(value);
+        btn.innerHTML = '<i class="fas fa-check"></i>';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 1500);
+      } catch {
+        btn.innerHTML = '<i class="fas fa-triangle-exclamation"></i>';
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i>'; }, 1500);
+      }
+    });
+  });
+}
+
 interface ServiceSummary { name: string; quantity: number; }
 
 function getServiceSummaries(order: Order): ServiceSummary[] {
@@ -506,6 +524,8 @@ export function openOrderDetail(orderId: string) {
   const loc     = getLocationName(o);
   const address = getLocationAddress(o);
   const techs   = getRealTechNames(o);
+  const client  = State.getClientById(o.clientId);
+  const phone   = client?.phone ?? null;
 
   // Fecha
   const [y, mo, d] = (o.service_date || '').split('-').map(Number);
@@ -552,18 +572,30 @@ export function openOrderDetail(orderId: string) {
 
   document.getElementById('om-manual-id')!.textContent = `#${o.manualId}`;
 
-  document.getElementById('order-modal-body')!.innerHTML = `
+  const modalBody = document.getElementById('order-modal-body')!;
+
+  modalBody.innerHTML = `
     <div class="od-header">
       <div class="od-location">${esc(loc)}</div>
       ${statusChip(o.status)}
     </div>
 
     <div class="od-section od-meta-grid">
+      <!-- Fila 1: Fecha | Dirección -->
       <div class="od-meta-item"><i class="fas fa-calendar"></i> ${esc(dateLabel)}</div>
+      ${address
+        ? `<div class="od-meta-item"><i class="fas fa-location-dot"></i><span>${esc(address)}</span><button class="od-copy-btn" data-copy-value="${esc(address)}" title="Copiar dirección"><i class="fas fa-copy"></i></button></div>`
+        : `<div></div>`}
+      <!-- Fila 2: Hora | Teléfono -->
       ${o.service_time
         ? `<div class="od-meta-item"><i class="fas fa-clock"></i> ${esc(formatTime(o.service_time))}${durLabel ? ` · ${esc(durLabel)}` : ''}</div>`
         : `<div class="od-meta-item"><i class="fas fa-clock"></i> Todo el día${durLabel ? ` · ${esc(durLabel)}` : ''}</div>`}
-      ${address ? `<div class="od-meta-item od-meta-full"><i class="fas fa-location-dot"></i> ${esc(address)}</div>` : ''}
+      <div class="od-meta-item">
+        <i class="fas fa-phone"></i>
+        ${phone
+          ? `<span>${esc(phone)}</span><button class="od-copy-btn" data-copy-value="${esc(phone)}" title="Copiar teléfono"><i class="fas fa-copy"></i></button>`
+          : `<span class="od-no-phone">Sin teléfono</span>`}
+      </div>
     </div>
 
     ${buildServiceBadges(o) ? `<div class="od-section"><div class="order-badges">${buildServiceBadges(o)}</div></div>` : ''}
@@ -586,6 +618,8 @@ export function openOrderDetail(orderId: string) {
     ${itemsHtml}
     ${photosHtml}
   `;
+
+  setupCopyButtons(modalBody);
 
   document.getElementById('order-modal-overlay')!.classList.add('open');
   document.getElementById('order-modal')!.classList.add('open');
@@ -867,7 +901,14 @@ export function closeShareMenu() {
 // Compartir resumen por WhatsApp (texto)
 // ----------------------------------------------------------------
 function sendWhatsApp(text: string) {
-  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  const encoded  = encodeURIComponent(text);
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if (isMobile) {
+    // En móvil: location.href evita el bloqueo de popups y abre la app directamente
+    window.location.href = `whatsapp://send?text=${encoded}`;
+  } else {
+    window.open(`https://web.whatsapp.com/send?text=${encoded}`, '_blank');
+  }
 }
 
 function buildItemsText(orders: Order[]): string {

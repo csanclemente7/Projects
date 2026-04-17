@@ -33,7 +33,7 @@ export async function fetchOrders(): Promise<Order[]> {
 export async function fetchClients(): Promise<Client[]> {
   const { data, error } = await supabaseQuotes
     .from('clients')
-    .select('id, name, address, city')
+    .select('id, name, address, city, phone')
     .order('name');
   if (error) throw error;
   return (data || []).map((r: any) => ({
@@ -41,6 +41,7 @@ export async function fetchClients(): Promise<Client[]> {
     name:    r.name,
     address: r.address ?? null,
     city:    r.city    ?? null,
+    phone:   r.phone   ?? null,
   }));
 }
 
