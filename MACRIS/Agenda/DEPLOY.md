@@ -9,7 +9,7 @@ MACRIS/Agenda
 La version web queda publicada bajo esta ruta:
 
 ```text
-/agenda
+/apps/agenda
 ```
 
 ## Variables de entorno
@@ -33,7 +33,7 @@ npm run build
 npm run preview
 ```
 
-El build web usa `base: /agenda/`. Para sincronizar Capacitor/Android se mantiene un build separado:
+El build web usa `base: /apps/agenda/`. Para sincronizar Capacitor/Android se mantiene un build separado:
 
 ```bash
 npm run build:capacitor
@@ -47,8 +47,8 @@ Si Netlify usa esta carpeta como raiz, `netlify.toml` ya define:
 ```text
 Build command: npm run build
 Publish directory: dist
-Root redirect: / -> /agenda/
-App route: /agenda/*
+Root redirect: / -> /apps/agenda/
+App route: /apps/agenda/*
 ```
 
 ## Vercel
@@ -59,8 +59,8 @@ Si Vercel usa esta carpeta como raiz, `vercel.json` ya define:
 Framework: Vite
 Build command: npm run build
 Output directory: dist
-Root redirect: / -> /agenda
-App route: /agenda/*
+Root redirect: / -> /apps/agenda
+App route: /apps/agenda/*
 ```
 
 ## Archivos locales

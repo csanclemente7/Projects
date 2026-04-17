@@ -4,15 +4,15 @@
 
 [[redirects]]
   from = "/"
-  to = "/agenda/"
+  to = "/apps/agenda/"
   status = 302
 
 [[redirects]]
-  from = "/agenda/assets/*"
+  from = "/apps/agenda/assets/*"
   to = "/assets/:splat"
   status = 200
 
 [[redirects]]
-  from = "/agenda/*"
+  from = "/apps/agenda/*"
   to = "/index.html"
   status = 200

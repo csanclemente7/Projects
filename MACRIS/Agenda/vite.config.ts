@@ -3,7 +3,7 @@ import { resolve } from 'path';
 
 export default defineConfig({
   root: '.',
-  base: '/agenda/',
+  base: '/apps/agenda/',
   build: {
     outDir: 'dist',
     rollupOptions: {
