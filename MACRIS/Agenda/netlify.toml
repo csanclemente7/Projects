@@ -1,0 +1,18 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/"
+  to = "/agenda/"
+  status = 302
+
+[[redirects]]
+  from = "/agenda/assets/*"
+  to = "/assets/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/agenda/*"
+  to = "/index.html"
+  status = 200

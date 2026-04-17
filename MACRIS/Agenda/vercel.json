@@ -1,0 +1,26 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "/agenda",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/agenda/assets/:path*",
+      "destination": "/assets/:path*"
+    },
+    {
+      "source": "/agenda/:path*",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/agenda",
+      "destination": "/index.html"
+    }
+  ]
+}

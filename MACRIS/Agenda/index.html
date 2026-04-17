@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Agenda MACRIS</title>
+  <link rel="stylesheet" href="index.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" crossorigin="anonymous" />
+</head>
+<body>
+
+  <!-- LOADER -->
+  <div id="loader">
+    <div class="loader-ring"></div>
+    <p>Cargando agenda...</p>
+  </div>
+
+  <!-- APP -->
+  <div id="app" style="display:none">
+
+    <!-- HEADER -->
+    <header id="app-header">
+      <div class="header-left">
+        <img src="Logo_macris.png" alt="MACRIS" class="logo" />
+        <div class="header-title">
+          <span class="app-name">Agenda</span>
+          <span id="header-period" class="header-period">—</span>
+        </div>
+      </div>
+
+      <!-- Vista — solo desktop -->
+      <div class="view-switcher" id="view-switcher">
+        <button class="view-btn" data-view="month">
+          <i class="fas fa-calendar-days"></i> Mes
+        </button>
+        <button class="view-btn active" data-view="week">
+          <i class="fas fa-calendar-week"></i> Semana
+        </button>
+        <button class="view-btn" data-view="day">
+          <i class="fas fa-calendar-day"></i> Día
+        </button>
+      </div>
+
+      <div class="header-right">
+        <button id="btn-today" class="btn-secondary">Hoy</button>
+        <button id="btn-prev"  class="btn-icon-nav" aria-label="Anterior">
+          <i class="fas fa-chevron-left"></i>
+        </button>
+        <button id="btn-next"  class="btn-icon-nav" aria-label="Siguiente">
+          <i class="fas fa-chevron-right"></i>
+        </button>
+        <button id="btn-refresh" class="btn-icon-nav" title="Actualizar">
+          <i class="fas fa-rotate"></i>
+        </button>
+        <button id="btn-summary" class="btn-icon-nav btn-summary" title="Resumen semanal">
+          <i class="fas fa-clipboard-list"></i>
+        </button>
+        <button id="btn-settings" class="btn-icon-nav" title="Ajustes">
+          <i class="fas fa-sliders"></i>
+        </button>
+        <span id="last-updated" class="last-updated"></span>
+      </div>
+    </header>
+
+    <!-- CONTENIDO PRINCIPAL -->
+    <main id="agenda-main">
+      <div id="agenda-container"></div>
+    </main>
+
+    <!-- NAV INFERIOR — solo móvil -->
+    <nav id="bottom-nav">
+      <button class="bottom-btn" data-view="month">
+        <i class="fas fa-calendar-days"></i>
+        <span>Mes</span>
+      </button>
+      <button class="bottom-btn active" data-view="week">
+        <i class="fas fa-calendar-week"></i>
+        <span>Semana</span>
+      </button>
+      <button class="bottom-btn" data-view="day">
+        <i class="fas fa-calendar-day"></i>
+        <span>Día</span>
+      </button>
+    </nav>
+
+    <!-- PANEL DESLIZABLE — día seleccionado (móvil) -->
+    <div id="panel-overlay"></div>
+    <div id="day-panel">
+      <div class="panel-handle"></div>
+      <div id="panel-header"></div>
+      <div id="panel-body"></div>
+    </div>
+
+    <!-- MODAL DETALLE DE ORDEN -->
+    <div id="order-modal-overlay"></div>
+    <div id="order-modal" role="dialog" aria-modal="true">
+      <div class="om-topbar">
+        <button id="order-modal-close" class="om-close-btn" aria-label="Cerrar">
+          <i class="fas fa-xmark"></i>
+        </button>
+        <span id="om-manual-id" class="om-manual-id"></span>
+        <button id="btn-share-order" class="om-share-btn" aria-label="Compartir por WhatsApp" title="Compartir por WhatsApp">
+          <i class="fab fa-whatsapp"></i>
+        </button>
+      </div>
+      <div id="order-modal-body"></div>
+    </div>
+
+    <!-- MODAL RESUMEN SEMANAL -->
+    <div id="summary-modal-overlay"></div>
+    <div id="summary-modal" role="dialog" aria-modal="true">
+      <div class="sm-topbar">
+        <div class="sm-title"><i class="fas fa-boxes-stacked"></i> <span id="sm-title-text">Resumen semanal</span></div>
+        <button id="summary-modal-close" class="om-close-btn" aria-label="Cerrar"><i class="fas fa-xmark"></i></button>
+      </div>
+      <div id="summary-modal-body"></div>
+      <div class="sm-footer">
+        <div class="sm-share-wrap" id="sm-share-wrap">
+          <div class="sm-share-menu" id="sm-share-menu">
+            <button class="sm-share-option" id="btn-share-tomorrow-agenda">
+              <i class="fas fa-calendar-day"></i>
+              <div>
+                <div class="sso-title">Agenda de mañana</div>
+                <div class="sso-sub">Órdenes completas del día siguiente</div>
+              </div>
+            </button>
+            <button class="sm-share-option" id="btn-share-tomorrow">
+              <i class="fas fa-boxes-stacked"></i>
+              <div>
+                <div class="sso-title">Insumos de mañana</div>
+                <div class="sso-sub">Lista de materiales del día siguiente</div>
+              </div>
+            </button>
+            <button class="sm-share-option" id="btn-share-week">
+              <i class="fas fa-calendar-week"></i>
+              <div>
+                <div class="sso-title">Resumen de la semana</div>
+                <div class="sso-sub">Insumos, agenda y notas semanales</div>
+              </div>
+            </button>
+          </div>
+          <button id="btn-share-wa" class="sm-share-btn">
+            <i class="fab fa-whatsapp"></i>
+            Enviar por WhatsApp
+            <i class="fas fa-chevron-up sm-share-arrow" id="sm-share-arrow"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL AJUSTES -->
+    <div id="settings-overlay"></div>
+    <div id="settings-panel" role="dialog" aria-modal="true">
+      <div class="sm-topbar">
+        <div class="sm-title"><i class="fas fa-sliders"></i> Ajustes</div>
+        <button id="settings-close" class="om-close-btn" aria-label="Cerrar"><i class="fas fa-xmark"></i></button>
+      </div>
+      <div class="settings-body">
+
+        <div class="settings-section">
+          <div class="settings-section-title">Tema</div>
+          <div class="settings-row">
+            <button class="theme-btn" data-theme="dark">
+              <i class="fas fa-moon"></i>
+              <span>Oscuro</span>
+            </button>
+            <button class="theme-btn" data-theme="navy">
+              <i class="fas fa-water"></i>
+              <span>Azul noche</span>
+            </button>
+            <button class="theme-btn" data-theme="light">
+              <i class="fas fa-sun"></i>
+              <span>Claro</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-section-title">Tamaño de letra</div>
+          <div class="settings-row font-row">
+            <button class="fontsize-btn" data-size="small" aria-label="Letra pequeña">
+              <span class="fs-label">A</span>
+              <span class="fs-sub">Pequeña</span>
+            </button>
+            <button class="fontsize-btn" data-size="normal" aria-label="Letra normal">
+              <span class="fs-label" style="font-size:1.15rem">A</span>
+              <span class="fs-sub">Normal</span>
+            </button>
+            <button class="fontsize-btn" data-size="large" aria-label="Letra grande">
+              <span class="fs-label" style="font-size:1.45rem">A</span>
+              <span class="fs-sub">Grande</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- LIGHTBOX FOTOS -->
+    <div id="lightbox-overlay">
+      <button id="lightbox-prev" class="lb-nav lb-prev"><i class="fas fa-chevron-left"></i></button>
+      <img id="lightbox-img" src="" alt="Foto" />
+      <button id="lightbox-next" class="lb-nav lb-next"><i class="fas fa-chevron-right"></i></button>
+      <button id="lightbox-close" class="lb-close"><i class="fas fa-xmark"></i></button>
+    </div>
+
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
