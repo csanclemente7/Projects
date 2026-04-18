@@ -41,6 +41,7 @@ export interface Report {
         client_name?: string | null;
         companyName?: string; // Denormalized for display
         dependencyName?: string; // Denormalized for display
+        sedeName?: string | null; // Denormalized for display
     };
     itemsSnapshot: { description: string; quantity: number }[] | null;
     cityId: string;

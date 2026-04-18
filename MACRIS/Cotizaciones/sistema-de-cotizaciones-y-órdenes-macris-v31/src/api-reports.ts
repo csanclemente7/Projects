@@ -26,7 +26,7 @@ function mapRowToReport(row: any): Report {
     };
 }
 
-export async function fetchReportsBatch(offset: number, limit: number, filters?: { searchTerm?: string, dateFrom?: string, dateTo?: string }) {
+export async function fetchReportsBatch(offset: number, limit: number, filters?: { searchTerm?: string, dateFrom?: string, dateTo?: string, serviceType?: string }) {
     const rpcParams = {
         search_term: filters?.searchTerm || null,
         date_from: filters?.dateFrom ? `${filters.dateFrom}T00:00:00.000Z` : null,
@@ -34,22 +34,30 @@ export async function fetchReportsBatch(offset: number, limit: number, filters?:
     };
 
     // @ts-ignore
-    const { data, error, count } = await supabaseOrders
+    let query = supabaseOrders
         .rpc('filter_maintenance_reports', rpcParams as any, { count: 'exact' })
         .range(offset, offset + limit - 1);
+
+    if (filters?.serviceType) {
+        // @ts-ignore
+        query = query.ilike('service_type', `%${filters.serviceType}%`);
+    }
+
+    // @ts-ignore
+    const { data, error, count } = await query;
 
     if (error) {
         console.error('Error fetching reports via rpc:', error);
         return { data: [], count: 0 };
     }
 
-    return { 
-        data: (data || []).map(mapRowToReport), 
+    return {
+        data: ((data as any[]) || []).map(mapRowToReport),
         count: count || 0
     };
 }
 
-export async function fetchAllExportableReports(filters?: { searchTerm?: string, dateFrom?: string, dateTo?: string }) {
+export async function fetchAllExportableReports(filters?: { searchTerm?: string, dateFrom?: string, dateTo?: string, serviceType?: string }) {
     const rpcParams = {
         search_term: filters?.searchTerm || null,
         date_from: filters?.dateFrom ? `${filters.dateFrom}T00:00:00.000Z` : null,
@@ -57,15 +65,23 @@ export async function fetchAllExportableReports(filters?: { searchTerm?: string,
     };
 
     // @ts-ignore
-    const { data, error } = await supabaseOrders
+    let exportQuery = supabaseOrders
         .rpc('filter_maintenance_reports', rpcParams as any);
+
+    if (filters?.serviceType) {
+        // @ts-ignore
+        exportQuery = exportQuery.ilike('service_type', `%${filters.serviceType}%`);
+    }
+
+    // @ts-ignore
+    const { data, error } = await exportQuery;
 
     if (error) {
         console.error('Error fetching all exportable reports:', error);
         return [];
     }
 
-    return (data || []).map(mapRowToReport);
+    return ((data as any[]) || []).map(mapRowToReport);
 }
 
 export async function updateReportPaymentStatus(id: string, isPaid: boolean) {
@@ -127,7 +143,7 @@ export async function fetchDependencies(): Promise<Dependency[]> {
     return data as Dependency[];
 }
 export async function updateFullReport(id: string, updates: Partial<any>): Promise<boolean> {
-    const { error } = await supabaseOrders
+    const { error } = await (supabaseOrders as any)
         .from('maintenance_reports')
         .update(updates)
         .eq('id', id);

@@ -89,8 +89,12 @@
     <div id="app-container" hidden>
         <aside id="main-nav">
             <div class="nav-header">
-                <img src="MacrisLogoBlanco.png" alt="Macris Logo" class="logo">
+                <img src="MacrisLogoBlanco.png" alt="Macris Logo" class="logo logo-full">
+                <img src="Logo_macris.png" alt="M" class="logo logo-small">
             </div>
+            <button id="nav-collapse-btn" class="nav-collapse-btn" title="Plegar menú">
+                <i class="fas fa-chevron-left"></i>
+            </button>
             <nav class="nav-links">
                 <a href="#" class="nav-link active" data-page="page-quotes"><i
                         class="fas fa-file-invoice-dollar"></i><span>Nueva cotización</span></a>
@@ -248,8 +252,8 @@
                             </div>
                         </div>
 
-                        <div class="card" style="margin-bottom: 20px;">
-                            <h3 style="margin-top: 0; margin-bottom: 15px;">Notas Internas <span
+                        <div class="card nc-notes-card" style="margin-bottom: 20px;">
+                            <h3 style="margin-top: 0; margin-bottom: 15px;"><i class="fas fa-lock" style="margin-right: 8px; color: var(--corporate-accent-teal); font-size: 0.9rem;"></i>Notas Internas <span
                                     style="font-size: 0.8rem; font-weight: normal; color: var(--color-text-secondary);">(Uso
                                     interno adm. - NO aparece en PDF)</span></h3>
                             <textarea id="quote-internal-notes-textarea" class="form-control form-control-textarea"
@@ -257,11 +261,8 @@
                         </div>
 
                         <div class="quote-annex-images card" style="margin-bottom: 20px;">
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                <h3 style="margin: 0; font-size: 15px; color: #5a5a5a; font-weight: 600;"><i
-                                        class="fas fa-image" style="margin-right: 8px;"></i> Fotografías / Anexos
-                                    Técnicos (Opcional)</h3>
+                            <div class="annex-card-header">
+                                <h3><i class="fas fa-image"></i> Fotografías / Anexos Técnicos <span style="font-size: 0.75rem; font-weight: 400; opacity: 0.75;">(Opcional)</span></h3>
                                 <label for="quote-annex-upload" class="btn btn-outline"
                                     style="cursor: pointer; padding: 6px 14px; font-size: 13px; margin: 0;">
                                     <i class="fas fa-upload"></i> Subir
@@ -270,7 +271,7 @@
                                     style="display: none;">
                             </div>
                             <div id="quote-annex-preview-container"
-                                style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                                style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px;">
                                 <!-- Uploaded image previews will appear here -->
                             </div>
                         </div>
@@ -551,25 +552,25 @@
 
             <!-- AGENDA PAGE -->
             <div id="page-agenda" class="page">
-                <header class="page-header">
-                    <div class="page-header-main">
-                        <h2 class="agenda-main-title">Agenda de Servicios</h2>
-                        <div class="page-actions" id="agenda-controls">
-                            <button id="agenda-refresh-btn" class="btn btn-primary" title="Actualizar" style="margin-right: 10px; padding: 0 12px; height: 38px;">
-                                <i class="fas fa-sync-alt"></i>
-                            </button>
-                            <div id="agenda-view-switcher" class="btn-group">
-                                <button class="btn btn-secondary" data-view="day">Día</button>
-                                <button class="btn btn-secondary active" data-view="week">Semana</button>
-                                <button class="btn btn-secondary" data-view="month">Mes</button>
-                            </div>
-                            <div id="agenda-nav">
-                                <button id="agenda-prev-btn" class="btn btn-secondary btn-icon-only" title="Anterior"><i
-                                        class="fas fa-chevron-left"></i></button>
-                                <h3 id="agenda-title"></h3>
-                                <button id="agenda-next-btn" class="btn btn-secondary btn-icon-only"
-                                    title="Siguiente"><i class="fas fa-chevron-right"></i></button>
-                            </div>
+                <header class="page-header agenda-header">
+                    <h2 class="agenda-main-title">Agenda de Servicios</h2>
+                    <div id="agenda-nav">
+                        <button id="agenda-prev-btn" class="btn btn-secondary btn-icon-only" title="Anterior">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h3 id="agenda-title"></h3>
+                        <button id="agenda-next-btn" class="btn btn-secondary btn-icon-only" title="Siguiente">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="agenda-header-right">
+                        <button id="agenda-refresh-btn" class="btn btn-primary btn-icon-only" title="Actualizar">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <div id="agenda-view-switcher" class="btn-group">
+                            <button class="btn btn-secondary" data-view="day">Día</button>
+                            <button class="btn btn-secondary active" data-view="week">Semana</button>
+                            <button class="btn btn-secondary" data-view="month">Mes</button>
                         </div>
                     </div>
                 </header>
@@ -721,6 +722,17 @@
                         </div>
                         <div>
                             <label
+                                style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Tipo de Servicio</label>
+                            <select id="reports-service-type-filter" class="form-control">
+                                <option value="">Todos</option>
+                                <option value="Preventivo">Preventivo</option>
+                                <option value="Correctivo">Correctivo</option>
+                                <option value="Montaje">Montaje/Instalación</option>
+                                <option value="Desmonte">Desmonte</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label
                                 style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Registros
                                 por página</label>
                             <select id="reports-page-size" class="form-control">
@@ -730,6 +742,9 @@
                                 <option value="100">100</option>
                             </select>
                         </div>
+                    </div>
+                    <div style="margin-bottom: 10px; font-size: 0.85rem; color: var(--color-text-secondary);">
+                        <span id="reports-count-label"><i class="fas fa-list-ol" style="margin-right:5px;"></i><span id="reports-total-count">—</span> reportes encontrados</span>
                     </div>
 
                     <div style="text-align: center; margin-bottom: 10px; display: none;" id="reports-loading-indicator">
@@ -742,8 +757,6 @@
                         <table id="reports-data-table" class="table" style="margin-bottom: 0;">
                             <thead>
                                 <tr>
-                                    <th style="width: 40px; text-align: center;"><input type="checkbox"
-                                            id="reports-select-all"></th>
                                     <th>Fecha</th>
                                     <th>Cliente/Empresa</th>
                                     <th>Sede</th>
@@ -1130,16 +1143,19 @@
         </div>
     </div>
 
-    <!-- Report Details Modal -->
-    <div class="modal" id="report-details-modal">
-        <div class="modal-content" style="max-width: 700px;">
-            <span class="close-modal-btn">&times;</span>
-            <h3>Detalles del Reporte</h3>
-            <div id="report-details-body"
-                style="margin-top: 15px; font-size: 0.95rem; line-height: 1.5; color: var(--text-color);">
-                <!-- Contenido dinámico -->
+    <!-- Report Details Slide-in Panel -->
+    <div id="report-details-overlay" class="report-details-overlay"></div>
+    <div id="report-details-panel" class="report-details-panel">
+        <div class="rdp-header">
+            <div class="rdp-header-left">
+                <i class="fas fa-file-alt"></i>
+                <span>Detalles del Reporte</span>
             </div>
+            <button class="rdp-close-btn" id="report-details-close-btn" title="Cerrar">
+                <i class="fas fa-times"></i>
+            </button>
         </div>
+        <div id="report-details-body" class="rdp-body"></div>
     </div>
 
     <!-- Confirmation Modal -->
@@ -1188,27 +1204,29 @@
         </div>
     </div>
 
-    <!-- Agenda Quick Edit Modal -->
-    <div id="agenda-edit-order-modal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <span class="close-modal-btn"
-                onclick="document.getElementById('agenda-edit-order-modal').style.display='none'">&times;</span>
-            <h3 style="margin-bottom:20px;">Edición Rápida de Orden</h3>
+    <!-- Agenda Edit Order Panel (slide-in) -->
+    <div id="agenda-edit-overlay"></div>
+    <div id="agenda-edit-order-modal" class="agenda-edit-panel">
+        <div class="aep-header">
+            <div class="aep-header-info">
+                <h3><i class="fas fa-pencil-alt" style="margin-right:8px; opacity:.7;"></i>Edición Rápida — <span id="aep-order-number"></span></h3>
+                <span id="aep-status-badge" class="aep-status-badge"></span>
+            </div>
+            <button class="aep-close-btn" id="agenda-edit-close-btn" title="Cerrar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="aep-body">
             <form id="agenda-edit-order-form">
                 <input type="hidden" id="agenda-edit-order-id">
 
-                <!-- Client Details Section -->
-                <div
-                    style="background:var(--color-bg-light); padding:10px 15px; border-radius:6px; margin-bottom:15px; border:1px solid #e5e7eb;">
-                    <h4
-                        style="margin-top:0; font-size:1rem; border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px; color:var(--color-text);">
-                        Datos del Cliente</h4>
-
+                <!-- Client Section -->
+                <div class="aep-section">
+                    <h4 class="aep-section-title"><i class="fas fa-user"></i> Datos del Cliente</h4>
                     <div class="form-group" style="margin-bottom:10px;">
                         <label>Nombre</label>
                         <input type="text" id="agenda-edit-client-name" class="form-control" required>
                     </div>
-
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
                         <div class="form-group" style="margin-bottom:0;">
                             <label>Teléfono</label>
@@ -1219,71 +1237,92 @@
                             <input type="text" id="agenda-edit-client-city" class="form-control">
                         </div>
                     </div>
-
                     <div class="form-group" style="margin-bottom:0;">
                         <label>Dirección</label>
                         <input type="text" id="agenda-edit-client-address" class="form-control">
                     </div>
                 </div>
 
-                <h4
-                    style="font-size:1rem; border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:10px; color:var(--color-text);">
-                    Datos del Servicio</h4>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label>Fecha de Servicio</label>
-                        <input type="date" id="agenda-edit-service-date" class="form-control" required>
+                <!-- Service Scheduling Section -->
+                <div class="aep-section">
+                    <h4 class="aep-section-title"><i class="fas fa-calendar-alt"></i> Programación</h4>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Fecha</label>
+                            <input type="date" id="agenda-edit-service-date" class="form-control" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Hora</label>
+                            <input type="time" id="agenda-edit-service-time" class="form-control">
+                        </div>
                     </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label>Hora de Inicio</label>
-                        <input type="time" id="agenda-edit-service-time" class="form-control">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Estado</label>
+                            <select id="agenda-edit-status" class="form-control" required>
+                                <option value="pending">Pendiente</option>
+                                <option value="scheduled">Programada</option>
+                                <option value="in_progress">En Progreso</option>
+                                <option value="completed">Completada</option>
+                                <option value="cancelled">Cancelada</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Tipo de Servicio</label>
+                            <select id="agenda-edit-type" class="form-control" required>
+                                <!-- populated dynamically -->
+                            </select>
+                        </div>
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label>Estado</label>
-                        <select id="agenda-edit-status" class="form-control" required>
-                            <option value="pending">Pendiente</option>
-                            <option value="scheduled">Programada</option>
-                            <option value="in_progress">En Progreso</option>
-                            <option value="completed">Completada</option>
-                            <option value="cancelled">Cancelada</option>
-                        </select>
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label>Duración Estimada (Horas)</label>
-                        <input type="number" id="agenda-edit-duration" class="form-control" min="0" step="0.5">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label>Tipo de Servicio</label>
-                    <select id="agenda-edit-type" class="form-control" required>
-                        <!-- Se llena dinámicamente -->
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>Notas / Observaciones</label>
-                    <textarea id="agenda-edit-notes" class="form-control" rows="3"
-                        placeholder="Añade notas breves..."></textarea>
-                </div>
-
-                <div class="modal-actions" style="display:flex; justify-content:space-between; margin-top:20px;">
-                    <button type="button" class="btn btn-secondary" id="agenda-edit-full-workspace-btn"
-                        style="background:#4b5563; border-color:#4b5563; color: white;">
-                        <i class="fas fa-external-link-alt"></i> Usar Vista Avanzada
+                <!-- Technicians Section -->
+                <div class="aep-section">
+                    <h4 class="aep-section-title"><i class="fas fa-hard-hat"></i> Técnicos Asignados</h4>
+                    <div id="aep-tech-chips" class="aep-tech-chips"></div>
+                    <button type="button" class="aep-add-tech-btn" id="aep-add-tech-btn">
+                        <i class="fas fa-plus"></i> Agregar técnico
                     </button>
-                    <div>
-                        <button type="button" class="btn btn-secondary"
-                            onclick="document.getElementById('agenda-edit-order-modal').style.display='none'"
-                            style="margin-right:8px;">Cancelar</button>
-                        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar
-                            Cambios</button>
-                    </div>
                 </div>
+
+                <!-- Items Section -->
+                <div class="aep-section">
+                    <h4 class="aep-section-title"><i class="fas fa-boxes-stacked"></i> Insumos / Servicios</h4>
+                    <div id="aep-items-list"></div>
+                    <button type="button" class="aep-add-item-btn" id="aep-add-item-btn">
+                        <i class="fas fa-plus"></i> Agregar ítem
+                    </button>
+                </div>
+
+                <!-- Notes Section -->
+                <div class="aep-section">
+                    <h4 class="aep-section-title"><i class="fas fa-sticky-note"></i> Notas / Observaciones</h4>
+                    <textarea id="agenda-edit-notes" class="form-control" rows="3"
+                        placeholder="Restricciones, observaciones, detalles del servicio..."></textarea>
+                </div>
+
+                <!-- Photos / Attachments Section (always visible) -->
             </form>
+            <!-- Photos section is OUTSIDE the form so cloneNode never detaches the grid -->
+            <div class="aep-section" id="aep-photos-section">
+                <h4 class="aep-section-title"><i class="fas fa-images"></i> Fotografías / Anexos</h4>
+                <div id="aep-photos-grid" class="aep-photos-grid"></div>
+                <label for="aep-photo-upload" class="aep-upload-btn" id="aep-upload-label">
+                    <i class="fas fa-camera"></i> Adjuntar foto
+                </label>
+                <input type="file" id="aep-photo-upload" accept="image/*" multiple style="display:none;">
+            </div>
+        </div>
+        <div class="aep-footer">
+            <button type="button" class="btn btn-secondary" id="agenda-edit-full-workspace-btn">
+                <i class="fas fa-external-link-alt"></i> Vista Avanzada
+            </button>
+            <div style="display:flex; gap:8px;">
+                <button type="button" class="btn btn-secondary" id="agenda-edit-cancel-btn">Cancelar</button>
+                <button type="submit" form="agenda-edit-order-form" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
         </div>
     </div>
 
@@ -1296,6 +1335,14 @@
             <span id="image-viewer-counter" style="font-size: 16px; font-weight: bold;"></span>
             <button id="image-viewer-next" class="image-viewer-btn"><i class="fas fa-arrow-right"></i></button>
         </div>
+    </div>
+
+    <!-- Agenda Day Panel (slide-in) -->
+    <div id="agenda-panel-overlay"></div>
+    <div id="agenda-day-panel">
+        <div class="adp-handle"></div>
+        <div id="agenda-panel-header"></div>
+        <div id="agenda-panel-body"></div>
     </div>
 
     <script type="module" src="index.tsx"></script>

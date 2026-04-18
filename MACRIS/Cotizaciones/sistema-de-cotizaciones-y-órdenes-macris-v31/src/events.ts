@@ -664,6 +664,25 @@ function setupOrderTabsEventListeners() {
     });
 }
 
+function setupSidebarCollapseListener() {
+    const nav = document.getElementById('main-nav');
+    const btn = document.getElementById('nav-collapse-btn');
+    const navHeader = nav?.querySelector('.nav-header') as HTMLElement | null;
+    if (!nav || !btn) return;
+    if (localStorage.getItem('nav-collapsed') === 'true') {
+        nav.classList.add('nav-collapsed');
+    }
+    const toggle = () => {
+        nav.classList.toggle('nav-collapsed');
+        localStorage.setItem('nav-collapsed', nav.classList.contains('nav-collapsed') ? 'true' : 'false');
+    };
+    btn.addEventListener('click', toggle);
+    if (navHeader) {
+        navHeader.style.cursor = 'pointer';
+        navHeader.addEventListener('click', toggle);
+    }
+}
+
 export function setupEventListeners() {
     setupNavigationEventListeners();
     setupQuoteEventListeners();
@@ -675,6 +694,7 @@ export function setupEventListeners() {
     setupOrderWorkspaceEventListeners();
     setupAgendaEventListeners();
     setupOrderTabsEventListeners();
+    setupSidebarCollapseListener();
 
     UI.setupItemSearch(D.itemSearchInput, D.itemSearchResultsContainer, 'quote');
     UI.setupClientSearch(D.clientSearchInput, D.clientSearchResultsContainer, 'quote');

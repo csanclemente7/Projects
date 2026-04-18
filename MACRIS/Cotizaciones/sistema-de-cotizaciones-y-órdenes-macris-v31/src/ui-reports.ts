@@ -7,7 +7,6 @@ import { supabaseOrders } from './supabase';
 import * as UI from './ui';
 
 let currentReports: Report[] = [];
-let selectedReportIds: Set<string> = new Set();
 let currentPage = 1;
 let pageSize = 10;
 let totalRecords = 0;
@@ -92,6 +91,10 @@ function setupEventListeners() {
         await resetAndLoadReports();
     });
 
+    DOM.reportsServiceTypeFilter.addEventListener('change', async () => {
+        await resetAndLoadReports();
+    });
+
     DOM.reportsPageSize.addEventListener('change', async (e) => {
         pageSize = parseInt((e.target as HTMLSelectElement).value, 10);
         await resetAndLoadReports();
@@ -113,32 +116,6 @@ function setupEventListeners() {
     DOM.reportsLastPageBtn.addEventListener('click', async () => {
         const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
         if (currentPage < totalPages) await loadPage(totalPages);
-    });
-
-    DOM.reportsSelectAll.addEventListener('change', (e) => {
-        const checked = (e.target as HTMLInputElement).checked;
-        const checkboxes = DOM.reportsTbody.querySelectorAll('.report-checkbox') as NodeListOf<HTMLInputElement>;
-        
-        checkboxes.forEach(cb => {
-            cb.checked = checked;
-            if (checked) {
-                selectedReportIds.add(cb.value);
-            } else {
-                selectedReportIds.delete(cb.value);
-            }
-        });
-    });
-
-    DOM.reportsTbody.addEventListener('change', (e) => {
-        const target = e.target as HTMLInputElement;
-        if (target && target.classList.contains('report-checkbox')) {
-            if (target.checked) {
-                selectedReportIds.add(target.value);
-            } else {
-                selectedReportIds.delete(target.value);
-            }
-            updateSelectAllCheckbox();
-        }
     });
 
     // Delegación para botones de PDF individuales
@@ -169,13 +146,12 @@ function setupEventListeners() {
             }
         }
 
-        const btnView = target.closest('.btn-view-report') as HTMLButtonElement;
-        if (btnView) {
-            const reportId = btnView.getAttribute('data-id');
+        // Click en la fila (no en botones de acción)
+        const row = (target as HTMLElement).closest('tr[data-report-id]') as HTMLElement;
+        if (row && !(target as HTMLElement).closest('.actions')) {
+            const reportId = row.getAttribute('data-report-id');
             const report = currentReports.find(r => r.id === reportId);
-            if (report) {
-                showReportDetailsModal(report);
-            }
+            if (report) showReportDetailsModal(report);
         }
 
         const btnTogglePaid = target.closest('.btn-toggle-paid') as HTMLButtonElement;
@@ -245,10 +221,6 @@ function setupEventListeners() {
     DOM.reportsExportMergedBtn.addEventListener('click', async () => await handleExport('pdf'));
     
     DOM.reportsExportWhatsappBtn.addEventListener('click', () => {
-        if (selectedReportIds.size === 0) {
-            alert('Debes seleccionar al menos un reporte para compartir.');
-            return;
-        }
         DOM.shareOptionsModal.classList.add('active');
     });
 
@@ -271,41 +243,22 @@ function setupEventListeners() {
 async function handleExport(type: string) {
     let reportsToExport: Report[] = [];
 
-    if (selectedReportIds.size > 0) {
-        // En base a lo que se ha bajado en cache
-        reportsToExport = currentReports.filter(r => selectedReportIds.has(r.id));
-    } else {
-        const searchInput = DOM.reportsSearchInput.value.trim();
-        const dateFrom = DOM.reportsDateFrom.value;
-        const dateTo = DOM.reportsDateTo.value;
-        const confirmMsg = searchInput || (dateFrom || dateTo)
-            ? "No has seleccionado reportes. ¿Deseas incluir TODOS los reportes filtrados (incluso los no mostrados)?" 
-            : "No has seleccionado reportes. ¿Deseas procesar TODOS los reportes históricos?";
-        
-        const confirmed = await new Promise(resolve => {
-            UI.showConfirmationModal('Selección de Reportes', confirmMsg, () => resolve(true), () => resolve(false));
-        });
+    const searchInput = DOM.reportsSearchInput.value.trim();
+    const dateFrom = DOM.reportsDateFrom.value;
+    const dateTo = DOM.reportsDateTo.value;
+    const serviceType = DOM.reportsServiceTypeFilter.value;
 
-        if (confirmed) {
-            DOM.reportsExportExcelBtn.disabled = true;
-            DOM.reportsExportZipBtn.disabled = true;
-            DOM.reportsExportMergedBtn.disabled = true;
-            DOM.reportsExportWhatsappBtn.disabled = true;
-            const filters = {
-                searchTerm: searchInput,
-                dateFrom: dateFrom,
-                dateTo: dateTo
-            };
-            reportsToExport = await fetchAllExportableReports(filters);
-            
-            DOM.reportsExportExcelBtn.disabled = false;
-            DOM.reportsExportZipBtn.disabled = false;
-            DOM.reportsExportMergedBtn.disabled = false;
-            DOM.reportsExportWhatsappBtn.disabled = false;
-        } else {
-            return;
-        }
-    }
+    DOM.reportsExportExcelBtn.disabled = true;
+    DOM.reportsExportZipBtn.disabled = true;
+    DOM.reportsExportMergedBtn.disabled = true;
+    DOM.reportsExportWhatsappBtn.disabled = true;
+
+    reportsToExport = await fetchAllExportableReports({ searchTerm: searchInput, dateFrom, dateTo, serviceType });
+
+    DOM.reportsExportExcelBtn.disabled = false;
+    DOM.reportsExportZipBtn.disabled = false;
+    DOM.reportsExportMergedBtn.disabled = false;
+    DOM.reportsExportWhatsappBtn.disabled = false;
 
     if (reportsToExport.length === 0) {
         alert("No se encontraron reportes.");
@@ -400,9 +353,6 @@ async function handleExport(type: string) {
 
 async function resetAndLoadReports(highlightNew: boolean = false) {
     currentPage = 1;
-    // NO vaciamos los seleccionados para permitir que seleccionen en multiples paginas
-    // selectedReportIds.clear(); 
-    DOM.reportsSelectAll.checked = false;
     await loadPage(1, highlightNew);
 }
 
@@ -419,7 +369,8 @@ async function loadPage(page: number, highlightNew: boolean = false) {
     const filters = {
         searchTerm: DOM.reportsSearchInput.value.trim(),
         dateFrom: DOM.reportsDateFrom.value,
-        dateTo: DOM.reportsDateTo.value
+        dateTo: DOM.reportsDateTo.value,
+        serviceType: DOM.reportsServiceTypeFilter.value
     };
 
     const offset = (currentPage - 1) * pageSize;
@@ -427,7 +378,7 @@ async function loadPage(page: number, highlightNew: boolean = false) {
 
     totalRecords = count;
     currentReports = data;
-    
+
     if (highlightNew && prevIds.size > 0) {
         currentReports.forEach(r => {
             if (!prevIds.has(r.id)) {
@@ -436,11 +387,15 @@ async function loadPage(page: number, highlightNew: boolean = false) {
             }
         });
     }
-    
+
     DOM.reportsTbody.innerHTML = '';
     renderReportRows(data);
-    updateSelectAllCheckbox();
-    
+
+    // Actualizar contador
+    if (DOM.reportsTotalCount) {
+        DOM.reportsTotalCount.textContent = totalRecords.toString();
+    }
+
     DOM.reportsLoadingIndicator.style.display = 'none';
     renderPaginationControls();
 }
@@ -475,8 +430,7 @@ function renderReportRows(reports: Report[]) {
             tr.classList.add('row-new-highlight');
         }
         
-        const isChecked = selectedReportIds.has(r.id);
-        const dateStr = new Intl.DateTimeFormat('es-CO', { 
+        const dateStr = new Intl.DateTimeFormat('es-CO', {
             year: 'numeric', month: '2-digit', day: '2-digit',
             hour: '2-digit', minute: '2-digit', hour12: true 
         }).format(new Date(r.timestamp));
@@ -517,8 +471,8 @@ function renderReportRows(reports: Report[]) {
         
         const displaySede = rawSede.length > 20 ? rawSede.substring(0, 20) + '...' : rawSede;
 
+        tr.setAttribute('data-report-id', r.id);
         tr.innerHTML = `
-            <td><input type="checkbox" class="report-checkbox" value="${r.id}" ${isChecked ? 'checked' : ''}></td>
             <td>${dateStr}</td>
             <td title="${clientOrCompany || ''}">${displayClient}</td>
             <td title="${rawSede}">${displaySede}</td>
@@ -529,9 +483,6 @@ function renderReportRows(reports: Report[]) {
             <td>${r.workerName}</td>
             <td class="actions" style="display: flex; gap: 6px; align-items: center; justify-content: flex-start;">
                 ${isPaidBtn}
-                <button class="btn btn-outline btn-view-report" data-id="${r.id}" title="Ver Detalles" style="padding: 0.25rem 0.5rem; font-size: 0.85rem;">
-                    <i class="fas fa-eye" style="color: #0275d8;"></i>
-                </button>
                 <button class="btn btn-outline btn-download-pdf" data-id="${r.id}" title="Ver PDF Local" style="padding: 0.25rem 0.5rem; font-size: 0.85rem;">
                     <i class="fas fa-file-pdf" style="color: #d9534f;"></i>
                 </button>
@@ -544,20 +495,6 @@ function renderReportRows(reports: Report[]) {
     });
 }
 
-function updateSelectAllCheckbox() {
-    const checkboxes = DOM.reportsTbody.querySelectorAll('.report-checkbox') as NodeListOf<HTMLInputElement>;
-    let allChecked = true;
-    let anyChecked = false;
-    
-    checkboxes.forEach(cb => {
-        if (cb.checked) anyChecked = true;
-        else allChecked = false;
-    });
-
-    if (checkboxes.length === 0) allChecked = false;
-    DOM.reportsSelectAll.checked = allChecked;
-    // DOM.reportsSelectAll.indeterminate = anyChecked && !allChecked;
-}
 
 // Utils
 function debounce(func: Function, wait: number) {
@@ -572,10 +509,23 @@ function debounce(func: Function, wait: number) {
     };
 }
 
+function closeReportDetailsPanel() {
+    document.getElementById('report-details-overlay')?.classList.remove('active');
+    document.getElementById('report-details-panel')?.classList.remove('active');
+}
+
 function showReportDetailsModal(report: Report) {
-    const modal = document.getElementById('report-details-modal');
+    const panel = document.getElementById('report-details-panel');
+    const overlay = document.getElementById('report-details-overlay');
     const body = document.getElementById('report-details-body');
-    if (!modal || !body) return;
+    if (!panel || !overlay || !body) return;
+
+    // Wire close handlers (replace each time to avoid duplicate listeners)
+    const closeBtn = document.getElementById('report-details-close-btn');
+    const newCloseBtn = closeBtn?.cloneNode(true) as HTMLElement;
+    closeBtn?.parentNode?.replaceChild(newCloseBtn, closeBtn);
+    newCloseBtn?.addEventListener('click', closeReportDetailsPanel);
+    overlay.onclick = closeReportDetailsPanel;
 
     const eq = (report.equipmentSnapshot || {}) as any;
     const isRes = eq.category === 'residencial';
@@ -621,16 +571,21 @@ function showReportDetailsModal(report: Report) {
             <h4 class="report-details-custom-title"><i class="fas fa-building"></i> Datos del Cliente</h4>
             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
                 <div class="report-details-form-row">
-                    <label>Nombre</label>
+                    <label>${isRes ? 'Cliente' : 'Empresa'}</label>
                     <input type="text" id="report-edit-client-name" class="input" value="${(isRes ? eq.client_name : eq.companyName) || ''}">
+                </div>
+                ${!isRes ? `
+                <div class="report-details-form-row">
+                    <label>Sede</label>
+                    <input type="text" id="report-edit-sede" class="input" value="${eq.sedeName || ''}">
+                </div>` : ''}
+                <div class="report-details-form-row">
+                    <label>Dependencia</label>
+                    <input type="text" id="report-edit-dependency" class="input" value="${eq.dependencyName || ''}">
                 </div>
                 <div class="report-details-form-row">
                     <label>Dirección</label>
                     <input type="text" id="report-edit-address" class="input" value="${eq.address || ''}">
-                </div>
-                <div class="report-details-form-row">
-                    <label>Dependencia</label>
-                    <input type="text" id="report-edit-dependency" class="input" value="${eq.dependencyName || ''}">
                 </div>
             </div>
         </div>
@@ -716,7 +671,8 @@ function showReportDetailsModal(report: Report) {
         </div>
     `;
 
-    modal.classList.add('active');
+    panel.classList.add('active');
+    overlay.classList.add('active');
 
     // Setup logic for adding/removing items
     const itemsContainer = document.getElementById('report-items-container');
@@ -747,9 +703,7 @@ function showReportDetailsModal(report: Report) {
     // Back button and Save logic
     const backBtn = document.getElementById('report-modal-back-btn');
     if (backBtn) {
-        backBtn.addEventListener('click', () => {
-            modal.classList.remove('active');
-        });
+        backBtn.addEventListener('click', closeReportDetailsPanel);
     }
 
     const saveBtn = document.getElementById('report-modal-save-btn') as HTMLButtonElement;
@@ -774,6 +728,8 @@ function showReportDetailsModal(report: Report) {
 
                 eq.address = (document.getElementById('report-edit-address') as HTMLInputElement).value;
                 eq.dependencyName = (document.getElementById('report-edit-dependency') as HTMLInputElement).value;
+                const sedeInput = document.getElementById('report-edit-sede') as HTMLInputElement | null;
+                if (sedeInput) eq.sedeName = sedeInput.value;
                 eq.brand = (document.getElementById('report-edit-brand') as HTMLInputElement).value;
                 eq.model = (document.getElementById('report-edit-model') as HTMLInputElement).value;
                 eq.type = (document.getElementById('report-edit-type') as HTMLInputElement).value;
@@ -806,9 +762,9 @@ function showReportDetailsModal(report: Report) {
                 });
 
                 if (success) {
-                    renderReportRows(currentReports);
+                    closeReportDetailsPanel();
+                    await resetAndLoadReports();
                     UI.showNotification("Reporte actualizado correctamente", "success");
-                    modal.classList.remove('active');
                 } else {
                     throw new Error("Failed to update report");
                 }
@@ -852,14 +808,6 @@ function showReportDetailsModal(report: Report) {
         });
     }
 
-    const closeBtn = modal.querySelector('.close-modal');
-    if (closeBtn) {
-        const newClose = closeBtn.cloneNode(true);
-        closeBtn.parentNode?.replaceChild(newClose, closeBtn);
-        newClose.addEventListener('click', () => {
-             modal.classList.remove('active');
-        });
-    }
 }
 
 export async function handleRealtimeReportUpdate(newReportId?: string) {

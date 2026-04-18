@@ -3021,8 +3021,7 @@ export function handleAgendaNavNext() {
 }
 
 export async function handleAgendaManualRefresh(buttonEl: HTMLButtonElement) {
-    const originalText = buttonEl.innerHTML;
-    buttonEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    buttonEl.classList.add('spinning');
     buttonEl.disabled = true;
 
     try {
@@ -3038,7 +3037,7 @@ export async function handleAgendaManualRefresh(buttonEl: HTMLButtonElement) {
         const notification = (window as any).UI?.showNotification || showNotification;
         notification('Error al sincronizar la agenda', 'error');
     } finally {
-        buttonEl.innerHTML = originalText;
+        buttonEl.classList.remove('spinning');
         buttonEl.disabled = false;
     }
 }
@@ -3135,7 +3134,7 @@ function renderMonthView() {
             busyClass = 'busy-day-medium';
         }
 
-        html += `<div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${busyClass}">`;
+        html += `<div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${busyClass}" data-date="${dateString}">`;
         html += `<div class="day-number">${currentDay.getDate()}</div>`;
         html += `<div class="day-orders">`;
         dailyOrders.forEach(order => {
@@ -3159,11 +3158,22 @@ function renderMonthView() {
 
     D.agendaContainer.innerHTML = html;
 
+    // Click on any pill → open panel (pills no longer navigate directly to workspace)
     D.agendaContainer.querySelectorAll('.agenda-order-pill').forEach(el => {
         el.addEventListener('click', (e) => {
             e.stopPropagation();
-            const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
-            if (orderId) navigateToOrderWorkspace(orderId, null);
+            const pill = e.currentTarget as HTMLElement;
+            const dayCell = pill.closest('.calendar-day') as HTMLElement | null;
+            const dateStr = dayCell?.dataset.date;
+            if (dateStr) openAgendaDayPanel(dateStr);
+        });
+    });
+
+    // Click anywhere on the day cell → open panel
+    D.agendaContainer.querySelectorAll('.calendar-day').forEach(el => {
+        el.addEventListener('click', () => {
+            const dateStr = (el as HTMLElement).dataset.date;
+            if (dateStr) openAgendaDayPanel(dateStr);
         });
     });
 }
@@ -3307,8 +3317,9 @@ function renderTimelineView(days: Date[]) {
 
     D.agendaContainer.querySelectorAll('.order-event, .agenda-order-pill').forEach(el => {
         el.addEventListener('click', (e) => {
+            e.stopPropagation();
             const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
-            if (orderId) navigateToOrderWorkspace(orderId, null);
+            if (orderId) openAgendaEditOrderModal(orderId);
         });
     });
 }
@@ -3328,7 +3339,10 @@ function renderListWeekView() {
     const orders = State.getOrders();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const dayNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const dayNames   = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const monthNames = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
 
     let html = '<div class="list-week-view">';
 
@@ -3338,8 +3352,9 @@ function renderListWeekView() {
             .filter(o => o.service_date && o.service_date.startsWith(dateString))
             .sort((a, b) => (a.service_time || '00:00').localeCompare(b.service_time || '00:00'));
 
-        const isToday = day.getTime() === today.getTime();
-        const numOrders = dailyOrders.length;
+        const isToday    = day.getTime() === today.getTime();
+        const isTomorrow = day.getTime() === tomorrow.getTime();
+        const numOrders  = dailyOrders.length;
 
         // --- Day Saturation Logic ---
         let saturationClass = '';
@@ -3351,10 +3366,23 @@ function renderListWeekView() {
             saturationClass = 'day-saturated-medium';
         }
 
+        const dayLabelBadge = isToday
+            ? '<span class="day-label-badge">Hoy</span>'
+            : isTomorrow
+            ? '<span class="day-label-badge">Mañana</span>'
+            : '';
+
+        const orderCountBadge = numOrders > 0
+            ? `<span class="day-order-count">${numOrders} orden${numOrders > 1 ? 'es' : ''}</span>`
+            : '';
+
         html += `
             <div class="day-section ${saturationClass}">
                 <div class="day-header ${isToday ? 'today' : ''}">
-                    ${dayNames[day.getDay()]} ${day.getDate()}${saturationLabel}
+                    <div class="day-header-left">
+                        ${dayNames[day.getDay()]} ${day.getDate()} ${monthNames[day.getMonth()]}${dayLabelBadge}${saturationLabel}
+                    </div>
+                    ${orderCountBadge}
                 </div>
                 <div class="day-orders-list">
         `;
@@ -3430,9 +3458,9 @@ function renderListWeekView() {
         }
 
         html += `
-                <div class="day-add-action" style="padding: 10px; text-align: center; border-top: 1px dashed var(--color-border); background-color: rgba(255, 255, 255, 0.5); display: flex; justify-content: center; align-items: center;">
-                    <button class="btn btn-secondary add-order-day-btn" data-date="${dateString}" title="Agendar orden este día" style="background-color: white; border: 1px dashed var(--color-success); border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); color: var(--color-success); width: 100%; height: 40px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-weight: 600; cursor: pointer;">
-                        <i class="fas fa-plus" style="pointer-events:none; margin-right: 8px;"></i> Nueva orden
+                <div class="day-add-action">
+                    <button class="add-order-day-btn" data-date="${dateString}" title="Agendar orden este día">
+                        <i class="fas fa-plus" style="pointer-events:none;"></i> Nueva orden
                     </button>
                 </div>
         `;
@@ -3446,8 +3474,9 @@ function renderListWeekView() {
 
     D.agendaContainer.querySelectorAll('.edit-order-btn').forEach(el => {
         el.addEventListener('click', (e) => {
+            e.stopPropagation();
             const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
-            if (orderId) navigateToOrderWorkspace(orderId, null);
+            if (orderId) openAgendaEditOrderModal(orderId);
         });
     });
 
@@ -3600,11 +3629,11 @@ export function openAgendaTechDropdown(orderId: string, triggerEl: HTMLElement, 
     }
 
     const visibleTechnicians = State.getTechnicians()
-        .filter(t => t.is_active && t.role !== 'admin' && !t.name.toLowerCase().includes('admin(dev)'))
+        .filter(t => t.is_active && t.role !== 'admin' && !(t.name ?? '').toLowerCase().includes('admin(dev)'))
         .sort((a, b) => {
             if (a.id === NO_ASIGNADO_TECHNICIAN_ID) return -1;
             if (b.id === NO_ASIGNADO_TECHNICIAN_ID) return 1;
-            return a.name.localeCompare(b.name);
+            return (a.name ?? '').localeCompare(b.name ?? '');
         });
 
     agendaTechDropdown.innerHTML = visibleTechnicians.map(tech => {
@@ -3716,119 +3745,453 @@ export function openAgendaTechDropdown(orderId: string, triggerEl: HTMLElement, 
 }
 
 
+// -----------------------------------------------------------------------
+// Agenda Day Panel — slide-in panel showing orders for a selected day
+// -----------------------------------------------------------------------
+const PANEL_DAY_NAMES  = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const PANEL_MONTH_NAMES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+export async function openAgendaDayPanel(dateStr: string) {
+    const panelOverlay = document.getElementById('agenda-panel-overlay')!;
+    const panel        = document.getElementById('agenda-day-panel')!;
+    const header       = document.getElementById('agenda-panel-header')!;
+    const body         = document.getElementById('agenda-panel-body')!;
+
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date   = new Date(y, m - 1, d);
+    const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; })();
+    const dayLabel = dateStr === todayStr ? 'Hoy' : PANEL_DAY_NAMES[date.getDay()];
+
+    const orders = State.getOrders()
+        .filter(o => o.service_date && o.service_date.startsWith(dateStr))
+        .sort((a, b) => (a.service_time || '00:00').localeCompare(b.service_time || '00:00'));
+
+    header.innerHTML = `
+        <div>
+            <h3>${dayLabel}, ${d} ${PANEL_MONTH_NAMES[m - 1]} ${y}</h3>
+            <p>${orders.length} orden${orders.length !== 1 ? 'es' : ''} agendada${orders.length !== 1 ? 's' : ''}</p>
+        </div>
+        <button class="adp-close-btn" id="agenda-panel-close-btn" title="Cerrar">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    document.getElementById('agenda-panel-close-btn')!.addEventListener('click', closeAgendaDayPanel);
+
+    if (orders.length === 0) {
+        body.innerHTML = `<div style="text-align:center; padding: 40px 16px; color: var(--color-text-secondary);">
+            <i class="fas fa-calendar-day" style="font-size:2rem; opacity:0.4; display:block; margin-bottom:10px;"></i>
+            No hay órdenes para este día
+        </div>`;
+    } else {
+        body.innerHTML = orders.map(order => {
+            const client   = State.getClients().find(c => c.id === order.clientId);
+            const location = getOrderDisplayLocation(order, client);
+            const time     = formatTime(order.service_time) || 'Todo el día';
+            const needsTech = order.technicianIds.length === 0 || (order.technicianIds.length === 1 && order.technicianIds[0] === NO_ASIGNADO_TECHNICIAN_ID);
+            const warnIcon  = needsTech ? `<i class="fas fa-user-slash" style="color:var(--color-warning);"></i> ` : '';
+            const typeLabel = order.order_type || '';
+            return `
+            <div class="adp-order-card" data-order-id="${order.id}">
+                <div class="adp-status-dot status-${order.status}"></div>
+                <div class="adp-info">
+                    <div class="adp-client">${warnIcon}${escapeHtml(location.fullName)} <span style="font-weight:400;color:var(--color-text-secondary);">#${order.manualId}</span></div>
+                    <div class="adp-meta">
+                        <span><i class="fas fa-clock" style="opacity:.6;"></i> ${time}</span>
+                        ${typeLabel ? `<span><i class="fas fa-tag" style="opacity:.6;"></i> ${escapeHtml(typeLabel)}</span>` : ''}
+                        ${location.addressString !== 'Sin dirección' ? `<span><i class="fas fa-map-marker-alt" style="opacity:.6;"></i> ${escapeHtml(location.addressString)}</span>` : ''}
+                    </div>
+                </div>
+                <button class="adp-edit-btn" data-order-id="${order.id}" title="Editar orden">
+                    <i class="fas fa-edit" style="pointer-events:none;"></i>
+                </button>
+            </div>`;
+        }).join('');
+    }
+
+    // "+ Nueva orden" button at the bottom
+    body.insertAdjacentHTML('beforeend', `
+        <button class="adp-add-order-btn" id="adp-add-order-btn" data-date="${dateStr}">
+            <i class="fas fa-plus"></i> Nueva orden
+        </button>
+    `);
+
+    // Wire up edit buttons
+    body.querySelectorAll('.adp-edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const orderId = (e.currentTarget as HTMLElement).dataset.orderId;
+            if (orderId) {
+                closeAgendaDayPanel();
+                openAgendaEditOrderModal(orderId);
+            }
+        });
+    });
+
+    // Clicking the card (not the button) also opens edit
+    body.querySelectorAll('.adp-order-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const orderId = (card as HTMLElement).dataset.orderId;
+            if (orderId) {
+                closeAgendaDayPanel();
+                openAgendaEditOrderModal(orderId);
+            }
+        });
+    });
+
+    // "+ Nueva orden"
+    document.getElementById('adp-add-order-btn')?.addEventListener('click', async () => {
+        closeAgendaDayPanel();
+        await navigateToOrderWorkspace(null, null, dateStr);
+    });
+
+    panelOverlay.addEventListener('click', closeAgendaDayPanel);
+    panelOverlay.classList.add('open');
+    panel.classList.add('open');
+}
+
+export function closeAgendaDayPanel() {
+    document.getElementById('agenda-panel-overlay')!.classList.remove('open');
+    document.getElementById('agenda-day-panel')!.classList.remove('open');
+}
+
 export function openAgendaEditOrderModal(orderId: string) {
     const order = State.getOrders().find(o => o.id === orderId);
     if (!order) return;
 
-    const modal = document.getElementById('agenda-edit-order-modal') as HTMLElement;
-    if (!modal) return;
-
-    // Fill client data
     const client = State.getClients().find(c => c.id === order.clientId);
+
+    // ── Header: order number + status badge ──────────────────────────
+    (document.getElementById('aep-order-number') as HTMLElement).textContent = `#${order.manualId}`;
+    const statusBadge = document.getElementById('aep-status-badge') as HTMLElement;
+    const statusMeta: Record<string, [string, string]> = {
+        pending:     ['Pendiente',   '#6c757d'],
+        scheduled:   ['Programada',  '#0dcaf0'],
+        in_progress: ['En Progreso', '#fd7e14'],
+        completed:   ['Completada',  '#198754'],
+        cancelled:   ['Cancelada',   '#dc3545'],
+    };
+    const [statusLabel, statusColor] = statusMeta[order.status] ?? ['—', '#999'];
+    statusBadge.textContent = statusLabel;
+    statusBadge.style.cssText = `background:${statusColor}22; color:${statusColor}; border:1px solid ${statusColor}55;`;
+
+    // ── Client fields ─────────────────────────────────────────────────
     if (client) {
         (document.getElementById('agenda-edit-client-name') as HTMLInputElement).value = client.name || '';
-        (document.getElementById('agenda-edit-client-phone') as HTMLInputElement).value = client.phone || '';
+        (document.getElementById('agenda-edit-client-phone') as HTMLInputElement).value = (client as any).phone || '';
         (document.getElementById('agenda-edit-client-city') as HTMLInputElement).value = client.city || '';
         (document.getElementById('agenda-edit-client-address') as HTMLInputElement).value = client.address || '';
     }
 
-    // Fill data
+    // ── Service fields ────────────────────────────────────────────────
     (document.getElementById('agenda-edit-order-id') as HTMLInputElement).value = order.id;
     (document.getElementById('agenda-edit-service-date') as HTMLInputElement).value = order.service_date;
     (document.getElementById('agenda-edit-service-time') as HTMLInputElement).value = order.service_time || '';
     (document.getElementById('agenda-edit-status') as HTMLSelectElement).value = order.status;
-    (document.getElementById('agenda-edit-duration') as HTMLInputElement).value = order.estimated_duration ? order.estimated_duration.toString() : '';
     (document.getElementById('agenda-edit-notes') as HTMLTextAreaElement).value = order.notes || '';
 
-    // Populate service type options from DB
     const serviceTypeSelect = document.getElementById('agenda-edit-type') as HTMLSelectElement;
     serviceTypeSelect.innerHTML = State.getServiceTypes().map(t => `<option value="${t.name}">${t.name}</option>`).join('');
-
-    // Find matching option (fuzzy/exact match)
-    const options = Array.from(serviceTypeSelect.options);
     const targetType = (order.order_type || '').trim().toLowerCase();
-    const matchingOption = options.find(opt => opt.value.trim().toLowerCase() === targetType);
-    if (matchingOption) {
-        serviceTypeSelect.value = matchingOption.value;
-    } else if (order.order_type) {
-        serviceTypeSelect.insertAdjacentHTML('beforeend', `<option value="${order.order_type}">${order.order_type} (Personalizado)</option>`);
+    const matchOpt = Array.from(serviceTypeSelect.options).find(o => o.value.trim().toLowerCase() === targetType);
+    if (matchOpt) { serviceTypeSelect.value = matchOpt.value; }
+    else if (order.order_type) {
+        serviceTypeSelect.insertAdjacentHTML('beforeend', `<option value="${order.order_type}">${order.order_type}</option>`);
         serviceTypeSelect.value = order.order_type;
     }
 
-    // Clone form to clear previous listeners
+    // ── Technicians: assigned chips + add dropdown ────────────────────
+    const allTechs = State.getTechnicians()
+        .filter(t => t.is_active && t.role !== 'admin' && !(t.name ?? '').toLowerCase().includes('admin(dev)'))
+        .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
+
+    const localTechIds: string[] = order.technicianIds.filter(id => id !== NO_ASIGNADO_TECHNICIAN_ID);
+    const techChipsEl = document.getElementById('aep-tech-chips') as HTMLElement;
+
+    const renderTechChips = () => {
+        const assigned = allTechs.filter(t => localTechIds.includes(t.id));
+        if (assigned.length === 0) {
+            techChipsEl.innerHTML = `<span style="font-size:0.82rem; color:var(--color-text-secondary); padding:4px 0;">Sin técnico asignado</span>`;
+        } else {
+            techChipsEl.innerHTML = assigned.map(t =>
+                `<span class="aep-tech-chip" data-tech-id="${t.id}">
+                    ${escapeHtml(t.name ?? '—')}
+                    <button type="button" class="aep-tech-chip-remove" data-tech-id="${t.id}" title="Quitar"><i class="fas fa-times"></i></button>
+                </span>`
+            ).join('');
+            techChipsEl.querySelectorAll('.aep-tech-chip-remove').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = (e.currentTarget as HTMLElement).dataset.techId!;
+                    const i = localTechIds.indexOf(id);
+                    if (i > -1) localTechIds.splice(i, 1);
+                    renderTechChips();
+                    closeTechPicker();
+                });
+            });
+        }
+    };
+    renderTechChips();
+
+    // Tech picker dropdown
+    let techPickerEl: HTMLElement | null = null;
+    const closeTechPicker = () => { techPickerEl?.remove(); techPickerEl = null; };
+    const addTechBtn = document.getElementById('aep-add-tech-btn') as HTMLElement;
+    const newAddTechBtn = addTechBtn.cloneNode(true) as HTMLElement;
+    addTechBtn.parentNode?.replaceChild(newAddTechBtn, addTechBtn);
+
+    newAddTechBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (techPickerEl) { closeTechPicker(); return; }
+        const unassigned = allTechs.filter(t => !localTechIds.includes(t.id));
+        if (unassigned.length === 0) return;
+        techPickerEl = document.createElement('div');
+        techPickerEl.className = 'aep-tech-picker';
+        techPickerEl.innerHTML = unassigned.map(t =>
+            `<div class="aep-tech-picker-item" data-tech-id="${t.id}">${escapeHtml(t.name ?? '—')}</div>`
+        ).join('');
+        techPickerEl.querySelectorAll('.aep-tech-picker-item').forEach(item => {
+            item.addEventListener('click', () => {
+                localTechIds.push((item as HTMLElement).dataset.techId!);
+                renderTechChips();
+                closeTechPicker();
+            });
+        });
+        newAddTechBtn.parentElement!.insertBefore(techPickerEl, newAddTechBtn.nextSibling);
+        setTimeout(() => document.addEventListener('click', closeTechPicker, { once: true }), 10);
+    });
+
+    // ── Items: inline editable rows ───────────────────────────────────
+    const localItems: { id?: string; description: string; quantity: number; }[] =
+        (order.items || []).map(i => ({ id: i.id, description: i.description, quantity: i.quantity }));
+
+    const itemsList = document.getElementById('aep-items-list') as HTMLElement;
+    const renderItems = () => {
+        itemsList.innerHTML = localItems.length === 0
+            ? `<p style="color:var(--color-text-secondary); font-size:0.85rem; margin:0 0 4px; text-align:center; padding:6px 0;">Sin ítems registrados</p>`
+            : localItems.map((item, idx) => `
+                <div class="aep-item-row" data-idx="${idx}">
+                    <input type="text" class="form-control aep-item-desc" placeholder="Descripción" value="${escapeHtml(item.description)}" data-idx="${idx}">
+                    <input type="number" class="form-control aep-item-qty" placeholder="Cant." value="${item.quantity}" min="1" step="1" data-idx="${idx}">
+                    <button type="button" class="aep-item-remove-btn" data-idx="${idx}" title="Eliminar"><i class="fas fa-times"></i></button>
+                </div>`).join('');
+
+        itemsList.querySelectorAll('.aep-item-desc').forEach(el => {
+            el.addEventListener('input', (e) => {
+                const idx = parseInt((e.target as HTMLElement).dataset.idx!);
+                localItems[idx].description = (e.target as HTMLInputElement).value;
+            });
+        });
+        itemsList.querySelectorAll('.aep-item-qty').forEach(el => {
+            el.addEventListener('input', (e) => {
+                const idx = parseInt((e.target as HTMLElement).dataset.idx!);
+                localItems[idx].quantity = parseFloat((e.target as HTMLInputElement).value) || 1;
+            });
+        });
+        itemsList.querySelectorAll('.aep-item-remove-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const idx = parseInt((e.currentTarget as HTMLElement).dataset.idx!);
+                localItems.splice(idx, 1);
+                renderItems();
+            });
+        });
+    };
+    renderItems();
+
+    const addItemBtn = document.getElementById('aep-add-item-btn') as HTMLElement;
+    const newAddItemBtn = addItemBtn.cloneNode(true) as HTMLElement;
+    addItemBtn.parentNode?.replaceChild(newAddItemBtn, addItemBtn);
+    newAddItemBtn.addEventListener('click', () => {
+        localItems.push({ description: '', quantity: 1 });
+        renderItems();
+        const inputs = itemsList.querySelectorAll('.aep-item-desc');
+        (inputs[inputs.length - 1] as HTMLInputElement)?.focus();
+    });
+
+    // ── Form submit ───────────────────────────────────────────────────
+    // Clone BEFORE photos setup so async photo callbacks always target live DOM nodes
+    // (photos section is outside the <form> in HTML, so cloneNode doesn't affect it)
     const form = document.getElementById('agenda-edit-order-form') as HTMLFormElement;
     const newForm = form.cloneNode(true) as HTMLFormElement;
     form.parentNode?.replaceChild(newForm, form);
 
+    // ── Photos / Attachments (outside form — never cloned) ────────────
+    const photosGrid = document.getElementById('aep-photos-grid') as HTMLElement;
+    const localImagePaths: string[] = [...(order.image_urls ?? [])];
+    const blobUrlCache: Record<string, string> = {};
+
+    const renderPhotos = () => {
+        if (localImagePaths.length === 0) {
+            photosGrid.innerHTML = `<p style="color:var(--color-text-secondary); font-size:0.82rem; margin:0 0 6px;">Sin fotos adjuntas</p>`;
+            return;
+        }
+        photosGrid.innerHTML = localImagePaths.map((_, i) =>
+            `<div class="aep-photo-cell" data-photo-idx="${i}"
+                  style="aspect-ratio:1; background:var(--color-bg-dark); border-radius:6px;
+                         display:flex; align-items:center; justify-content:center; overflow:hidden;">
+                <i class="fas fa-spinner fa-spin" style="color:var(--color-text-secondary);"></i>
+             </div>`
+        ).join('');
+
+        localImagePaths.forEach((path, i) => {
+            const cell = photosGrid.querySelector(`[data-photo-idx="${i}"]`) as HTMLElement;
+            if (!cell) return;
+
+            const showImage = (src: string) => {
+                cell.innerHTML = `<img src="${src}" alt="foto"
+                    style="width:100%;height:100%;object-fit:cover;border-radius:6px;cursor:pointer;">`;
+                cell.querySelector('img')?.addEventListener('click', () => {
+                    (document.getElementById('image-viewer-img') as HTMLImageElement).src = src;
+                    (document.getElementById('image-viewer-modal') as HTMLElement).style.display = 'flex';
+                });
+            };
+
+            if (blobUrlCache[path]) {
+                showImage(blobUrlCache[path]);
+                return;
+            }
+            supabaseOrders.storage.from('order-images').download(path)
+                .then(({ data, error }) => {
+                    if (error || !data) {
+                        console.error('[AEP] photo download error:', path, error);
+                        cell.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:red;"><i class="fas fa-exclamation-circle"></i></div>`;
+                        return;
+                    }
+                    const url = URL.createObjectURL(data);
+                    blobUrlCache[path] = url;
+                    showImage(url);
+                });
+        });
+    };
+    renderPhotos();
+
+    const uploadLabel = document.getElementById('aep-upload-label') as HTMLElement;
+    const uploadInput = document.getElementById('aep-photo-upload') as HTMLInputElement;
+    const newUploadInput = uploadInput.cloneNode(true) as HTMLInputElement;
+    uploadInput.parentNode?.replaceChild(newUploadInput, uploadInput);
+
+    newUploadInput.addEventListener('change', async () => {
+        const files = newUploadInput.files;
+        if (!files || files.length === 0) return;
+        uploadLabel.classList.add('uploading');
+        uploadLabel.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Subiendo...';
+
+        for (let i = 0; i < files.length; i++) {
+            try {
+                const compressed = await compressImage(files[i]);
+                const fileName = `public/ORDER_${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+                const { data, error } = await supabaseOrders.storage.from('order-images').upload(fileName, compressed, { contentType: 'image/jpeg' });
+                if (error) { showNotification('Error al subir imagen', 'error'); continue; }
+                if (data?.path) {
+                    blobUrlCache[data.path] = URL.createObjectURL(compressed);
+                    localImagePaths.push(data.path);
+                }
+            } catch { showNotification('Error al comprimir imagen', 'error'); }
+        }
+        renderPhotos();
+        newUploadInput.value = '';
+        uploadLabel.classList.remove('uploading');
+        uploadLabel.innerHTML = '<i class="fas fa-camera"></i> Adjuntar foto';
+    });
+
+    // Re-wire add-item btn after clone
+    const clonedAddItemBtn = newForm.querySelector('#aep-add-item-btn') as HTMLElement;
+    clonedAddItemBtn?.addEventListener('click', () => {
+        localItems.push({ description: '', quantity: 1 });
+        renderItems();
+        const inputs = itemsList.querySelectorAll('.aep-item-desc');
+        (inputs[inputs.length - 1] as HTMLInputElement)?.focus();
+    });
+
     newForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        closeTechPicker();
 
-        // Update client info if it was changed
-        let clientUpdated = false;
-        if (client) {
-            const newClientName = (document.getElementById('agenda-edit-client-name') as HTMLInputElement).value;
-            const newClientPhone = (document.getElementById('agenda-edit-client-phone') as HTMLInputElement).value;
-            const newClientCity = (document.getElementById('agenda-edit-client-city') as HTMLInputElement).value;
-            const newClientAddress = (document.getElementById('agenda-edit-client-address') as HTMLInputElement).value;
+        const submitBtn = document.querySelector('.aep-footer .btn-primary') as HTMLButtonElement;
+        const origLabel = submitBtn?.innerHTML ?? '';
+        if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...'; }
 
-            if (client.name !== newClientName || client.phone !== newClientPhone || client.city !== newClientCity || client.address !== newClientAddress) {
-                const updatedClient = {
-                    ...client,
-                    name: newClientName,
-                    phone: newClientPhone,
-                    city: newClientCity,
-                    address: newClientAddress
-                };
-                try {
-                    const savedClient = await API.upsertClient(updatedClient);
+        try {
+            // Client update
+            let clientUpdated = false;
+            if (client) {
+                const newName    = (document.getElementById('agenda-edit-client-name') as HTMLInputElement).value;
+                const newPhone   = (document.getElementById('agenda-edit-client-phone') as HTMLInputElement).value;
+                const newCity    = (document.getElementById('agenda-edit-client-city') as HTMLInputElement).value;
+                const newAddress = (document.getElementById('agenda-edit-client-address') as HTMLInputElement).value;
+                if (client.name !== newName || (client as any).phone !== newPhone || client.city !== newCity || client.address !== newAddress) {
+                    const saved = await API.upsertClient({ ...client, name: newName, phone: newPhone, city: newCity, address: newAddress } as any);
                     const clients = [...State.getClients()];
-                    const cIdx = clients.findIndex(c => c.id === savedClient.id);
-                    if (cIdx !== -1) clients[cIdx] = savedClient;
+                    const ci = clients.findIndex(c => c.id === saved.id);
+                    if (ci !== -1) clients[ci] = saved;
                     State.setClients(clients);
                     clientUpdated = true;
-                } catch (err) {
-                    console.error("Error saving client update", err);
                 }
             }
+
+            const newTechIds = localTechIds.length > 0 ? [...localTechIds] : [NO_ASIGNADO_TECHNICIAN_ID];
+            const newItems = localItems
+                .filter(i => i.description.trim() !== '')
+                .map(i => ({ ...order.items.find(oi => oi.id === i.id), description: i.description, quantity: i.quantity, orderId: order.id })) as any[];
+
+            const updatedOrder = {
+                ...order,
+                service_date:   (document.getElementById('agenda-edit-service-date') as HTMLInputElement).value,
+                service_time:   (document.getElementById('agenda-edit-service-time') as HTMLInputElement).value || null,
+                status:         (document.getElementById('agenda-edit-status') as HTMLSelectElement).value as any,
+                order_type:     (document.getElementById('agenda-edit-type') as HTMLSelectElement).value,
+                notes:          (document.getElementById('agenda-edit-notes') as HTMLTextAreaElement).value,
+                technicianIds:  newTechIds,
+                items:          newItems,
+                image_urls:     localImagePaths,
+            };
+
+            const savedOrder = await API.saveOrder(updatedOrder);
+            const orders = [...State.getOrders()];
+            const idx = orders.findIndex(o => o.id === savedOrder.id);
+            if (idx !== -1) orders[idx] = savedOrder;
+            State.setOrders(orders);
+
+            closeAgendaEditPanel();
+            renderAgendaPage();
+            showNotification(
+                clientUpdated ? `Orden #${order.manualId} y Cliente actualizados` : `Orden #${order.manualId} actualizada correctamente`,
+                'success'
+            );
+        } catch (err: any) {
+            showNotification(`Error al guardar: ${err.message}`, 'error');
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origLabel; }
         }
-
-        const newDate = (document.getElementById('agenda-edit-service-date') as HTMLInputElement).value;
-        const newTime = (document.getElementById('agenda-edit-service-time') as HTMLInputElement).value || null;
-        const newStatus = (document.getElementById('agenda-edit-status') as HTMLSelectElement).value as any;
-        const durationStr = (document.getElementById('agenda-edit-duration') as HTMLInputElement).value;
-        const newDuration = durationStr ? parseFloat(durationStr) : null;
-        const newType = (document.getElementById('agenda-edit-type') as HTMLSelectElement).value;
-        const newNotes = (document.getElementById('agenda-edit-notes') as HTMLTextAreaElement).value;
-
-        const updatedOrder = {
-            ...order,
-            service_date: newDate,
-            service_time: newTime,
-            status: newStatus,
-            estimated_duration: newDuration,
-            order_type: newType,
-            notes: newNotes
-        };
-
-        const savedOrder = await API.saveOrder(updatedOrder);
-        const orders = [...State.getOrders()];
-        const idx = orders.findIndex(o => o.id === savedOrder.id);
-        if (idx !== -1) orders[idx] = savedOrder;
-        State.setOrders(orders);
-
-        modal.style.display = 'none';
-
-        renderAgendaPage();
-        const msg = clientUpdated ? `Orden #${order.manualId} y Cliente actualizados` : `Orden #${order.manualId} actualizada correctamente`;
-        showNotification(msg, 'success');
     });
 
-    document.getElementById('agenda-edit-full-workspace-btn')?.addEventListener('click', () => {
-        modal.style.display = 'none';
-        navigateToOrderWorkspace(order.id, null);
+    // Footer buttons (outside form — same DOM elements every time, clone to clear old listeners)
+    ['agenda-edit-full-workspace-btn', 'agenda-edit-close-btn', 'agenda-edit-cancel-btn'].forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const fresh = el.cloneNode(true) as HTMLElement;
+        el.parentNode?.replaceChild(fresh, el);
+        if (id === 'agenda-edit-full-workspace-btn') {
+            fresh.addEventListener('click', () => { closeAgendaEditPanel(); navigateToOrderWorkspace(order.id, null); });
+        } else {
+            fresh.addEventListener('click', closeAgendaEditPanel);
+        }
     });
+    const overlay = document.getElementById('agenda-edit-overlay')!;
+    const freshOverlay = overlay.cloneNode(false) as HTMLElement;
+    overlay.parentNode?.replaceChild(freshOverlay, overlay);
+    freshOverlay.addEventListener('click', closeAgendaEditPanel);
 
-    modal.style.display = 'flex';
+    openAgendaEditPanel();
+}
+
+function openAgendaEditPanel() {
+    document.getElementById('agenda-edit-overlay')!.classList.add('open');
+    document.getElementById('agenda-edit-order-modal')!.classList.add('open');
+}
+
+export function closeAgendaEditPanel() {
+    document.getElementById('agenda-edit-overlay')!.classList.remove('open');
+    document.getElementById('agenda-edit-order-modal')!.classList.remove('open');
 }
 
 export function setupQuoteAnnexUpload() {
