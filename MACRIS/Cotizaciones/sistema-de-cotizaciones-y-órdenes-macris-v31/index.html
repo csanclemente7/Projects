@@ -9,9 +9,19 @@
                    img-src 'self' https://www.macrisrefrigeracion.com https://macrisrefrigeracion.com data: blob:; 
                    font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com; 
                    connect-src 'self' https://ctitnuadeqdwsgulhpjg.supabase.co wss://ctitnuadeqdwsgulhpjg.supabase.co https://fzcalgofrhbqvowazdpk.supabase.co wss://fzcalgofrhbqvowazdpk.supabase.co https://*.supabase.co wss://*.supabase.co https://formsubmit.co;
-                   frame-src 'self' blob: data:;">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                   frame-src 'self' blob: data:;
+                   worker-src 'self';
+                   manifest-src 'self';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f4c81">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Cotizaciones">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Cotizaciones - Macris</title>
+    <link rel="manifest" href="%BASE_URL%manifest.webmanifest">
+    <link rel="icon" type="image/png" href="%BASE_URL%icons/icon-192.png">
+    <link rel="apple-touch-icon" href="%BASE_URL%icons/apple-touch-icon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -40,6 +50,11 @@
 </head>
 
 <body>
+    <!-- PWA SPLASH SCREEN -->
+    <div id="pwa-splash">
+        <img src="icon_cotizaciones.png" alt="MACRIS" class="pwa-splash-logo" id="pwa-splash-logo" />
+    </div>
+
     <div id="login-overlay">
         <div class="login-split-graphic">
             <div class="login-brand-content">
@@ -1024,6 +1039,7 @@
         <a href="#" class="nav-link" data-page="page-orders"><i
                 class="fas fa-clipboard-list"></i><span>Órdenes</span></a>
         <a href="#" class="nav-link" data-page="page-agenda"><i class="fas fa-calendar-alt"></i><span>Agenda</span></a>
+        <a href="#" class="nav-link" data-page="page-reports"><i class="fas fa-chart-bar"></i><span>Reportes</span></a>
         <a href="#" class="nav-link" data-page="page-clients"><i class="fas fa-users"></i><span>Clientes</span></a>
         <a href="#" class="nav-link" data-page="page-items"><i class="fas fa-box-open"></i><span>Insumos</span></a>
         <a href="#" class="nav-link" data-page="page-technicians"><i

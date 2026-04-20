@@ -1,5 +1,6 @@
 import { checkAuth } from './src/auth';
+import { registerCotizacionesPwa, runPwaSplash } from './src/pwa';
 
-// Start the authentication check.
-// This will either show the login screen or start the app.
-checkAuth();
+registerCotizacionesPwa();
+// Show splash first, then proceed to auth
+runPwaSplash().then(() => checkAuth());

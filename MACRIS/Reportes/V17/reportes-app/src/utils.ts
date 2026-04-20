@@ -2,6 +2,25 @@ export function generateId(): string {
     return crypto.randomUUID();
 }
 
+/**
+ * Normaliza un timestamp ISO a formato YYYY-MM-DD para guardar en last_maintenance_date.
+ * Usa los primeros 10 caracteres del string ISO para evitar diferencias por zona horaria.
+ */
+export function toDateString(timestamp: string): string {
+    return timestamp.substring(0, 10);
+}
+
+/**
+ * Determina si un reporte de mantenimiento debe actualizar last_maintenance_date del equipo.
+ * Solo aplica para Mantenimiento Preventivo sobre equipos reales del inventario.
+ */
+export function shouldUpdateLastMaintenance(serviceType: string, equipmentId: string | null | undefined): boolean {
+    if (!equipmentId) return false;
+    if (equipmentId === 'MANUAL_NO_ID') return false;
+    if (equipmentId === 'INSTALL_NO_ID') return false;
+    return serviceType === 'Mantenimiento Preventivo';
+}
+
 export function formatDate(dateInput?: Date | string, includeTime: boolean = true): string {
     if (!dateInput) return 'N/A';
     

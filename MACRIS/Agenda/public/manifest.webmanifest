@@ -1,0 +1,26 @@
+{
+  "name": "Agenda MACRIS",
+  "short_name": "Agenda",
+  "description": "Agenda de servicios técnicos MACRIS Refrigeración",
+  "start_url": "/apps/agenda/",
+  "scope": "/apps/agenda/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "lang": "es",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

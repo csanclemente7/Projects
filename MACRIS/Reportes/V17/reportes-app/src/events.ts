@@ -1,11 +1,11 @@
 import * as D from './dom';
 import * as Auth from './auth';
 import * as UI from './ui';
-import { toggleFullscreen, withTimeout } from './utils';
+import { toggleFullscreen, withTimeout, toDateString, shouldUpdateLastMaintenance } from './utils';
 import * as State from './state';
 import { EntityType, Report, Equipment, Order, Database, Company, Dependency } from './types';
 // FIX: Added fetchEquipmentTypes and fetchRefrigerantTypes to the import list.
-import { deleteEntity as apiDeleteEntity, deleteReport as apiDeleteReport, saveEntity, deleteAllReports as apiDeleteAllReports, toggleEmployeeStatus, saveMaintenanceReport, updateMaintenanceReport, fetchAllEquipment, fetchCities, fetchCompanies, fetchDependencies, fetchUsers, toggleReportPaidStatus, updateOrderItemQuantity, checkAndCompleteOrderIfFinished, incrementOrderItemCompletedQuantity, updateOrderStatus, updateAppSetting, fetchAllReports, fetchReportsForWorker, awardPointToTechnician, updateUserPoints, fetchEquipmentTypes, fetchRefrigerantTypes } from './api';
+import { deleteEntity as apiDeleteEntity, deleteReport as apiDeleteReport, saveEntity, deleteAllReports as apiDeleteAllReports, toggleEmployeeStatus, saveMaintenanceReport, updateMaintenanceReport, updateEquipmentLastMaintenanceDate, fetchAllEquipment, fetchCities, fetchCompanies, fetchDependencies, fetchUsers, toggleReportPaidStatus, updateOrderItemQuantity, checkAndCompleteOrderIfFinished, incrementOrderItemCompletedQuantity, updateOrderStatus, updateAppSetting, fetchAllReports, fetchReportsForWorker, awardPointToTechnician, updateUserPoints, fetchEquipmentTypes, fetchRefrigerantTypes } from './api';
 import { addReportToQueue, updateLocalReport, cacheAllData } from './lib/local-db';
 import QRCode from 'qrcode';
 
@@ -475,9 +475,13 @@ async function handleEntityFormSubmit(e: SubmitEvent) {
                 UI.renderDependenciesTable();
                 if (State.entityFormContext?.source === 'reportForm' && State.entityFormContext.selectedCompanyId) {
                     const companyId = State.entityFormContext.selectedCompanyId;
-                    UI.updateLocationDropdownsFromCompany(companyId);
+                    // companyId here is the sedeId (or the company if no sedes).
+                    // Do NOT call updateLocationDropdownsFromCompany() — it would receive the sedeId,
+                    // fail to find it in companies, and reset the ciudad/sede dropdowns.
+                    // Just refresh the dependency list for the current sede/company.
                     const filteredDependencies = State.dependencies.filter(d => d.companyId === companyId);
                     UI.populateDropdown(D.reportDependencySelect, filteredDependencies, data.id);
+                    D.reportDependencySelect.disabled = false;
                 } else if (State.entityFormContext?.source === 'entityForm') {
                     const originalEquipmentId = State.entityFormContext.originalEntityId;
                     shouldCloseCurrentModal = false;
@@ -652,6 +656,35 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
         }
     }
 
+// Sección 9 del plan: Alerta si el equipo está dentro del periodo vigente de mantenimiento preventivo.
+    // Solo aplica para preventivos nuevos (no edición) sobre equipos reales del inventario.
+    if (serviceType === 'Mantenimiento Preventivo' && !D.reportIdInput.value) {
+        const equipIdForAlert = D.reportEquipmentIdHidden.value;
+        if (equipIdForAlert && equipIdForAlert !== 'MANUAL_NO_ID' && equipIdForAlert !== 'INSTALL_NO_ID') {
+            const eqForAlert = State.equipmentList.find(eq => eq.id === equipIdForAlert);
+            if (eqForAlert?.lastMaintenanceDate && eqForAlert.periodicityMonths > 0) {
+                // Usamos mediodía para evitar desfases de zona horaria al parsear YYYY-MM-DD
+                const lastDate = new Date(eqForAlert.lastMaintenanceDate + 'T12:00:00');
+                const nextDue = new Date(lastDate);
+                nextDue.setMonth(nextDue.getMonth() + eqForAlert.periodicityMonths);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if (nextDue > today) {
+                    const daysLeft = Math.ceil((nextDue.getTime() - today.getTime()) / (1000 * 3600 * 24));
+                    const nextDueStr = nextDue.toLocaleDateString('es-CO');
+                    const proceed = await UI.showConfirmationModal(
+                        `Este equipo (${eqForAlert.manualId || eqForAlert.model}) ya tuvo mantenimiento preventivo el ${eqForAlert.lastMaintenanceDate}.\n\nPeriodo: ${eqForAlert.periodicityMonths} mes(es) — Próximo sugerido: ${nextDueStr} (faltan ${daysLeft} día(s)).\n\n¿Desea registrar un nuevo preventivo de todas formas?`,
+                        'Continuar de todas formas'
+                    );
+                    if (!proceed) {
+                        UI.showAppNotification('Guardado cancelado.', 'info');
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
     UI.showLoader('Guardando Reporte...');
 
     try {
@@ -680,7 +713,9 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
                 if (!equipment) throw new Error("Equipo base no encontrado.");
                 equipmentSnapshot = {
                     id: equipment.id, manualId: equipment.manualId, model: equipment.model, brand: equipment.brand,
-                    type: equipment.typeName, capacity: equipment.capacity, refrigerant: equipment.refrigerantName,
+                    type: State.equipmentTypes.find((t: any) => t.id === equipment.equipment_type_id)?.name || equipment.typeName,
+                    capacity: equipment.capacity,
+                    refrigerant: State.refrigerantTypes.find((t: any) => t.id === equipment.refrigerant_type_id)?.name || equipment.refrigerantName,
                     client_name: equipment.client_name,
                     companyName: State.companies.find(c => c.id === equipment.companyId)?.name,
                     sedeName: State.sedes.find(s => s.id === equipment.sedeId)?.name,
@@ -788,6 +823,17 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
             UI.renderMyReportsTable();
             if (State.currentUser.role === 'admin') UI.renderAdminReportsTable();
 
+            // Plan sección 7.1: actualizar estado local del equipo al guardar preventivo offline.
+            // La actualización en la BD ocurrirá cuando sync.ts procese la cola (sección 7.2).
+            const offlineSnapId = reportForState.equipmentSnapshot?.id;
+            if (shouldUpdateLastMaintenance(reportForState.serviceType, offlineSnapId)) {
+                const offlineDateStr = toDateString(reportForState.timestamp);
+                const offlineEq = State.equipmentList.find(eq => eq.id === offlineSnapId);
+                if (!offlineEq?.lastMaintenanceDate || offlineDateStr >= offlineEq.lastMaintenanceDate) {
+                    State.updateEquipmentInState(offlineSnapId!, { lastMaintenanceDate: offlineDateStr });
+                }
+            }
+
             FormAutosave.clearDraft(); // LIMPIAR AUTOGUARDADO TRAS GUARDAR
             UI.showAppNotification('Reporte guardado localmente. Se sincronizará cuando haya conexión.', 'info');
             UI.closeReportFormModal();
@@ -827,7 +873,6 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
         try {
             if (isEditing) {
                 await updateMaintenanceReport(reportId, reportForDb);
-                UI.showAppNotification('Reporte actualizado con éxito.', 'success');
             } else {
                 await saveMaintenanceReport(reportForDb);
                 const { error: pointError } = await awardPointToTechnician(State.currentUser.id);
@@ -838,9 +883,26 @@ async function handleMaintenanceReportSubmit(e: SubmitEvent) {
                         State.currentUser.points++;
                         UI.updateUserPointsDisplay(State.currentUser.points);
                     }
-                    UI.showAppNotification('¡Reporte guardado con éxito!', 'success');
                 }
             }
+
+            // Plan sección 6: actualizar last_maintenance_date tras preventivo sobre equipo real.
+            // Edición: solo si la fecha nueva >= la ya guardada (plan sección 6.3 / riesgo de sobrescribir).
+            const snapId = reportForState.equipmentSnapshot?.id;
+            if (shouldUpdateLastMaintenance(reportForState.serviceType, snapId)) {
+                const dateStr = toDateString(reportForState.timestamp);
+                const eqInState = State.equipmentList.find(eq => eq.id === snapId);
+                if (!eqInState?.lastMaintenanceDate || dateStr >= eqInState.lastMaintenanceDate) {
+                    try {
+                        await updateEquipmentLastMaintenanceDate(snapId!, dateStr);
+                        State.updateEquipmentInState(snapId!, { lastMaintenanceDate: dateStr });
+                    } catch (eqErr) {
+                        console.warn('[Preventivo] No se pudo actualizar last_maintenance_date:', eqErr);
+                    }
+                }
+            }
+
+            UI.showAppNotification(isEditing ? 'Reporte actualizado con éxito.' : '¡Reporte guardado con éxito!', 'success');
 
             if (orderIdValue) {
                 const orderItemIdValue = D.reportOrderItemIdHidden?.value;

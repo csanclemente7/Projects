@@ -4294,13 +4294,15 @@ body.dark-theme #mobile-nav-bar {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
+    gap: 2px;
     color: var(--color-text-secondary);
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     font-weight: 500;
     text-decoration: none;
-    padding: 5px;
+    padding: 4px 2px;
     flex-grow: 1;
+    flex-basis: 0;
+    min-width: 0;
     height: 100%;
     border-left: none;
     /* Override desktop style */
@@ -4319,8 +4321,15 @@ body.dark-theme #mobile-nav-bar {
 }
 
 #mobile-nav-bar .nav-link i {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     width: auto;
+}
+
+#mobile-nav-bar .nav-link span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
 }
 
 #mobile-settings-btn {
@@ -6418,5 +6427,237 @@ body.dark-theme .custom-select-container {
     }
     .report-details-panel.active {
         transform: translateY(0);
+    }
+}
+
+/* =============================================================
+   REPORTES — VISTA MÓVIL
+   ============================================================= */
+@media (max-width: 768px) {
+
+    /* ── Header: título arriba, botones de acción abajo ─────── */
+    #page-reports .page-header {
+        height: auto !important;
+        min-height: 52px !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+        padding: 10px 14px 12px !important;
+    }
+    #page-reports .page-header > div {
+        width: 100%;
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    #reports-export-excel-btn,
+    #reports-export-zip-btn,
+    #reports-export-merged-btn,
+    #reports-export-whatsapp-btn {
+        flex: 1 1 calc(50% - 3px) !important;
+        padding: 7px 6px !important;
+        font-size: 0.76rem !important;
+        justify-content: center;
+        display: inline-flex !important;
+        align-items: center;
+        gap: 5px;
+    }
+    /* En móvil los btn span están ocultos globalmente — mostrarlos solo aquí */
+    #page-reports .page-header .btn span {
+        display: inline !important;
+    }
+
+    /* ── Filtros: 2 columnas, búsqueda ancho completo ────────── */
+    #page-reports .filters-container {
+        grid-template-columns: 1fr 1fr !important;
+        gap: 10px !important;
+        padding: 12px 12px !important;
+        margin-bottom: 12px !important;
+    }
+    #page-reports .filters-container > div:first-child {
+        grid-column: 1 / -1;
+    }
+
+    /* ── Tabla → Tarjetas ─────────────────────────────────────── */
+    #page-reports .table-responsive {
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+        max-height: none !important;
+        background: transparent !important;
+    }
+
+    #reports-data-table          { display: block; width: 100%; }
+    #reports-data-table thead    { display: none; }
+    #reports-data-table tbody    { display: flex; flex-direction: column; gap: 10px; }
+
+    #reports-data-table tbody tr {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 14px;
+        row-gap: 8px;
+        background: var(--color-bg-medium) !important;
+        border: 1px solid var(--color-border-light) !important;
+        border-radius: 10px;
+        padding: 12px 14px;
+        cursor: pointer;
+        transition: box-shadow 0.15s, border-color 0.15s;
+    }
+    #reports-data-table tbody tr:hover {
+        border-color: var(--corporate-accent-teal) !important;
+        box-shadow: 0 2px 12px rgba(0,168,197,0.14) !important;
+        background: var(--color-bg-medium) !important;
+    }
+    /* Fila roja (sin firma) */
+    #reports-data-table tbody tr[style*="rgba(220"] {
+        border-left: 3px solid #dc3545 !important;
+    }
+
+    #reports-data-table tbody td {
+        display: flex;
+        flex-direction: column;
+        padding: 0 !important;
+        border: none !important;
+        font-size: 0.83rem;
+        color: var(--color-text);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    #reports-data-table tbody td::before {
+        display: block;
+        font-size: 0.62rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--color-text-secondary);
+        margin-bottom: 2px;
+    }
+
+    /* Etiquetas por columna (orden: fecha, cliente, sede, dep, servicio, marca, equipo, técnico, acciones) */
+    #reports-data-table tbody td:nth-child(1)::before { content: "Fecha"; }
+    #reports-data-table tbody td:nth-child(2)::before { content: "Cliente"; }
+    #reports-data-table tbody td:nth-child(3)::before { content: "Sede"; }
+    #reports-data-table tbody td:nth-child(4)::before { content: "Dependencia"; }
+    #reports-data-table tbody td:nth-child(5)::before { content: "Tipo servicio"; }
+    #reports-data-table tbody td:nth-child(6)::before { content: "Marca"; }
+    #reports-data-table tbody td:nth-child(7)::before { content: "Equipo"; }
+    #reports-data-table tbody td:nth-child(8)::before { content: "Técnico"; }
+
+    /* Fecha + Técnico en columna 1; Cliente + ... en columna 2 */
+    #reports-data-table tbody td:nth-child(1) { grid-column: 1; }
+    #reports-data-table tbody td:nth-child(2) { grid-column: 2; }
+    #reports-data-table tbody td:nth-child(5) { grid-column: 1 / -1; white-space: normal; }
+
+    /* Acciones: fila completa separada al fondo de la tarjeta */
+    #reports-data-table tbody td:nth-child(9) {
+        grid-column: 1 / -1;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        padding-top: 8px !important;
+        margin-top: 4px;
+        border-top: 1px solid var(--color-border-light) !important;
+        white-space: nowrap;
+    }
+    #reports-data-table tbody td:nth-child(9)::before { content: none; }
+    #reports-data-table tbody td:nth-child(9) .btn {
+        padding: 5px 10px !important;
+        font-size: 0.82rem !important;
+    }
+
+    /* ── Paginación compacta ─────────────────────────────────── */
+    #page-reports .pagination-controls {
+        position: static !important;
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 8px 12px !important;
+    }
+}
+
+/* =====================================================================
+   PWA — iPhone safe areas & splash screen
+   ===================================================================== */
+
+/* ---------- Splash screen ---------- */
+#pwa-splash {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #0a1628;
+    transition: opacity 0.46s ease;
+}
+
+#pwa-splash.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#pwa-splash.hidden {
+    display: none;
+}
+
+.pwa-splash-logo {
+    width: 120px;
+    height: 120px;
+    border-radius: 26px;
+    object-fit: contain;
+    animation: pwaSplashIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.pwa-splash-logo.zoom-out {
+    animation: pwaSplashOut 0.38s ease-in forwards;
+}
+
+@keyframes pwaSplashIn {
+    from { opacity: 0; transform: scale(0.55); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pwaSplashOut {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(1.8); }
+}
+
+/* ---------- Safe-area insets (iPhone notch / Dynamic Island / home bar) ---------- */
+@supports (padding-top: env(safe-area-inset-top)) {
+
+    /* Header — pushed down below the status bar */
+    .app-header {
+        padding-top: env(safe-area-inset-top, 0px);
+        height: calc(72px + env(safe-area-inset-top, 0px));
+    }
+
+    /* Bottom nav — raised above the home indicator */
+    #mobile-nav-bar {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        height: calc(65px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Login screen on mobile — give room for the status bar */
+    @media (max-width: 768px) {
+        #login-overlay {
+            padding-top: env(safe-area-inset-top, 0px);
+        }
+
+        .login-split-form {
+            padding-top: calc(20px + env(safe-area-inset-top, 0px));
+        }
+
+        /* Loader overlay */
+        #loader-overlay {
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        /* Main content area: account for header + bottom nav safe-area growth */
+        #app-container {
+            padding-bottom: calc(65px + env(safe-area-inset-bottom, 0px));
+        }
     }
 }

@@ -1,9 +1,9 @@
 import { getQueuedReports, removeReportFromQueue, QueuedReport, getQueuedEntities, removeEntityFromQueue, QueuedEntity, addOrUpdateItemInStore, getAllFromStore, cacheAllData } from './local-db';
-import { supabaseOrders, upsertMaintenanceReport, updateOrderStatus, awardPointToTechnician, fetchAllReports, fetchReportsForWorker, fetchCompanies, fetchCities, fetchDependencies, fetchEquipmentTypes, fetchRefrigerantTypes } from '../api';
+import { supabaseOrders, upsertMaintenanceReport, updateOrderStatus, awardPointToTechnician, fetchAllReports, fetchReportsForWorker, fetchCompanies, fetchCities, fetchDependencies, fetchEquipmentTypes, fetchRefrigerantTypes, updateEquipmentLastMaintenanceDate } from '../api';
 import { showAppNotification, renderMyReportsTable, renderAdminReportsTable, renderAssignedOrdersList, renderAdminOrdersList, updateUserPointsDisplay } from '../ui';
 import * as State from '../state';
 import { EntityType } from '../types';
-import { checkOnlineStatus, withTimeout } from '../utils';
+import { checkOnlineStatus, withTimeout, shouldUpdateLastMaintenance, toDateString } from '../utils';
 import { Network } from '@capacitor/network';
 
 
@@ -319,6 +319,21 @@ export async function synchronizeQueue(): Promise<void> {
                      } else if (pointError) {
                          console.warn(`[Sync] Failed to award point for report ${report.localId}, but sync will continue.`, pointError);
                      }
+                }
+
+                // Plan sección 7.2: actualizar last_maintenance_date al sincronizar un preventivo offline.
+                const syncSnapId = reportToSync.equipmentSnapshot?.id;
+                if (shouldUpdateLastMaintenance(reportToSync.serviceType, syncSnapId)) {
+                    const syncDateStr = toDateString(reportToSync.timestamp);
+                    const syncEq = State.equipmentList.find(eq => eq.id === syncSnapId);
+                    if (!syncEq?.lastMaintenanceDate || syncDateStr >= syncEq.lastMaintenanceDate) {
+                        try {
+                            await updateEquipmentLastMaintenanceDate(syncSnapId!, syncDateStr);
+                            State.updateEquipmentInState(syncSnapId!, { lastMaintenanceDate: syncDateStr });
+                        } catch (eqErr) {
+                            console.warn('[Sync] No se pudo actualizar last_maintenance_date:', eqErr);
+                        }
+                    }
                 }
 
                 // **CRITICAL FIX**: After successful sync, add to the main `reports` cache

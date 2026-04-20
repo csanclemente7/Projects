@@ -223,7 +223,7 @@ export async function fetchAllEquipment(): Promise<Equipment[]> {
     const equipmentRows = await fetchAllRows<any>(
         () => supabaseOrders
             .from('maintenance_equipment')
-            .select('*, equipment_type:maintenance_equipment_types(id, name), refrigerant_type:maintenance_refrigerant_types(id, name)')
+            .select('*')
             .order('brand')
             .order('model'),
         'equipment'
@@ -236,15 +236,18 @@ export async function fetchAllEquipment(): Promise<Equipment[]> {
         model: dbEquipment.model,
         brand: dbEquipment.brand,
         type: dbEquipment.type,
-        typeName: dbEquipment.equipment_type?.name || dbEquipment.type || 'N/A',
+        typeName: dbEquipment.type || 'N/A', // Enriched from State.equipmentTypes after fetch
         equipment_type_id: dbEquipment.equipment_type_id,
-        refrigerantName: dbEquipment.refrigerant_type?.name || null,
+        refrigerantName: null, // Enriched from State.refrigerantTypes after fetch
         refrigerant_type_id: dbEquipment.refrigerant_type_id,
         capacity: dbEquipment.capacity,
         periodicityMonths: dbEquipment.periodicity_months,
         lastMaintenanceDate: dbEquipment.last_maintenance_date,
         cityId: dbEquipment.city_id,
-        companyId: dbEquipment.company_id,
+        // client_id = empresa raíz (clients table); company_id = sede (maintenance_companies).
+        // Para empresas con sedes, client_id tiene el ID de la empresa raíz que sí existe
+        // en State.companies. Para empresas sin sedes solo existe company_id.
+        companyId: dbEquipment.client_id || dbEquipment.company_id,
         dependencyId: dbEquipment.dependency_id,
         category: dbEquipment.category || 'empresa',
         address: dbEquipment.address,
@@ -957,6 +960,18 @@ export async function upsertMaintenanceReport(reportData: Database['public']['Ta
 
 export async function updateMaintenanceReport(reportId: string, reportData: Database['public']['Tables']['maintenance_reports']['Update']) {
     const { error } = await supabaseOrders.from('maintenance_reports').update(reportData).eq('id', reportId);
+    if (error) throw error;
+}
+
+/**
+ * Actualiza last_maintenance_date de un equipo del inventario.
+ * Solo debe llamarse tras guardar un reporte de Mantenimiento Preventivo sobre un equipo real.
+ */
+export async function updateEquipmentLastMaintenanceDate(equipmentId: string, maintenanceDate: string): Promise<void> {
+    const { error } = await supabaseOrders
+        .from('maintenance_equipment')
+        .update({ last_maintenance_date: maintenanceDate })
+        .eq('id', equipmentId);
     if (error) throw error;
 }
 

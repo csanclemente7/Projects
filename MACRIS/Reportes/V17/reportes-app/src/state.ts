@@ -99,6 +99,13 @@ export function setUsers(newUsers: User[]) {
 export function setEquipmentList(newEquipmentList: Equipment[]) {
     equipmentList = newEquipmentList;
 }
+
+/** Actualiza campos específicos de un equipo en el estado local sin reemplazar toda la lista. */
+export function updateEquipmentInState(equipmentId: string, updates: Partial<Equipment>) {
+    equipmentList = equipmentList.map(eq =>
+        eq.id === equipmentId ? { ...eq, ...updates } : eq
+    );
+}
 export function setCities(newCities: City[]) {
     cities = newCities;
 }

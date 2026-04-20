@@ -5,7 +5,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
 
   return {
-    base: '/apps/cotizaciones', // SIEMPRE esta ruta para producción
+    base: '/apps/cotizaciones/', // SIEMPRE esta ruta para producción
     build: {
       rollupOptions: {
         input: {

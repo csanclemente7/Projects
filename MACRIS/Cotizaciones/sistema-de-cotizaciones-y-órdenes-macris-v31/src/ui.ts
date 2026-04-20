@@ -1073,7 +1073,7 @@ function getClientSedes(clientId: string): Sede[] {
 
 function getSedeDependencies(sede: Sede): Dependency[] {
     return State.getDependencies()
-        .filter(dependency => dependency.sede_id === sede.id || dependency.company_id === sede.id)
+        .filter(dependency => dependency.sede_id === sede.id || dependency.company_id === sede.id || dependency.client_id === sede.id)
         .sort((a, b) => a.name.localeCompare(b.name));
 }
 

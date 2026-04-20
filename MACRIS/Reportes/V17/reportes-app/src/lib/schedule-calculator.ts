@@ -33,33 +33,39 @@ export function calculateSchedule(equipmentList: Equipment[], reports: Report[])
     const now = new Date();
     now.setHours(0, 0, 0, 0); // Normalize to the start of the day for consistent comparison.
 
-    // 1. Create a map for the latest report date for each equipment for efficient lookup.
-    const latestReportDates = new Map<string, string>();
+    // 1. Create a map for the latest PREVENTIVO report date for each equipment.
+    //    Only Mantenimiento Preventivo affects the maintenance schedule.
+    //    Correctivo, Montaje/Instalación and others must NOT shift the preventive due date.
+    const latestPreventiveReportDates = new Map<string, string>();
     reports.forEach(report => {
         const equipmentId = report.equipmentSnapshot?.id;
-        if (equipmentId && equipmentId !== 'MANUAL_NO_ID') {
-            const existingDate = latestReportDates.get(equipmentId);
-            if (!existingDate || new Date(report.timestamp) > new Date(existingDate)) {
-                latestReportDates.set(equipmentId, report.timestamp);
-            }
+        if (!equipmentId || equipmentId === 'MANUAL_NO_ID' || equipmentId === 'INSTALL_NO_ID') return;
+        if (report.serviceType !== 'Mantenimiento Preventivo') return;
+        const existingDate = latestPreventiveReportDates.get(equipmentId);
+        if (!existingDate || new Date(report.timestamp) > new Date(existingDate)) {
+            latestPreventiveReportDates.set(equipmentId, report.timestamp);
         }
     });
-    console.log(`[ScheduleCalc] Se encontraron reportes para ${latestReportDates.size} equipos únicos.`);
+    console.log(`[ScheduleCalc] Se encontraron reportes preventivos para ${latestPreventiveReportDates.size} equipos únicos.`);
 
     // 2. Iterate over each piece of equipment to determine its next maintenance date.
     equipmentList.forEach(equipment => {
         let baseDate: string | undefined | null = undefined;
         let dateSource: 'report' | 'manual' | 'creation' | 'none' = 'none';
 
-        // Determine the base date with priority: Latest Report > Manual Date > Creation Date
-        const latestReportDate = latestReportDates.get(equipment.id);
-        
-        if (latestReportDate) {
-            baseDate = latestReportDate;
-            dateSource = 'report';
-        } else if (equipment.lastMaintenanceDate) {
+        // Priority for base date:
+        // 1. equipment.lastMaintenanceDate — dato oficial del inventario, actualizado por preventivos.
+        // 2. Último reporte de tipo Mantenimiento Preventivo — respaldo si aún no hay lastMaintenanceDate.
+        // 3. equipment.created_at — fallback inicial para equipos sin histórico.
+        // Correctivos, instalaciones y otros tipos NO deben afectar la programación preventiva.
+        const latestPreventiveDate = latestPreventiveReportDates.get(equipment.id);
+
+        if (equipment.lastMaintenanceDate) {
             baseDate = equipment.lastMaintenanceDate;
             dateSource = 'manual';
+        } else if (latestPreventiveDate) {
+            baseDate = latestPreventiveDate;
+            dateSource = 'report';
         } else if (equipment.created_at) {
             baseDate = equipment.created_at;
             dateSource = 'creation';

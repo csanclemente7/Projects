@@ -1,6 +1,6 @@
 
 import * as D from './dom';
-import { formatDate, formatTime, resizeCanvas, withTimeout } from './utils';
+import { formatDate, formatTime, resizeCanvas, withTimeout, shouldUpdateLastMaintenance } from './utils';
 import * as State from './state';
 import { calculateSchedule } from './lib/schedule-calculator';
 // FIX: Add missing import for PDF generation, required by handleDownloadReportsZip.
@@ -986,6 +986,34 @@ export async function openReportFormModal(options: { report?: Report; equipment?
     updateSaveReportButtonState(); // Set initial button state
     D.reportFormModal.style.display = 'flex';
     resetModalScroll(D.reportFormModal);
+
+    // Alerta de preventivo reciente — mostrar al abrir el formulario (no en el submit)
+    // para que el técnico tenga contexto antes de rellenar el reporte.
+    // Solo aplica a reportes nuevos (no edición) con Mantenimiento Preventivo sobre equipo real.
+    if (!report) {
+        const currentServiceType = D.reportServiceTypeSelect.value;
+        const currentEquipmentId = D.reportEquipmentIdHidden.value;
+        if (shouldUpdateLastMaintenance(currentServiceType, currentEquipmentId)) {
+            const eq = State.equipmentList.find(e => e.id === currentEquipmentId);
+            if (eq?.lastMaintenanceDate && eq.periodicityMonths > 0) {
+                const lastDate = new Date(eq.lastMaintenanceDate + 'T12:00:00');
+                const nextDue = new Date(lastDate);
+                nextDue.setMonth(nextDue.getMonth() + eq.periodicityMonths);
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if (nextDue > today) {
+                    const daysLeft = Math.ceil((nextDue.getTime() - today.getTime()) / (1000 * 3600 * 24));
+                    const nextDueStr = nextDue.toLocaleDateString('es-CO');
+                    showConfirmationModal(
+                        `⚠️ Este equipo (${eq.manualId || eq.model}) ya tuvo mantenimiento preventivo el ${eq.lastMaintenanceDate}.\n\nPeriodicidad: ${eq.periodicityMonths} mes(es)\nPróximo sugerido: ${nextDueStr} (faltan ${daysLeft} día(s))\n\n¿Desea registrar un nuevo preventivo de todas formas?`,
+                        'Sí, continuar'
+                    ).then(confirmed => {
+                        if (!confirmed) closeReportFormModal();
+                    });
+                }
+            }
+        }
+    }
 }
 
 export function closeReportFormModal() {
@@ -2584,14 +2612,19 @@ export function renderAdminEquipmentTable() {
     const searchTerm = State.tableSearchTerms.adminEquipment.toLowerCase();
 
     const filteredEquipment = State.equipmentList.filter(eq => {
-        const clientOrCompany = eq.category === 'residencial'
+        const directCompany = eq.category !== 'residencial'
+            ? State.companies.find(c => c.id === eq.companyId)
+            : undefined;
+        const sedeForEq = eq.sedeId ? State.sedes.find(s => s.id === eq.sedeId) : undefined;
+        const companyName = eq.category === 'residencial'
             ? (eq.client_name || '')
-            : (State.companies.find(c => c.id === eq.companyId)?.name || '');
+            : (directCompany?.name || State.companies.find(c => c.id === sedeForEq?.companyId)?.name || '');
+        const sedeName = sedeForEq?.name || '';
         const dependency = eq.dependencyId ? State.dependencies.find(d => d.id === eq.dependencyId)?.name || '' : '';
         const city = eq.cityId ? State.cities.find(c => c.id === eq.cityId)?.name || '' : '';
 
         const searchString = [
-            eq.manualId, eq.brand, eq.model, eq.typeName, clientOrCompany, dependency, city
+            eq.manualId, eq.brand, eq.model, eq.typeName, companyName, sedeName, dependency, city
         ].join(' ').toLowerCase();
 
         return searchString.includes(searchTerm);
@@ -2600,9 +2633,23 @@ export function renderAdminEquipmentTable() {
     const paginatedEquipment = getPaginatedData('adminEquipment', filteredEquipment);
 
     D.adminEquipmentTableBody.innerHTML = paginatedEquipment.map(eq => {
-        const location = eq.category === 'residencial'
+        // Para empresas con sedes, companyId ya apunta a la empresa raíz (client_id del DB).
+        // Fallback defensivo: si no se encuentra en companies, buscar vía la sede.
+        const companyFromDirect = eq.category !== 'residencial'
+            ? State.companies.find(c => c.id === eq.companyId)
+            : undefined;
+        const companyFromSede = !companyFromDirect && eq.sedeId
+            ? State.companies.find(c => c.id === State.sedes.find(s => s.id === eq.sedeId)?.companyId)
+            : undefined;
+        const companyName = eq.category === 'residencial'
+            ? (eq.client_name || 'N/A')
+            : (companyFromDirect?.name || companyFromSede?.name || 'N/A');
+        const sedeName = eq.sedeId
+            ? (State.sedes.find(s => s.id === eq.sedeId)?.name || 'N/A')
+            : '<span class="text-muted">—</span>';
+        const location = eq.cityId
             ? (State.cities.find(c => c.id === eq.cityId)?.name || 'N/A')
-            : (State.companies.find(c => c.id === eq.companyId)?.name || 'N/A');
+            : 'N/A';
         const dependencyOrClient = eq.category === 'residencial'
             ? (eq.client_name || 'N/A')
             : (State.dependencies.find(d => d.id === eq.dependencyId)?.name || 'N/A');
@@ -2614,6 +2661,8 @@ export function renderAdminEquipmentTable() {
                 <td data-label="Marca">${eq.brand}</td>
                 <td data-label="Tipo">${eq.typeName}</td>
                 <td data-label="Categoría">${eq.category}</td>
+                <td data-label="Empresa">${companyName}</td>
+                <td data-label="Sede">${sedeName}</td>
                 <td data-label="Ubicación">${location}</td>
                 <td data-label="Dependencia/Cliente">${dependencyOrClient}</td>
                 <td data-label="Periodicidad (Meses)">${eq.periodicityMonths}</td>
@@ -2627,7 +2676,7 @@ export function renderAdminEquipmentTable() {
     }).join('');
 
     if (paginatedEquipment.length === 0) {
-        D.adminEquipmentTableBody.innerHTML = '<tr><td colspan="9">No se encontraron equipos.</td></tr>';
+        D.adminEquipmentTableBody.innerHTML = '<tr><td colspan="11">No se encontraron equipos.</td></tr>';
     }
 
     renderPagination('adminEquipment', D.adminEquipmentPaginationContainer, paginatedEquipment, filteredEquipment.length, renderAdminEquipmentTable);

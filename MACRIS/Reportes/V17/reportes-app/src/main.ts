@@ -28,6 +28,18 @@ const INITIAL_BOOTSTRAP_RETRY_DELAY_MS = 3500;
 
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
+function enrichEquipmentTypeNames(
+    equipmentData: any[],
+    equipmentTypesData: any[],
+    refrigerantTypesData: any[]
+): any[] {
+    return equipmentData.map(eq => ({
+        ...eq,
+        typeName: equipmentTypesData.find((t: any) => t.id === eq.equipment_type_id)?.name || eq.typeName,
+        refrigerantName: refrigerantTypesData.find((t: any) => t.id === eq.refrigerant_type_id)?.name || eq.refrigerantName,
+    }));
+}
+
 async function hasUsableInternetConnection(): Promise<boolean> {
     try {
         if (Capacitor.isNativePlatform()) {
@@ -240,7 +252,8 @@ async function synchronizeAndLoadData() {
             State.setCompanies(companiesData);
             State.setDependencies(dependenciesData);
             State.setSedes(sedesData);
-            State.setEquipmentList(equipmentData);
+            const enrichedEquipmentData = enrichEquipmentTypeNames(equipmentData, equipmentTypesData, refrigerantTypesData);
+        State.setEquipmentList(enrichedEquipmentData);
             State.setServiceTypes(serviceTypesData);
             State.setEquipmentTypes(equipmentTypesData);
             State.setRefrigerantTypes(refrigerantTypesData);
@@ -263,7 +276,7 @@ async function synchronizeAndLoadData() {
                 cacheAllData('companies', companiesData),
                 cacheAllData('dependencies', dependenciesData),
                 cacheAllData('sedes', sedesData),
-                cacheAllData('equipment', equipmentData),
+                cacheAllData('equipment', enrichedEquipmentData),
                 cacheAllData('service_types', serviceTypesData),
                 cacheAllData('equipment_types', equipmentTypesData),
                 cacheAllData('refrigerant_types', refrigerantTypesData),
@@ -393,7 +406,8 @@ async function refreshOnlineData(options: { silent?: boolean, hasLocalData: bool
         State.setCompanies(companiesData);
         State.setDependencies(dependenciesData);
         State.setSedes(sedesData);
-        State.setEquipmentList(equipmentData);
+        const enrichedEquipmentData = enrichEquipmentTypeNames(equipmentData, equipmentTypesData, refrigerantTypesData);
+        State.setEquipmentList(enrichedEquipmentData);
         State.setServiceTypes(serviceTypesData);
         State.setEquipmentTypes(equipmentTypesData);
         State.setRefrigerantTypes(refrigerantTypesData);
@@ -427,7 +441,7 @@ async function refreshOnlineData(options: { silent?: boolean, hasLocalData: bool
             cacheAllData('companies', companiesData),
             cacheAllData('dependencies', dependenciesData),
             cacheAllData('sedes', sedesData),
-            cacheAllData('equipment', equipmentData),
+            cacheAllData('equipment', enrichedEquipmentData),
             cacheAllData('service_types', serviceTypesData),
             cacheAllData('equipment_types', equipmentTypesData),
             cacheAllData('refrigerant_types', refrigerantTypesData),

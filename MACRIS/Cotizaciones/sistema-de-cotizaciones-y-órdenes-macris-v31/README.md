@@ -18,3 +18,7 @@ View your app in AI Studio: https://ai.studio/apps/drive/1VduXCSx2yeQIfgOf9cbgNx
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## PWA
+
+La aplicacion publica de Cotizaciones incluye manifest, iconos y service worker bajo el `BASE_URL` de Vite (`/apps/cotizaciones/` en produccion). El service worker cachea la interfaz y recursos estaticos, pero deja las consultas a Supabase fuera del cache para no cambiar la logica de datos.
