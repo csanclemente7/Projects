@@ -2081,9 +2081,11 @@ body.dark-theme .pill-input-container {
 /* ---- Items Card ---- */
 #page-quotes .quote-items.card {
     padding: 0;
-    overflow: hidden;
+    overflow: visible;
     border: none;
     box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    position: relative;
+    z-index: 20;
 }
 
 #page-quotes .quote-items.card > h3 {
@@ -2095,6 +2097,7 @@ body.dark-theme .pill-input-container {
     background: linear-gradient(to right, #0f2d52 0%, #1a3f6f 60%, rgba(0,168,197,0.5) 100%);
     padding: 11px 20px;
     margin: 0;
+    border-radius: var(--border-radius-sharp) var(--border-radius-sharp) 0 0;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -2127,6 +2130,12 @@ body.dark-theme .pill-input-container {
     background: var(--color-bg-dark);
     border-top: 1px solid var(--color-border-light);
     margin-top: 0;
+    position: relative;
+    border-radius: 0 0 var(--border-radius-sharp) var(--border-radius-sharp);
+}
+
+#page-quotes #item-search-results {
+    z-index: 200;
 }
 
 body.dark-theme #page-quotes .add-item-form-container {
