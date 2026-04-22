@@ -47,7 +47,7 @@
         </div>
         <div class="login-panel">
             <div class="login-header">
-                <img src="Macris-horizontal.png" alt="Macris Logo" class="login-logo">
+                <img src="Logo_macris.png" alt="Macris Logo" class="login-logo">
                 <div class="login-badge">MACRIS DATA SCIENCE</div>
             </div>
             <h1 class="login-title">Acceso Administrador</h1>
@@ -83,10 +83,10 @@
         <!-- Header -->
         <header class="main-header">
             <div class="header-branding">
-                <button id="toggle-sidebar-mobile" class="btn-drawer-toggle mobile-only">
+                <button id="toggle-sidebar-mobile" class="btn-drawer-toggle panel-toggle" title="Filtros">
                     <i class="fas fa-filter"></i>
                 </button>
-                <img src="Macris-horizontal.png" alt="Macris Logo" class="admin-logo">
+                <img src="Logo_macris.png" alt="Macris Logo" class="admin-logo">
                 <h1 class="desktop-only">Report Analytics <span class="badge">Admin</span></h1>
             </div>
             <div class="header-controls">
@@ -95,13 +95,29 @@
                 <button id="export-excel-btn" class="btn btn-success btn-compact desktop-only"><i class="fas fa-file-excel"></i> Excel</button>
                 <button id="export-zip-btn" class="btn btn-accent btn-compact desktop-only"><i class="fas fa-file-archive"></i> ZIP</button>
                 <button id="export-pdf-btn" class="btn btn-primary btn-compact desktop-only"><i class="fas fa-file-pdf"></i> PDF</button>
-                <button id="company-merge-btn" class="btn btn-secondary btn-compact desktop-only"><i class="fas fa-code-branch"></i> Unificar</button>
-                <button id="sede-cleanup-btn" class="btn btn-secondary btn-compact desktop-only" style="background: rgba(255,165,0,0.15); border-color: rgba(255,165,0,0.4); color: #ffad33;"><i class="fas fa-sitemap"></i> Limpiar Sedes</button>
+                <div id="merge-tools-wrapper" class="merge-tools-wrapper desktop-only">
+                    <button id="merge-tools-btn" class="btn btn-secondary btn-compact"><i class="fas fa-code-branch"></i> Unificar</button>
+                    <div id="merge-tools-popover" class="merge-tools-popover">
+                        <button id="company-merge-btn" class="btn btn-secondary btn-compact merge-tool-btn">
+                            <i class="fas fa-code-branch"></i> Unificar Empresas
+                        </button>
+                        <button id="city-merge-btn" class="btn btn-secondary btn-compact merge-tool-btn" style="background: rgba(0,223,255,0.12); border-color: rgba(0,223,255,0.35); color: #00dfff;">
+                            <i class="fas fa-city"></i> Ciudades
+                        </button>
+                        <button id="sede-cleanup-btn" class="btn btn-secondary btn-compact merge-tool-btn" style="background: rgba(255,165,0,0.15); border-color: rgba(255,165,0,0.4); color: #ffad33;">
+                            <i class="fas fa-sitemap"></i> Limpiar Sedes
+                        </button>
+                        <button id="dependency-merge-btn" class="btn btn-secondary btn-compact merge-tool-btn" style="background: rgba(160,100,255,0.15); border-color: rgba(160,100,255,0.4); color: #b57aff;">
+                            <i class="fas fa-compress-arrows-alt"></i> Dependencias
+                        </button>
+                    </div>
+                </div>
                 <button id="btn-qr-generator" class="btn btn-secondary btn-compact desktop-only" style="background: rgba(0, 223, 255, 0.1); border-color: rgba(0, 223, 255, 0.4); color: #00dfff;"><i class="fas fa-qrcode"></i> QRs</button>
                 <button id="db-backup-btn" class="btn btn-accent btn-compact desktop-only" style="background:var(--secondary); color:#fff"><i class="fas fa-database"></i> Copias</button>
-                <button id="toggle-chat-mobile" class="btn-drawer-toggle mobile-only">
+                <button id="toggle-chat-mobile" class="btn-drawer-toggle panel-toggle" title="Asistente IA">
                     <i class="fas fa-robot"></i>
                 </button>
+                <button id="btn-settings" class="btn-drawer-toggle panel-toggle" title="Ajustes y Tema"><i class="fas fa-sliders-h"></i></button>
                 <button id="logout-btn" class="btn btn-danger btn-icon-only"><i class="fas fa-power-off"></i></button>
             </div>
         </header>
@@ -242,6 +258,53 @@
                 </div>
             </aside>
         </main>
+        <div id="panel-overlay" class="panel-overlay"></div>
+
+    <!-- Settings / Theme Panel -->
+    <div id="settings-panel" class="settings-panel">
+        <div class="settings-panel-header">
+            <div class="settings-panel-title">
+                <i class="fas fa-palette"></i>
+                <span>Apariencia</span>
+            </div>
+            <button id="close-settings-panel" class="settings-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="settings-panel-body">
+            <p class="settings-section-label">Tema de Color</p>
+            <div class="theme-grid" id="theme-grid">
+                <button class="theme-swatch" data-theme="cyber-teal" title="Cyber Teal">
+                    <span class="swatch-dot" style="background:#00DFFF"></span>
+                    <span class="swatch-name">Cyber Teal</span>
+                    <i class="fas fa-check swatch-check"></i>
+                </button>
+                <button class="theme-swatch" data-theme="neon-violet" title="Neon Violet">
+                    <span class="swatch-dot" style="background:#A855F7"></span>
+                    <span class="swatch-name">Neon Violet</span>
+                    <i class="fas fa-check swatch-check"></i>
+                </button>
+                <button class="theme-swatch" data-theme="emerald" title="Emerald">
+                    <span class="swatch-dot" style="background:#10B981"></span>
+                    <span class="swatch-name">Emerald</span>
+                    <i class="fas fa-check swatch-check"></i>
+                </button>
+                <button class="theme-swatch" data-theme="amber" title="Amber Gold">
+                    <span class="swatch-dot" style="background:#F59E0B"></span>
+                    <span class="swatch-name">Amber Gold</span>
+                    <i class="fas fa-check swatch-check"></i>
+                </button>
+                <button class="theme-swatch" data-theme="rose" title="Rose Red">
+                    <span class="swatch-dot" style="background:#F43F5E"></span>
+                    <span class="swatch-name">Rose Red</span>
+                    <i class="fas fa-check swatch-check"></i>
+                </button>
+                <button class="theme-swatch" data-theme="arctic" title="Arctic Blue">
+                    <span class="swatch-dot" style="background:#38BDF8"></span>
+                    <span class="swatch-name">Arctic Blue</span>
+                    <i class="fas fa-check swatch-check"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 
         <!-- Bottom Navigation for mobile -->
         <nav id="bottom-nav" class="bottom-nav-mobile mobile-only">
@@ -451,6 +514,123 @@
                 <div class="chat-actions">
                     <button id="sede-cleanup-scan" class="btn btn-primary" style="background: linear-gradient(135deg, #ffad33, #ff8c00); border: none;">
                         <i class="fas fa-search"></i> Escanear Sedes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Unificador de Ciudades Duplicadas -->
+    <div id="city-merge-modal" class="modal">
+        <div class="modal-content" style="max-width: 900px; width: 95vw;">
+            <span id="close-city-merge-modal" class="close-button">&times;</span>
+            <div class="chat-header" style="padding: 0 0 15px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <i class="fas fa-city" style="color: #00dfff;"></i>
+                    <span>Unificador de Ciudades Duplicadas</span>
+                </div>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-dim); padding: 12px 0; line-height: 1.6; border-bottom: 1px dashed var(--border); margin-bottom: 15px;">
+                <i class="fas fa-info-circle" style="color: var(--primary);"></i>
+                La herramienta detecta ciudades repetidas por nombre, muestra cuantas sedes estan asociadas a cada una
+                y permite unificar grupos detectados automaticamente o grupos creados de forma manual.
+            </div>
+            <div id="city-merge-dashboard" style="max-height: 55vh; overflow-y: auto; overflow-x: hidden; padding: 4px 0;">
+                <div style="text-align: center; color: var(--text-dim); padding: 40px; font-size: 0.95rem;">
+                    <i class="fas fa-city" style="font-size: 2rem; margin-bottom: 15px; opacity: 0.5; color: #00dfff;"></i><br>
+                    Haz clic en &quot;Escanear Duplicados&quot; o usa &quot;Modo manual&quot; para empezar.
+                </div>
+            </div>
+            <div id="city-merge-progress" style="display:none; padding: 0 0 12px 0;">
+                <div class="mini-loader">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    <span id="city-merge-progress-text">Analizando...</span>
+                </div>
+                <div style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; height: 8px; margin-top: 6px;">
+                    <div id="city-merge-progress-bar" style="height: 100%; width: 0%; background: #00dfff; transition: width 0.3s;"></div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="chat-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button id="city-merge-scan" class="btn btn-primary" style="background: linear-gradient(135deg, #00dfff, #0099cc); border: none;">
+                        <i class="fas fa-search"></i> Escanear Duplicados
+                    </button>
+                    <button id="city-merge-manual" class="btn btn-secondary" style="border-color: rgba(0,223,255,0.35); color: #00dfff;">
+                        <i class="fas fa-hand-pointer"></i> Modo manual
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Modal: Unificador de Dependencias Duplicadas -->
+    <div id="dependency-merge-modal" class="modal">
+        <div class="modal-content" style="max-width: 900px; width: 95vw;">
+            <span id="close-dependency-merge-modal" class="close-button">&times;</span>
+            <div class="chat-header" style="padding: 0 0 15px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <i class="fas fa-compress-arrows-alt" style="color: #b57aff;"></i>
+                    <span>Unificador de Dependencias Duplicadas</span>
+                </div>
+            </div>
+            <div style="font-size: 0.8rem; color: var(--text-dim); padding: 12px 0; line-height: 1.6; border-bottom: 1px dashed var(--border); margin-bottom: 15px;">
+                <i class="fas fa-info-circle" style="color: var(--primary);"></i>
+                Selecciona una empresa y, si tiene sedes, una sede específica. La herramienta detectará
+                dependencias con el mismo nombre y te permitirá elegir cuál conservar, migrando equipos y reportes automáticamente.
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 15px;">
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <label style="font-size: 0.8rem; color: var(--text-dim); white-space: nowrap; min-width: 80px;">Empresa:</label>
+                    <div id="dep-merge-company-picker" style="position: relative; flex: 1;">
+                        <input type="hidden" id="dep-merge-company-id">
+                        <div id="dep-merge-company-selected" style="display: none; align-items: center; justify-content: space-between; gap: 10px; background: rgba(181,122,255,0.12); border: 1px solid rgba(181,122,255,0.35); padding: 8px 12px; border-radius: 6px; color: var(--text); font-size: 0.85rem;">
+                            <span id="dep-merge-company-selected-text" style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                            <button id="dep-merge-company-clear" type="button" style="background: transparent; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.85rem; flex-shrink: 0;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <input id="dep-merge-company-search" type="text" placeholder="Buscar empresa..." style="width: 100%; background: var(--bg-input); border: 1px solid var(--border); padding: 8px 10px; border-radius: 6px; color: var(--text); font-size: 0.85rem; box-sizing: border-box;" autocomplete="off">
+                        <div id="dep-merge-company-results" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 200; max-height: 220px; overflow-y: auto; background: var(--bg-card); border: 1px solid #b57aff; border-top: none; border-radius: 0 0 8px 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.45);"></div>
+                    </div>
+                </div>
+                <div id="dep-merge-sede-row" style="display: none; flex-direction: row; gap: 12px; align-items: center;">
+                    <label style="font-size: 0.8rem; color: var(--text-dim); white-space: nowrap; min-width: 80px;">Sede:</label>
+                    <div id="dep-merge-sede-picker" style="position: relative; flex: 1;">
+                        <input type="hidden" id="dep-merge-sede-id">
+                        <div id="dep-merge-sede-selected" style="display: none; align-items: center; justify-content: space-between; gap: 10px; background: rgba(181,122,255,0.12); border: 1px solid rgba(181,122,255,0.35); padding: 8px 12px; border-radius: 6px; color: var(--text); font-size: 0.85rem;">
+                            <span id="dep-merge-sede-selected-text" style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                            <button id="dep-merge-sede-clear" type="button" style="background: transparent; border: none; color: var(--text-dim); cursor: pointer; font-size: 0.85rem; flex-shrink: 0;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <input id="dep-merge-sede-search" type="text" placeholder="Buscar sede específica..." style="width: 100%; background: var(--bg-input); border: 1px solid var(--border); padding: 8px 10px; border-radius: 6px; color: var(--text); font-size: 0.85rem; box-sizing: border-box;" autocomplete="off">
+                        <div id="dep-merge-sede-results" style="display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 200; max-height: 220px; overflow-y: auto; background: var(--bg-card); border: 1px solid #b57aff; border-top: none; border-radius: 0 0 8px 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.45);"></div>
+                    </div>
+                    <button id="dep-merge-sede-all-btn" type="button" class="btn btn-secondary btn-compact" style="white-space: nowrap;">
+                        Todas
+                    </button>
+                </div>
+            </div>
+            <div id="dep-merge-dashboard" style="max-height: 55vh; overflow-y: auto; overflow-x: hidden; padding: 4px 0;">
+                <div style="text-align: center; color: var(--text-dim); padding: 40px; font-size: 0.95rem;">
+                    <i class="fas fa-compress-arrows-alt" style="font-size: 2rem; margin-bottom: 15px; opacity: 0.5; color: #b57aff;"></i><br>
+                    Configura los filtros y haz clic en &quot;Escanear&quot; para detectar duplicados.
+                </div>
+            </div>
+            <div id="dep-merge-progress" style="display:none; padding: 0 0 12px 0;">
+                <div class="mini-loader">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                    <span id="dep-merge-progress-text">Analizando...</span>
+                </div>
+                <div style="background: var(--bg-input); border: 1px solid var(--border); border-radius: 999px; overflow: hidden; height: 8px; margin-top: 6px;">
+                    <div id="dep-merge-progress-bar" style="height: 100%; width: 0%; background: #b57aff; transition: width 0.3s;"></div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="chat-actions">
+                    <button id="dep-merge-scan" class="btn btn-primary" style="background: linear-gradient(135deg, #b57aff, #7c3aed); border: none;">
+                        <i class="fas fa-search"></i> Escanear Duplicados
                     </button>
                 </div>
             </div>

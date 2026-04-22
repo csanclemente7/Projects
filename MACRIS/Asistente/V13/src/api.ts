@@ -1,6 +1,6 @@
 
 import { createClient, PostgrestError } from '@supabase/supabase-js';
-import { Database, Report, User, Equipment, City, Company, Dependency, Order, OrderItem, ServiceType, AppSettings, ClientsDatabase, EntityType, EquipmentType, RefrigerantType } from './types';
+import { Database, Report, User, Equipment, City, Company, Dependency, Sede, Order, OrderItem, ServiceType, AppSettings, ClientsDatabase, EntityType, EquipmentType, RefrigerantType } from './types';
 
 // --- Supabase Configuration ---
 const ORDERS_SUPABASE_URL: string = 'https://fzcalgofrhbqvowazdpk.supabase.co';
@@ -293,6 +293,22 @@ export async function fetchCompanies(): Promise<Company[]> {
     const { data, error } = await supabaseOrders.from('maintenance_companies').select('*').order('name');
     if (error) throw error;
     return (data as any[] || []).map(db => ({ id: db.id, name: db.name, cityId: db.city_id, clientId: db.client_id, category: db.category }));
+}
+
+export async function fetchSedes(): Promise<Sede[]> {
+    const { data, error } = await supabaseOrders
+        .from('maintenance_companies')
+        .select('*')
+        .not('client_id', 'is', null)
+        .order('name');
+    if (error) throw error;
+    return (data as any[] || []).map(db => ({
+        id: db.id,
+        name: db.name,
+        address: db.address || null,
+        companyId: db.client_id,
+        cityId: db.city_id || null,
+    }));
 }
 
 export async function fetchDependencies(): Promise<Dependency[]> {

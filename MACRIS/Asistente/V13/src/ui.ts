@@ -36,6 +36,7 @@ const EXCEL_FIELDS = [
 // --- Basic UI Setup ---
 
 export function initUI() {
+    initTheme();
     setupManualFilters();
     setupChat();
     setupExports();
@@ -60,38 +61,103 @@ function setupModalListeners() {
 }
 
 function setupMobileDrawers() {
-    const filterSidebar = document.getElementById('filter-sidebar');
-    const aiSidebar = document.getElementById('ai-chat-sidebar');
-    const toggleFilterBtn = document.getElementById('toggle-sidebar-mobile');
-    const toggleChatBtn = document.getElementById('toggle-chat-mobile');
-    const closeBtns = document.querySelectorAll('.close-drawer');
-
-    const overlay = document.createElement('div');
-    overlay.className = 'drawer-overlay';
-    document.body.appendChild(overlay);
+    const filterSidebar   = document.getElementById('filter-sidebar') as HTMLElement | null;
+    const aiSidebar       = document.getElementById('ai-chat-sidebar') as HTMLElement | null;
+    const toggleFilterBtn = document.getElementById('toggle-sidebar-mobile') as HTMLElement | null;
+    const toggleChatBtn   = document.getElementById('toggle-chat-mobile') as HTMLElement | null;
+    const overlay         = document.getElementById('panel-overlay') as HTMLElement | null;
+    const closeBtns       = document.querySelectorAll('.close-drawer');
 
     const closeAll = () => {
-        filterSidebar?.classList.remove('open');
-        aiSidebar?.classList.remove('open');
-        overlay.classList.remove('active');
+        filterSidebar?.classList.remove('is-open');
+        aiSidebar?.classList.remove('is-open');
+        overlay?.classList.remove('active');
+        toggleFilterBtn?.classList.remove('active-toggle');
+        toggleChatBtn?.classList.remove('active-toggle');
+        updateNavBtns('reports');
     };
 
-    toggleFilterBtn?.addEventListener('click', () => { filterSidebar?.classList.add('open'); overlay.classList.add('active'); });
-    toggleChatBtn?.addEventListener('click', () => { aiSidebar?.classList.add('open'); overlay.classList.add('active'); });
-    closeBtns.forEach(btn => btn.addEventListener('click', closeAll));
-    overlay.addEventListener('click', closeAll);
+    const openFilter = () => {
+        aiSidebar?.classList.remove('is-open');
+        toggleChatBtn?.classList.remove('active-toggle');
+        const isOpen = filterSidebar?.classList.contains('is-open');
+        if (isOpen) { closeAll(); } else {
+            filterSidebar?.classList.add('is-open');
+            overlay?.classList.add('active');
+            toggleFilterBtn?.classList.add('active-toggle');
+        }
+    };
 
-    const navBtns = document.querySelectorAll('.nav-btn');
-    navBtns.forEach(btn => {
+    const openChat = () => {
+        filterSidebar?.classList.remove('is-open');
+        toggleFilterBtn?.classList.remove('active-toggle');
+        const isOpen = aiSidebar?.classList.contains('is-open');
+        if (isOpen) { closeAll(); } else {
+            aiSidebar?.classList.add('is-open');
+            overlay?.classList.add('active');
+            toggleChatBtn?.classList.add('active-toggle');
+        }
+    };
+
+    const updateNavBtns = (action: string) => {
+        document.querySelectorAll('.nav-btn').forEach(b => {
+            b.classList.toggle('active', (b as HTMLElement).dataset.action === action);
+        });
+    };
+
+    toggleFilterBtn?.addEventListener('click', openFilter);
+    toggleChatBtn?.addEventListener('click', openChat);
+    closeBtns.forEach(btn => btn.addEventListener('click', closeAll));
+    overlay?.addEventListener('click', closeAll);
+
+    document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-            navBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
             const action = (btn as HTMLElement).dataset.action;
-            if (action === 'filters') toggleFilterBtn?.click();
-            if (action === 'ai') toggleChatBtn?.click();
-            if (action === 'reports') closeAll();
+            if (action === 'filters') openFilter();
+            else if (action === 'ai') openChat();
+            else closeAll();
         });
     });
+
+    // Settings panel
+    const settingsBtn   = document.getElementById('btn-settings');
+    const settingsPanel = document.getElementById('settings-panel') as HTMLElement | null;
+    const closeSettings = document.getElementById('close-settings-panel');
+
+    settingsBtn?.addEventListener('click', () => {
+        closeAll();
+        const isOpen = settingsPanel?.classList.contains('is-open');
+        settingsPanel?.classList.toggle('is-open');
+        overlay?.classList.toggle('active', !isOpen);
+    });
+    closeSettings?.addEventListener('click', () => {
+        settingsPanel?.classList.remove('is-open');
+        overlay?.classList.remove('active');
+    });
+    overlay?.addEventListener('click', () => {
+        settingsPanel?.classList.remove('is-open');
+    });
+
+    // Theme swatches
+    document.querySelectorAll('.theme-swatch').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const theme = (btn as HTMLElement).dataset.theme || 'cyber-teal';
+            applyTheme(theme);
+        });
+    });
+}
+
+export function applyTheme(theme: string) {
+    document.body.dataset.theme = theme;
+    localStorage.setItem('macris_theme', theme);
+    document.querySelectorAll('.theme-swatch').forEach(btn => {
+        btn.classList.toggle('active', (btn as HTMLElement).dataset.theme === theme);
+    });
+}
+
+export function initTheme() {
+    const saved = localStorage.getItem('macris_theme') || 'cyber-teal';
+    applyTheme(saved);
 }
 
 export function showLoader(m?: string) {

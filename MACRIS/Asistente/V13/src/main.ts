@@ -8,6 +8,39 @@ import { setupEventListeners } from './events';
 import { initCompanyMerge } from './company-merge';
 import { initSedeCleanup } from './sede-cleanup';
 import { initBackupRestore } from './backup';
+import { initDependencyMerge } from './dependency-merge';
+import { initCityMerge } from './city-merge';
+
+function initMergeLauncher() {
+    const wrapper = document.getElementById('merge-tools-wrapper');
+    const toggleBtn = document.getElementById('merge-tools-btn');
+    const popover = document.getElementById('merge-tools-popover');
+
+    if (!wrapper || !toggleBtn || !popover) return;
+
+    const closePopover = () => {
+        popover.classList.remove('is-open');
+    };
+
+    toggleBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        popover.classList.toggle('is-open');
+    });
+
+    popover.querySelectorAll('button').forEach(button => {
+        button.addEventListener('click', () => {
+            closePopover();
+        });
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!wrapper.contains(event.target as Node)) {
+            closePopover();
+        }
+    });
+
+    window.addEventListener('resize', closePopover);
+}
 
 async function initAuthGate() {
     UI.showLoader('Sincronizando acceso...');
@@ -54,8 +87,11 @@ import { initQrGenerator } from './qr-bulk-generator';
 
 export async function main() {
     setupEventListeners();
+    initMergeLauncher();
     initCompanyMerge();
+    initCityMerge();
     initSedeCleanup();
+    initDependencyMerge();
     initBackupRestore();
     setupDashboard();
     initQrGenerator();
