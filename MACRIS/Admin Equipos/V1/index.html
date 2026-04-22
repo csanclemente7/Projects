@@ -130,6 +130,7 @@
                                 <th>Sede</th>
                                 <th>Dependencia</th>
                                 <th>Ciudad</th>
+                                <th>Periodicidad</th>
                                 <th>Último Mtto.</th>
                                 <th>Acciones</th>
                             </tr>
@@ -211,7 +212,7 @@
                         <div class="form-group">
                             <label>Empresa:</label>
                             <div class="input-with-button">
-                                <input type="search" id="form-company-search" placeholder="Buscar empresa..." autocomplete="off">
+                                <input type="search" id="form-company-search" placeholder="Buscar empresa por ID o nombre..." autocomplete="off">
                                 <button type="button" id="btn-quick-add-company" class="btn-add-inline" title="Agregar Empresa"><i class="fas fa-plus"></i></button>
                             </div>
                             <div id="form-company-results" class="search-results-container" role="listbox"></div>
@@ -366,17 +367,20 @@
                 <li><strong>Marca</strong> (Obligatorio)</li>
                 <li><strong>Modelo</strong> (Obligatorio)</li>
                 <li><strong>Capacidad</strong> (Ej: 12000 BTU)</li>
-                <li><strong>Ciudad</strong> (Obligatorio)</li>
-                <li><strong>Empresa</strong> (Obligatorio)</li>
-                <li><strong>Sede</strong> (Opcional, pero debe pertenecer a la Empresa)</li>
-                <li><strong>Dependencia</strong> (Opcional, pero debe pertenecer a la Empresa/Sede)</li>
+                <li><strong>Ciudad</strong> (Obligatorio si no usa Sede ID. Si usa Sede ID, el sistema puede tomar la ciudad desde esa sede)</li>
+                <li><strong>Empresa ID</strong> (Recomendado. Use el ID del cliente en Cotizaciones, por ejemplo: 173062)</li>
+                <li><strong>Empresa</strong> (Obligatorio si no usa Empresa ID)</li>
+                <li><strong>Sede ID</strong> (Obligatorio si la empresa ya tiene sedes registradas en Cotizaciones)</li>
+                <li><strong>Sede</strong> (Opcional como referencia visual o para empresas nuevas)</li>
+                <li><strong>Dependencia</strong> (Opcional. Si no existe, se creará asociada a la Empresa/Sede correcta)</li>
                 <li><strong>Tipo de Equipo</strong> (Ej: Mini Split, Central, etc.)</li>
                 <li><strong>Refrigerante</strong> (Ej: R410A)</li>
+                <li><strong>Periodicidad</strong> (Meses entre mantenimientos, Ej: 6. Por defecto: 6)</li>
             </ol>
             
             <div class="app-notification info" style="position:relative; animation:none; cursor:initial; margin-bottom: 20px; box-shadow: none; border: 1px solid var(--accent-light);">
                 <i class="fas fa-lightbulb" style="color:var(--accent-color); margin-right:10px;"></i>
-                El sistema leerá las columnas dinámicamente si los nombres (encabezados) coinciden. Los datos de ciudades, empresas y tipos deben estar <strong>literalmente igual</strong> a como están registrados en el sistema para evitar ser marcados con error.
+                El sistema leerá las columnas dinámicamente si los nombres (encabezados) coinciden. Para empresas ya existentes, use preferiblemente <strong>Empresa ID</strong> y, si esa empresa tiene sedes, use también <strong>Sede ID</strong>. Así el importador identificará la relación exacta Empresa / Sede / Dependencia y evitará duplicados o equipos mal ubicados.
             </div>
 
             <div class="modal-actions">

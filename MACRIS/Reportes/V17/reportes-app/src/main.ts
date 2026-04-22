@@ -155,6 +155,17 @@ async function ensureFreshLocalPersistence(): Promise<void> {
             return;
         }
 
+        // If the device is offline and the user has a persisted session, defer the reset.
+        // Wiping all data offline would leave the technician with an empty login screen
+        // and no way to recover until they have internet. We reset on next online startup instead.
+        const isOffline = Capacitor.isNativePlatform()
+            ? !(await Network.getStatus()).connected
+            : !navigator.onLine;
+        if (isOffline && localStorage.getItem('maintenance_app_current_user')) {
+            console.warn('[Startup] Skipping local reset: device is offline and user has a persisted session. Will reset on next online startup.');
+            return;
+        }
+
         await resetLocalPersistence(`[Startup] Resetting local app data: ${resetReasons.join(', ')}.`);
     }
 
@@ -539,6 +550,20 @@ export async function main() {
         } else {
             // Primera vez sin cache: reintentar porque Android a veces reporta la red tarde al abrir.
             await ensureInitialBootstrapData(false);
+
+            // If still no data after bootstrap attempts, register a one-shot 'online' listener.
+            // When the device recovers connectivity, automatically retry loading so the login
+            // screen populates without requiring the technician to close and reopen the app.
+            if (!hasMinimumBootstrapData()) {
+                const onOnline = async () => {
+                    window.removeEventListener('online', onOnline);
+                    console.log('[Startup] Network restored. Retrying initial data load...');
+                    showAppNotification('Conexión restaurada. Cargando datos...', 'info');
+                    await refreshOnlineData({ silent: false, hasLocalData: false });
+                    populateLoginWorkerSelect();
+                };
+                window.addEventListener('online', onOnline);
+            }
         }
 
         populateLoginWorkerSelect();

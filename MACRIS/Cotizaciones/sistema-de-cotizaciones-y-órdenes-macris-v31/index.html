@@ -227,7 +227,7 @@
                                 <div class="form-group">
                                     <label for="item-search">Agregar Ítem</label>
                                     <div class="input-with-button">
-                                        <input type="text" id="item-search" placeholder="Buscar por código o nombre..."
+                                        <input type="search" id="item-search" placeholder="Buscar por código o nombre..."
                                             autocomplete="off" data-lpignore="true" data-1p-ignore>
                                         <button id="add-new-item-quote-page-btn" class="btn btn-add-inline"
                                             title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
@@ -714,28 +714,33 @@
                 <div class="page-content">
                     <div class="filters-container"
                         style="background: var(--surface); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border); display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                        <div>
-                            <label
-                                style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Buscar</label>
-                            <div style="display: flex; gap: 8px;">
-                                <input type="text" id="reports-search" class="form-control"
-                                    placeholder="Técnico, equipo, tipo..." autocomplete="off">
+                        <div class="reports-filter reports-filter-search">
+                            <div class="reports-search-toolbar" style="display: flex; gap: 8px;">
+                                <button id="reports-selection-toggle-btn" class="btn btn-outline" type="button" title="Activar selección manual" aria-label="Activar selección manual">
+                                    <i class="fas fa-check-square"></i>
+                                </button>
+                                <div class="reports-search-field">
+                                    <label for="reports-search"
+                                        style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Buscar</label>
+                                    <input type="text" id="reports-search" class="form-control"
+                                        placeholder="Técnico, equipo, tipo..." autocomplete="off">
+                                </div>
                                 <button id="reports-refresh-btn" class="btn btn-primary" title="Actualizar" style="padding: 0 12px;">
                                     <i class="fas fa-sync-alt"></i>
                                 </button>
                             </div>
                         </div>
-                        <div>
+                        <div class="reports-filter reports-filter-date">
                             <label
                                 style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Desde</label>
                             <input type="date" id="reports-date-from" class="form-control">
                         </div>
-                        <div>
+                        <div class="reports-filter reports-filter-date">
                             <label
                                 style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Hasta</label>
                             <input type="date" id="reports-date-to" class="form-control">
                         </div>
-                        <div>
+                        <div class="reports-filter reports-filter-service">
                             <label
                                 style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Tipo de Servicio</label>
                             <select id="reports-service-type-filter" class="form-control">
@@ -746,20 +751,26 @@
                                 <option value="Desmonte">Desmonte</option>
                             </select>
                         </div>
-                        <div>
+                        <div class="reports-filter reports-filter-page-size">
                             <label
                                 style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Registros
                                 por página</label>
-                            <select id="reports-page-size" class="form-control">
-                                <option value="10">10</option>
-                                <option value="25">25</option>
-                                <option value="50">50</option>
-                                <option value="100">100</option>
-                            </select>
+                            <div class="reports-page-size-toolbar">
+                                <select id="reports-page-size" class="form-control">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <button id="reports-clear-filters-btn" class="btn btn-outline" type="button" title="Limpiar filtros" aria-label="Limpiar filtros">
+                                    <i class="fas fa-eraser"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
-                    <div style="margin-bottom: 10px; font-size: 0.85rem; color: var(--color-text-secondary);">
+                    <div class="reports-count-bar" style="margin-bottom: 10px; font-size: 0.85rem; color: var(--color-text-secondary);">
                         <span id="reports-count-label"><i class="fas fa-list-ol" style="margin-right:5px;"></i><span id="reports-total-count">—</span> reportes encontrados</span>
+                        <span id="reports-selected-count" hidden>0 seleccionados</span>
                     </div>
 
                     <div style="text-align: center; margin-bottom: 10px; display: none;" id="reports-loading-indicator">
@@ -772,6 +783,11 @@
                         <table id="reports-data-table" class="table" style="margin-bottom: 0;">
                             <thead>
                                 <tr>
+                                    <th id="reports-selection-header" class="reports-selection-column" hidden>
+                                        <label class="reports-select-all-label" for="reports-select-all-visible" title="Seleccionar filas visibles">
+                                            <input type="checkbox" id="reports-select-all-visible">
+                                        </label>
+                                    </th>
                                     <th>Fecha</th>
                                     <th>Cliente/Empresa</th>
                                     <th>Sede</th>

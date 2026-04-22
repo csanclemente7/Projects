@@ -12,7 +12,7 @@ let isSyncing = false; // Simple lock to prevent concurrent syncs
 const localToServerIdMap = new Map<string, string>();
 
 let periodicSyncIntervalId: number | null = null;
-const SYNC_INTERVAL = 30 * 1000; // 30 seconds
+const SYNC_INTERVAL = 60 * 1000; // 60 seconds — reduced from 30s to save battery and data
 
 async function hasReliableConnection(): Promise<boolean> {
   try {

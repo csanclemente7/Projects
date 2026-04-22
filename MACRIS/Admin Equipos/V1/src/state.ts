@@ -53,7 +53,7 @@ export const tablePaginationStates: Record<MaintenanceTableKey, PaginationState>
     myReports: { currentPage: 1, itemsPerPage: 10 },
     adminReports: { currentPage: 1, itemsPerPage: 10 },
     adminSchedule: { currentPage: 1, itemsPerPage: 10 },
-    adminEquipment: { currentPage: 1, itemsPerPage: 10 },
+    adminEquipment: { currentPage: 1, itemsPerPage: 20 },
     adminCities: { currentPage: 1, itemsPerPage: 10 },
     adminCompanies: { currentPage: 1, itemsPerPage: 10 },
     adminSedes: { currentPage: 1, itemsPerPage: 10 },

@@ -7,15 +7,60 @@ import { saveEntity, saveMultipleEquipments, fetchEquipment, deleteEntity as api
 import { extractDataFromImage } from './ai';
 import { parseExcelEquipments, ExcelValidationResult } from './excel';
 
+const normalizeEntityName = (value: string) => String(value || '')
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+
+function dependencyMatchesLocation(
+    dependency: { companyId: string; sedeId?: string | null },
+    companyId: string,
+    sedeId?: string | null
+) {
+    if (!companyId) return false;
+    if (sedeId) {
+        return dependency.sedeId === sedeId || dependency.companyId === sedeId;
+    }
+    return dependency.companyId === companyId && !dependency.sedeId;
+}
+
+function resolveDependencyIdForEquipment(
+    dependencyName: string,
+    companyId: string,
+    sedeId?: string | null,
+    dependencyPool = State.dependencies
+) {
+    const normalizedDepName = normalizeEntityName(dependencyName);
+    if (!normalizedDepName || !companyId) return '';
+
+    const match = dependencyPool.find(d =>
+        normalizeEntityName(d.name) === normalizedDepName &&
+        dependencyMatchesLocation(d, companyId, sedeId)
+    );
+
+    return match?.id || '';
+}
+
 async function refreshEquipment() {
     UI.showLoader('Sincronizando...');
     try {
-        const list = await fetchEquipment();
+        const [list, freshDeps] = await Promise.all([
+            fetchEquipment(),
+            fetchDependencies(),
+        ]);
         State.setEquipmentList(list);
+        State.setDependencies(freshDeps);
         UI.renderAdminEquipmentTable();
     } finally {
         UI.hideLoader();
     }
+}
+
+function getVisibleDependenciesForForm(companyId: string, sedeId: string) {
+    if (!companyId) return [];
+    return State.dependencies.filter(d => dependencyMatchesLocation(d, companyId, sedeId || null));
 }
 
 async function handleEntityFormSubmit(e: SubmitEvent) {
@@ -25,14 +70,20 @@ async function handleEntityFormSubmit(e: SubmitEvent) {
     const id = formData.get('id') as string;
     const category = formData.get('category') as string;
 
-    if (category === 'empresa' && (!D.formCompanyId.value || !D.formSedeId.value || !D.formDependencyId.value)) {
-        UI.showAppNotification('Para activos empresariales debe seleccionar Empresa, Sede y Dependencia', 'error');
-        // allow returning but wait, maybe not all have dependencies? Let's keep it less strict if preferred, but usually they are required, wait. Let's just be careful not to break existing data if they don't have sedes yet.
-        // I will just require Empresa, since Sede might be new:
-    }
     if (category === 'empresa' && !D.formCompanyId.value) {
         UI.showAppNotification('Primero debe seleccionar una empresa', 'error');
         return;
+    }
+    if (category === 'empresa') {
+        const companyHasSedes = State.sedes.some(s => s.companyId === D.formCompanyId.value && s.id !== D.formCompanyId.value);
+        if (companyHasSedes && !D.formSedeId.value) {
+            UI.showAppNotification('Para esta empresa debe seleccionar una sede.', 'error');
+            return;
+        }
+        if (!D.formDependencyId.value) {
+            UI.showAppNotification('Debe seleccionar una dependencia antes de guardar el equipo.', 'error');
+            return;
+        }
     }
 
     if (D.formCityId) {
@@ -176,11 +227,9 @@ async function handleQuickAddSubmit(e: SubmitEvent) {
         } else if (type === 'dependency') {
             const freshDeps = await fetchDependencies();
             State.setDependencies(freshDeps);
-            let filtered = State.dependencies.filter(d => d.companyId === D.formCompanyId.value);
-            if (D.formSedeId.value) {
-                filtered = filtered.filter(d => d.sedeId === D.formSedeId.value || !d.sedeId);
-            }
+            const filtered = getVisibleDependenciesForForm(D.formCompanyId.value, D.formSedeId.value);
             UI.populateDropdown(D.formDependencyId, filtered, data.id);
+            D.formDependencyId.value = data.id;
         }
 
     } catch (err: any) {
@@ -276,14 +325,26 @@ export function setupEventListeners() {
     
     D.adminEquipmentSearchInput?.addEventListener('input', (e) => {
         State.setTableSearchTerm('adminEquipment', (e.target as HTMLInputElement).value);
+        State.tablePaginationStates.adminEquipment.currentPage = 1;
         UI.renderAdminEquipmentTable();
     });
 
     D.adminEquipmentCompanyFilter?.addEventListener('change', () => {
+        State.tablePaginationStates.adminEquipment.currentPage = 1;
         UI.renderAdminEquipmentTable();
     });
 
     D.adminEquipmentSedeFilter?.addEventListener('change', () => {
+        State.tablePaginationStates.adminEquipment.currentPage = 1;
+        UI.renderAdminEquipmentTable();
+    });
+
+    D.adminEquipmentPaginationContainer?.addEventListener('click', (e) => {
+        const button = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-page]');
+        if (!button || button.disabled) return;
+        const requestedPage = Number(button.dataset.page);
+        if (!Number.isFinite(requestedPage) || requestedPage < 1) return;
+        State.tablePaginationStates.adminEquipment.currentPage = requestedPage;
         UI.renderAdminEquipmentTable();
     });
 
@@ -321,9 +382,15 @@ export function setupEventListeners() {
                 const statusBadge = r.isValid ? '<span class="badge-success">Válido</span>' : '<span class="badge-error">Error</span>';
                 if (r.isValid) validCount++; else errorCount++;
 
+                const parsedBrand = (r.data as any)?.brand || r.rawRow.Marca || r.rawRow.marca || r.rawRow['Marca Equipo'] || r.rawRow['marca equipo'] || 'N/A';
+                const parsedModel = (r.data as any)?.model || r.rawRow.Modelo || r.rawRow.modelo || r.rawRow['Modelo Equipo'] || r.rawRow['modelo equipo'] || 'N/A';
+                const rawSedeId = r.rawRow['Sede ID'] || r.rawRow['sede id'] || r.rawRow['ID de Sede'] || r.rawRow['id de sede'] || '';
+                const rawSede = r.rawRow.Sede || r.rawRow.sede || '';
+                const sedePreviewValue = rawSedeId || rawSede || 'N/A';
+                const sedePreviewLabel = rawSedeId ? 'Sede ID' : 'Sede';
                 const equipmentInfo = `
-                    <strong>${r.rawRow.Marca || r.rawRow.marca || 'N/A'} - ${r.rawRow.Modelo || r.rawRow.modelo || 'N/A'}</strong><br>
-                    <small>Sede: ${r.rawRow.Sede || r.rawRow.sede || 'N/A'}</small>
+                    <strong>${parsedBrand} - ${parsedModel}</strong><br>
+                    <small>${sedePreviewLabel}: ${sedePreviewValue}</small>
                 `;
 
                 const errorsOut = r.isValid ? 
@@ -466,6 +533,7 @@ async function processPendingEntitiesAndInsert(equipments: any[]): Promise<void>
     const newCompaniesMap = new Map<string, string>(); // newCompanyName -> companyId
     const newSedesMap = new Map<string, string>(); // newSedeName_companyId -> sedeId
     const newDepsMap = new Map<string, string>(); // newDepName_companyId_sedeId -> refId
+    const createdDependencies: Array<{ id: string; name: string; companyId: string; sedeId: string | null; }> = [];
 
     const toFormData = (obj: any) => {
         const fd = new FormData();
@@ -478,9 +546,12 @@ async function processPendingEntitiesAndInsert(equipments: any[]): Promise<void>
     // 1. Resolve Cities
     for (const eq of equipments) {
         if (eq.isNewCity && eq.newCityName) {
-            const key = eq.newCityName.toLowerCase();
+            const key = normalizeEntityName(eq.newCityName);
             if (!newCitiesMap.has(key)) {
-                const { data } = await saveEntity('city', '', toFormData({ name: eq.newCityName }));
+                const { data, error } = await saveEntity('city', '', toFormData({ name: eq.newCityName }));
+                if (error || !data?.id) {
+                    throw new Error(`No se pudo crear la ciudad "${eq.newCityName}" durante la importación.`);
+                }
                 newCitiesMap.set(key, data.id);
             }
             eq.cityId = newCitiesMap.get(key);
@@ -491,9 +562,12 @@ async function processPendingEntitiesAndInsert(equipments: any[]): Promise<void>
     // 2. Resolve Companies
     for (const eq of equipments) {
         if (eq.isNewCompany && eq.newCompanyName) {
-            const key = eq.newCompanyName.toLowerCase() + "_" + eq.cityId;
+            const key = normalizeEntityName(eq.newCompanyName) + "_" + eq.cityId;
             if (!newCompaniesMap.has(key)) {
-                const { data } = await saveEntity('company', '', toFormData({ name: eq.newCompanyName, city_id: eq.cityId }));
+                const { data, error } = await saveEntity('company', '', toFormData({ name: eq.newCompanyName, city_id: eq.cityId }));
+                if (error || !data?.id) {
+                    throw new Error(`No se pudo crear la empresa "${eq.newCompanyName}" durante la importación.`);
+                }
                 newCompaniesMap.set(key, data.id);
             }
             eq.companyId = newCompaniesMap.get(key);
@@ -504,9 +578,16 @@ async function processPendingEntitiesAndInsert(equipments: any[]): Promise<void>
     // 3. Resolve Sedes
     for (const eq of equipments) {
         if (eq.isNewSede && eq.newSedeName) {
-            const key = eq.newSedeName.toLowerCase() + "_" + eq.companyId;
+            const key = normalizeEntityName(eq.newSedeName) + "_" + eq.companyId;
             if (!newSedesMap.has(key)) {
-                const { data } = await saveEntity('sede', '', toFormData({ name: eq.newSedeName, company_id: eq.companyId }));
+                const { data, error } = await saveEntity('sede', '', toFormData({
+                    name: eq.newSedeName,
+                    company_id: eq.companyId,
+                    city_id: eq.cityId || null
+                }));
+                if (error || !data?.id) {
+                    throw new Error(`No se pudo crear la sede "${eq.newSedeName}" durante la importación.`);
+                }
                 newSedesMap.set(key, data.id);
             }
             eq.sedeId = newSedesMap.get(key);
@@ -516,19 +597,83 @@ async function processPendingEntitiesAndInsert(equipments: any[]): Promise<void>
 
     // 4. Resolve Dependencies
     for (const eq of equipments) {
+        const dependencyLabel = eq.dependencyName || eq.newDependencyName;
+        if (dependencyLabel) {
+            const exactExistingId = resolveDependencyIdForEquipment(dependencyLabel, eq.companyId, eq.sedeId);
+            if (exactExistingId) {
+                eq.dependencyId = exactExistingId;
+                eq.isNewDependency = false;
+                continue;
+            }
+        }
+
         if (eq.isNewDependency && eq.newDependencyName) {
-            const key = eq.newDependencyName.toLowerCase() + "_" + eq.companyId + "_" + (eq.sedeId || 'null');
+            const key = normalizeEntityName(eq.newDependencyName) + "_" + eq.companyId + "_" + (eq.sedeId || 'null');
             if (!newDepsMap.has(key)) {
-                const { data } = await saveEntity('dependency', '', toFormData({ 
+                const { data, error } = await saveEntity('dependency', '', toFormData({ 
                     name: eq.newDependencyName, 
                     company_id: eq.companyId,
                     sede_id: eq.sedeId || null
                 }));
+                if (error || !data?.id) {
+                    throw new Error(`No se pudo crear la dependencia "${eq.newDependencyName}" durante la importación.`);
+                }
                 newDepsMap.set(key, data.id); // Note: data is a single object, not array, because saveEntity uses .single()
+                const createdDependency = {
+                    id: data.id,
+                    name: data.name,
+                    companyId: data.company_id || eq.sedeId || eq.companyId,
+                    clientId: data.client_id || eq.companyId || null,
+                    sedeId: data.sede_id || null,
+                };
+                State.dependencies.push(createdDependency);
+                createdDependencies.push(createdDependency);
             }
             eq.dependencyId = newDepsMap.get(key);
             eq.isNewDependency = false;
         }
+    }
+
+    const freshDependencies = await fetchDependencies();
+    const mergedDependencies = [...freshDependencies];
+    createdDependencies.forEach(dep => {
+        if (!mergedDependencies.some(existing => existing.id === dep.id)) {
+            mergedDependencies.push(dep);
+        }
+    });
+    State.setDependencies(mergedDependencies);
+
+    for (const eq of equipments) {
+        if (eq.category !== 'empresa' || !eq.companyId) continue;
+
+        const dependencyLabel = eq.dependencyName || eq.newDependencyName;
+        if (!dependencyLabel) continue;
+
+        const exactDbDependencyId = resolveDependencyIdForEquipment(
+            dependencyLabel,
+            eq.companyId,
+            eq.sedeId,
+            mergedDependencies
+        );
+        if (exactDbDependencyId) {
+            eq.dependencyId = exactDbDependencyId;
+            eq.isNewDependency = false;
+        }
+    }
+
+    const invalidEnterpriseRows = equipments.filter(eq =>
+        eq.category === 'empresa' && (!eq.companyId || !eq.dependencyId)
+    );
+    if (invalidEnterpriseRows.length > 0) {
+        const sampleIds = invalidEnterpriseRows
+            .slice(0, 5)
+            .map(eq => {
+                const base = eq.manualId || `${eq.brand || 'Equipo'} ${eq.model || ''}`.trim();
+                const dep = eq.dependencyName || eq.newDependencyName || 'sin dependencia';
+                return `${base} -> ${dep}`;
+            })
+            .join(', ');
+        throw new Error(`La importación se detuvo porque algunos equipos empresariales quedaron sin dependencia válida: ${sampleIds}. Revise el Excel y vuelva a intentarlo.`);
     }
 
     // 5. Bulk Insert equipments

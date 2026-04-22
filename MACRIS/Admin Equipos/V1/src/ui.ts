@@ -53,6 +53,18 @@ export function closeInfoModal() {
     if (D.infoModal) D.infoModal.style.display = 'none';
 }
 
+function dependencyMatchesLocation(
+    dependency: { companyId: string; sedeId?: string | null },
+    companyId: string,
+    sedeId?: string | null
+) {
+    if (!companyId) return false;
+    if (sedeId) {
+        return dependency.sedeId === sedeId || dependency.companyId === sedeId;
+    }
+    return dependency.companyId === companyId && !dependency.sedeId;
+}
+
 type QuickAddType = 'city' | 'company' | 'dependency';
 
 const QUICK_ADD_COPY: Record<QuickAddType, { title: string; nameLabel: string; placeholder: string; parentLabel?: string }> = {
@@ -204,12 +216,14 @@ export function renderAdminEquipmentTable() {
     const term = State.tableSearchTerms.adminEquipment.toLowerCase();
     const companyFilterId = D.adminEquipmentCompanyFilter?.value;
     const sedeFilterId = D.adminEquipmentSedeFilter?.value;
+    const paginationState = State.tablePaginationStates.adminEquipment;
     
     const filtered = State.equipmentList.filter(e => {
         const company = State.companies.find(c => c.id === e.companyId)?.name || '';
+        const companyManualId = State.companies.find(c => c.id === e.companyId)?.manualId || '';
         const matchesCompany = !companyFilterId || e.companyId === companyFilterId;
         const matchesSede = !sedeFilterId || e.sedeId === sedeFilterId;
-        const searchStr = `${e.manualId} ${e.brand} ${e.model} ${e.client_name} ${company}`.toLowerCase();
+        const searchStr = `${e.manualId} ${e.brand} ${e.model} ${e.client_name} ${company} ${companyManualId}`.toLowerCase();
         return matchesCompany && matchesSede && searchStr.includes(term);
     });
 
@@ -217,7 +231,19 @@ export function renderAdminEquipmentTable() {
         D.adminEquipmentCount.textContent = filtered.length.toString();
     }
 
-    D.adminEquipmentTableBody.innerHTML = filtered.map(e => {
+    const totalItems = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / paginationState.itemsPerPage));
+    if (paginationState.currentPage > totalPages) {
+        paginationState.currentPage = totalPages;
+    }
+    if (paginationState.currentPage < 1) {
+        paginationState.currentPage = 1;
+    }
+
+    const startIndex = (paginationState.currentPage - 1) * paginationState.itemsPerPage;
+    const paginated = filtered.slice(startIndex, startIndex + paginationState.itemsPerPage);
+
+    D.adminEquipmentTableBody.innerHTML = paginated.map(e => {
         const city = State.cities.find(c => c.id === e.cityId)?.name || 'N/A';
         const owner = e.category === 'residencial' 
             ? `<span class="text-accent">${e.client_name || 'Sin nombre'}</span>` 
@@ -234,6 +260,7 @@ export function renderAdminEquipmentTable() {
             <td data-label="Sede">${sedeName}</td>
             <td data-label="Dependencia">${depName}</td>
             <td data-label="Ciudad">${city}</td>
+            <td data-label="Periodicidad">${e.periodicityMonths ?? 6} mes(es)</td>
             <td data-label="Último Mtto.">${formatDate(e.lastMaintenanceDate, false)}</td>
             <td data-label="Acciones">
                 <button class="btn btn-secondary action-btn edit-equipment-btn" data-id="${e.id}"><i class="fas fa-edit"></i></button>
@@ -241,6 +268,23 @@ export function renderAdminEquipmentTable() {
             </td>
         </tr>`;
     }).join('');
+
+    if (D.adminEquipmentPaginationContainer) {
+        const from = totalItems === 0 ? 0 : startIndex + 1;
+        const to = Math.min(startIndex + paginationState.itemsPerPage, totalItems);
+        const prevDisabled = paginationState.currentPage <= 1 ? 'disabled' : '';
+        const nextDisabled = paginationState.currentPage >= totalPages ? 'disabled' : '';
+        D.adminEquipmentPaginationContainer.innerHTML = `
+            <div class="pagination-summary">
+                Mostrando ${from}-${to} de ${totalItems} registros
+            </div>
+            <div class="pagination-actions">
+                <button class="btn btn-secondary" data-page="${paginationState.currentPage - 1}" ${prevDisabled}>Anterior</button>
+                <span class="pagination-page-indicator">Página ${paginationState.currentPage} de ${totalPages}</span>
+                <button class="btn btn-secondary" data-page="${paginationState.currentPage + 1}" ${nextDisabled}>Siguiente</button>
+            </div>
+        `;
+    }
 }
 
 export function openEquipmentForm(id?: string) {
@@ -287,21 +331,14 @@ export function openEquipmentForm(id?: string) {
     };
 
     const updateDependencies = (sedeId: string, companyId: string, selectedDepId?: string) => {
-        let filtered = State.dependencies;
-        if (sedeId) {
-             // For legacy dependencies, companyId might actually hold the Sede ID
-             filtered = filtered.filter(d => d.sedeId === sedeId || d.companyId === sedeId);
-        } else {
-             // If no sede is selected, filter by the company ID
-             filtered = filtered.filter(d => d.companyId === companyId && !d.sedeId);
-        }
+        const filtered = State.dependencies.filter(d => dependencyMatchesLocation(d, companyId, sedeId || null));
         populateDropdown(D.formDependencyId, filtered, selectedDepId, 'Seleccione dependencia...');
     };
 
     const syncCompanySearchInput = () => {
         if (!D.formCompanySearchInput) return;
         const selected = State.companies.find(c => c.id === D.formCompanyId.value);
-        D.formCompanySearchInput.value = selected?.name || '';
+        D.formCompanySearchInput.value = selected ? `[${selected.manualId}] ${selected.name}` : '';
     };
 
     const clearCompanyResults = () => {
@@ -316,16 +353,21 @@ export function openEquipmentForm(id?: string) {
             return;
         }
 
-        const matches = State.companies.filter(c => c.name.toLowerCase().includes(query)).slice(0, 15);
+        const matches = State.companies
+            .filter(c =>
+                c.name.toLowerCase().includes(query)
+                || c.manualId.toLowerCase().includes(query)
+            )
+            .slice(0, 15);
         if (matches.length === 0) {
             D.formCompanyResults.innerHTML = '<div class="search-result-item" aria-disabled="true">Sin resultados</div>';
             return;
         }
 
         D.formCompanyResults.innerHTML = matches.map(company => {
-            const cityName = State.cities.find(c => c.id === company.cityId)?.name || 'Sin ciudad';
+            const cityName = State.cities.find(c => c.id === company.cityId)?.name || company.cityName || 'Sin ciudad';
             return `<div class="search-result-item" data-id="${company.id}" role="option">
-                <span class="search-result-item-id">${company.name}</span>
+                <span class="search-result-item-id">[${company.manualId}] ${company.name}</span>
                 <span class="search-result-item-location">${cityName}</span>
             </div>`;
         }).join('');

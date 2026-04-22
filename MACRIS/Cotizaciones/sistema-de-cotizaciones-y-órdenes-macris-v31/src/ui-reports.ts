@@ -1,5 +1,5 @@
 import * as DOM from './dom';
-import { fetchReportsBatch, fetchAllExportableReports, fetchCities, fetchCompanies, fetchDependencies, SUPABASE_REPORT_BATCH, updateReportPaymentStatus, deleteReport, updateFullReport } from './api-reports';
+import { fetchReportsBatch, fetchAllExportableReports, fetchReportsByIds, fetchCities, fetchCompanies, fetchDependencies, SUPABASE_REPORT_BATCH, updateReportPaymentStatus, deleteReport, updateFullReport } from './api-reports';
 import { generateZipExport, generateExcelExport, generateMergedPdfExport, getMergedPdfBlob } from './exporter';
 import { generateReportPDF } from './pdf-reports';
 import type { Report, City, Company, Dependency } from './reports-types';
@@ -11,6 +11,9 @@ let currentPage = 1;
 let pageSize = 10;
 let totalRecords = 0;
 let highlightedReportIds: Set<string> = new Set();
+let selectionModeEnabled = false;
+let selectedReportIds: Set<string> = new Set();
+let selectedReportsCache: Map<string, Report> = new Map();
 
 // Reference Data
 let cachedCities: City[] = [];
@@ -48,6 +51,213 @@ function renderReportServiceType(serviceType: string | null | undefined): string
     )).join('<span class="report-service-type-separator"> • </span>');
 }
 
+function normalizeObservationText(value: string | null | undefined): string {
+    return (value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function reportObservationsNeedAlert(observations: string | null | undefined): boolean {
+    const text = normalizeObservationText(observations);
+    if (!text) return false;
+
+    const ignorePatterns = [
+        /\bno presenta(?:\s+\w+){0,3}\s+(?:danos?|fugas?|fallas?|defectos?)\b/,
+        /\bsin fugas?\b/,
+        /\bsin danos?\b/,
+        /\bsin fallas?\b/,
+        /\bno presenta(?:\s+\w+){0,3}\s+(?:falla|fallo)\b/,
+        /\bno se evidencia(?:\s+\w+){0,3}\s+(?:dano|danos|fuga|fugas|falla|fallas)\b/,
+        /\bno requiere(?:\s+\w+){0,2}\s+(?:reparacion|arreglo|correccion)\b/,
+        /\ben buen estado\b/,
+        /\boperando normal(?:mente)?\b/,
+        /\bfuncionando normal(?:mente)?\b/,
+        /\btrabajando normal(?:mente)?\b/,
+    ];
+
+    if (ignorePatterns.some(pattern => pattern.test(text))) {
+        return false;
+    }
+
+    const directAlertPatterns = [
+        /\bdanos?\b/,
+        /\bdanad[oa]s?\b/,
+        /\bdefectuos[oa]s?\b/,
+        /\bfallas?\b/,
+        /\bfall[oa]\b/,
+        /\bfugas?\b/,
+        /\bfalta\s+(?:de\s+)?(?:gas|refrigerante)\b/,
+        /\bsin\s+(?:gas|refrigerante)\b/,
+        /\bperdida\s+de\s+(?:gas|refrigerante)\b/,
+        /\bpierde\s+(?:gas|refrigerante)\b/,
+        /\bescape\s+de\s+(?:gas|refrigerante)\b/,
+        /\bproblema(?:s)?\b/,
+        /\bmal\s+estado\b/,
+        /\bno\s+(?:funciona|opera|enciende|arranca|enfria|trabaja)\b/,
+        /\bdejo\s+de\s+(?:funcionar|enfriar|operar)\b/,
+        /\bpresenta\s+(?:dano|danos|falla|fallas|fuga|fugas|defecto|defectos)\b/,
+        /\bse\s+encuentra\s+(?:danad[oa]|defectuos[oa]|averiad[oa])\b/,
+        /\barreglar\b/,
+        /\barreglo\b/,
+        /\brepar(?:ar|acion|aciones|ado|ada)\b/,
+        /\baveri(?:a|ado|ada)\b/,
+        /\brequiere\s+(?:revision|reparacion|arreglo|correccion)\b/,
+        /\bcorreccion\s+de\s+(?:gas|fuga|flares?)\b/,
+        /\brecarga(?:\s+\w+){0,3}\s+(?:de\s+)?(?:gas|refrigerante)\b/,
+    ];
+
+    if (directAlertPatterns.some(pattern => pattern.test(text))) {
+        return true;
+    }
+
+    const correctiveActionPatterns = [
+        /\bcorrig(?:e|io|ieron)\b/,
+        /\bcorreccion\b/,
+        /\brepar(?:ar|acion|aciones|ado|ada)\b/,
+        /\barreglar\b/,
+        /\barreglo\b/,
+        /\brecarga\b/,
+        /\brecargo\b/,
+        /\breemplaz(?:o|a|ado|ada)\b/,
+        /\bcambio\s+de\b/,
+        /\bajuste\b/,
+    ];
+
+    const correctiveTargetPatterns = [
+        /\bgas\b/,
+        /\brefrigerante\b/,
+        /\bfuga\b/,
+        /\bflares?\b/,
+        /\bcompresor\b/,
+        /\bcapacitor\b/,
+        /\bvalvulas?\b/,
+        /\bserpentin\b/,
+        /\bmotor(?:es)?\b/,
+        /\btarjeta\b/,
+        /\bcontactora\b/,
+        /\bfiltro\s+secador\b/,
+    ];
+
+    const hasCorrectiveAction = correctiveActionPatterns.some(pattern => pattern.test(text));
+    const hasCorrectiveTarget = correctiveTargetPatterns.some(pattern => pattern.test(text));
+
+    return hasCorrectiveAction && hasCorrectiveTarget;
+}
+
+function renderReportServiceTypeCell(serviceType: string | null | undefined, observations: string | null | undefined): string {
+    const showAlert = reportObservationsNeedAlert(observations);
+
+    return `
+        <span class="report-service-type-cell">
+            <span class="report-service-type-content">${renderReportServiceType(serviceType)}</span>
+            ${showAlert ? `
+                <span class="report-observation-alert" title="Observaciones con posible novedad o corrección técnica">
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                </span>
+            ` : ''}
+        </span>
+    `;
+}
+
+function syncSelectedReportCache(reports: Report[]) {
+    reports.forEach(report => selectedReportsCache.set(report.id, report));
+}
+
+function updateSelectionCountLabel() {
+    if (!DOM.reportsSelectedCount) return;
+
+    if (!selectionModeEnabled) {
+        DOM.reportsSelectedCount.hidden = true;
+        DOM.reportsSelectedCount.textContent = '0 seleccionados';
+        return;
+    }
+
+    DOM.reportsSelectedCount.hidden = false;
+    DOM.reportsSelectedCount.textContent = `${selectedReportIds.size} seleccionados`;
+}
+
+function updateSelectAllVisibleState() {
+    if (!DOM.reportsSelectAllVisible) return;
+
+    const visibleIds = currentReports.map(report => report.id);
+    const selectedVisibleCount = visibleIds.filter(id => selectedReportIds.has(id)).length;
+
+    DOM.reportsSelectAllVisible.disabled = !selectionModeEnabled || visibleIds.length === 0;
+    DOM.reportsSelectAllVisible.checked = visibleIds.length > 0 && selectedVisibleCount === visibleIds.length;
+    DOM.reportsSelectAllVisible.indeterminate = selectedVisibleCount > 0 && selectedVisibleCount < visibleIds.length;
+}
+
+function refreshSelectionUi() {
+    const table = document.getElementById('reports-data-table');
+    table?.classList.toggle('selection-mode', selectionModeEnabled);
+
+    if (DOM.reportsSelectionHeader) {
+        DOM.reportsSelectionHeader.hidden = !selectionModeEnabled;
+    }
+
+    if (DOM.reportsSelectionToggleBtn) {
+        DOM.reportsSelectionToggleBtn.classList.toggle('active', selectionModeEnabled);
+        DOM.reportsSelectionToggleBtn.setAttribute('aria-pressed', selectionModeEnabled ? 'true' : 'false');
+        DOM.reportsSelectionToggleBtn.title = selectionModeEnabled
+            ? 'Desactivar selección manual'
+            : 'Activar selección manual';
+    }
+
+    updateSelectionCountLabel();
+    updateSelectAllVisibleState();
+}
+
+function clearReportSelection() {
+    selectedReportIds.clear();
+    selectedReportsCache.clear();
+    updateSelectionCountLabel();
+    updateSelectAllVisibleState();
+}
+
+function toggleSelectionMode() {
+    selectionModeEnabled = !selectionModeEnabled;
+
+    if (!selectionModeEnabled) {
+        clearReportSelection();
+    } else {
+        syncSelectedReportCache(currentReports);
+    }
+
+    refreshSelectionUi();
+    renderReportRows(currentReports);
+}
+
+function setReportSelected(report: Report, shouldSelect: boolean) {
+    if (shouldSelect) {
+        selectedReportIds.add(report.id);
+        selectedReportsCache.set(report.id, report);
+    } else {
+        selectedReportIds.delete(report.id);
+        selectedReportsCache.delete(report.id);
+    }
+
+    updateSelectionCountLabel();
+    updateSelectAllVisibleState();
+}
+
+async function resolveSelectedReportsForExport(): Promise<Report[]> {
+    const selectedIds = Array.from(selectedReportIds);
+    if (selectedIds.length === 0) return [];
+
+    const missingIds = selectedIds.filter(id => !selectedReportsCache.has(id));
+    if (missingIds.length > 0) {
+        const recoveredReports = await fetchReportsByIds(missingIds);
+        recoveredReports.forEach(report => selectedReportsCache.set(report.id, report));
+    }
+
+    return selectedIds
+        .map(id => selectedReportsCache.get(id))
+        .filter((report): report is Report => Boolean(report));
+}
+
 export async function initReportsUI() {
     setupEventListeners();
     await loadReferenceData();
@@ -68,6 +278,10 @@ async function loadReferenceData() {
 }
 
 function setupEventListeners() {
+    DOM.reportsSelectionToggleBtn.addEventListener('click', () => {
+        toggleSelectionMode();
+    });
+
     DOM.reportsSearchInput.addEventListener('input', debounce(async () => {
         await resetAndLoadReports();
     }, 500));
@@ -95,6 +309,15 @@ function setupEventListeners() {
         await resetAndLoadReports();
     });
 
+    DOM.reportsClearFiltersBtn.addEventListener('click', async () => {
+        DOM.reportsSearchInput.value = '';
+        DOM.reportsDateFrom.value = '';
+        DOM.reportsDateTo.value = '';
+        DOM.reportsServiceTypeFilter.value = '';
+        await resetAndLoadReports();
+        DOM.reportsSearchInput.focus();
+    });
+
     DOM.reportsPageSize.addEventListener('change', async (e) => {
         pageSize = parseInt((e.target as HTMLSelectElement).value, 10);
         await resetAndLoadReports();
@@ -118,9 +341,40 @@ function setupEventListeners() {
         if (currentPage < totalPages) await loadPage(totalPages);
     });
 
+    DOM.reportsSelectAllVisible.addEventListener('change', () => {
+        if (!selectionModeEnabled) return;
+
+        const shouldSelectVisible = DOM.reportsSelectAllVisible.checked;
+        currentReports.forEach(report => {
+            if (shouldSelectVisible) {
+                selectedReportIds.add(report.id);
+                selectedReportsCache.set(report.id, report);
+            } else {
+                selectedReportIds.delete(report.id);
+                selectedReportsCache.delete(report.id);
+            }
+        });
+
+        updateSelectionCountLabel();
+        updateSelectAllVisibleState();
+        renderReportRows(currentReports);
+    });
+
     // Delegación para botones de PDF individuales
     DOM.reportsTbody.addEventListener('click', async (e) => {
         const target = e.target as HTMLElement;
+        const checkbox = target.closest('.report-select-checkbox') as HTMLInputElement | null;
+        if (checkbox) {
+            const reportId = checkbox.getAttribute('data-id');
+            const report = currentReports.find(r => r.id === reportId);
+            if (report) {
+                setReportSelected(report, checkbox.checked);
+                const row = checkbox.closest('tr[data-report-id]');
+                row?.classList.toggle('report-selected-row', checkbox.checked);
+            }
+            return;
+        }
+
         const btn = target.closest('.btn-download-pdf') as HTMLButtonElement;
         
         if (btn) {
@@ -148,7 +402,7 @@ function setupEventListeners() {
 
         // Click en la fila (no en botones de acción)
         const row = (target as HTMLElement).closest('tr[data-report-id]') as HTMLElement;
-        if (row && !(target as HTMLElement).closest('.actions')) {
+        if (row && !(target as HTMLElement).closest('.actions') && !(target as HTMLElement).closest('.reports-selection-cell')) {
             const reportId = row.getAttribute('data-report-id');
             const report = currentReports.find(r => r.id === reportId);
             if (report) showReportDetailsModal(report);
@@ -200,6 +454,9 @@ function setupEventListeners() {
                         
                         const success = await deleteReport(reportId);
                         if (success) {
+                            selectedReportIds.delete(reportId);
+                            selectedReportsCache.delete(reportId);
+                            updateSelectionCountLabel();
                             await resetAndLoadReports();
                         } else {
                             throw new Error("API returned false");
@@ -253,19 +510,6 @@ async function handleExport(type: string) {
     DOM.reportsExportMergedBtn.disabled = true;
     DOM.reportsExportWhatsappBtn.disabled = true;
 
-    reportsToExport = await fetchAllExportableReports({ searchTerm: searchInput, dateFrom, dateTo, serviceType });
-
-    DOM.reportsExportExcelBtn.disabled = false;
-    DOM.reportsExportZipBtn.disabled = false;
-    DOM.reportsExportMergedBtn.disabled = false;
-    DOM.reportsExportWhatsappBtn.disabled = false;
-
-    if (reportsToExport.length === 0) {
-        alert("No se encontraron reportes.");
-        return;
-    }
-
-    // Set buttons visually to loading
     const activeBtn = type === 'excel' ? DOM.reportsExportExcelBtn : 
                       type === 'zip' ? DOM.reportsExportZipBtn : 
                       type === 'whatsapp' ? DOM.reportsExportWhatsappBtn : DOM.reportsExportMergedBtn;
@@ -275,6 +519,27 @@ async function handleExport(type: string) {
     activeBtn.disabled = true;
 
     try {
+        if (selectionModeEnabled) {
+            if (selectedReportIds.size === 0) {
+                UI.showNotification('Selecciona al menos un reporte o desactiva el modo selección para exportar todos.', 'warning');
+                return;
+            }
+
+            reportsToExport = await resolveSelectedReportsForExport();
+        } else {
+            reportsToExport = await fetchAllExportableReports({ searchTerm: searchInput, dateFrom, dateTo, serviceType });
+        }
+
+        if (reportsToExport.length === 0) {
+            UI.showNotification(
+                selectionModeEnabled
+                    ? 'No fue posible recuperar los reportes seleccionados. Actualiza la lista e inténtalo de nuevo.'
+                    : 'No se encontraron reportes con los filtros actuales.',
+                'error'
+            );
+            return;
+        }
+
         if (type === 'excel') {
             await generateExcelExport(reportsToExport, cachedCities);
         } else if (type === 'zip') {
@@ -344,8 +609,17 @@ async function handleExport(type: string) {
         }
     } catch (e) {
         console.error("Procesamiento Error:", e);
-        alert("Ocurrió un error en el proceso.");
+        UI.showNotification(
+            type === 'pdf'
+                ? 'No fue posible unir los PDFs seleccionados. Intenta actualizar la lista y repetir la acción.'
+                : 'Ocurrió un error durante la exportación.',
+            'error'
+        );
     } finally {
+        DOM.reportsExportExcelBtn.disabled = false;
+        DOM.reportsExportZipBtn.disabled = false;
+        DOM.reportsExportMergedBtn.disabled = false;
+        DOM.reportsExportWhatsappBtn.disabled = false;
         activeBtn.innerHTML = oldText;
         activeBtn.disabled = false;
     }
@@ -378,6 +652,7 @@ async function loadPage(page: number, highlightNew: boolean = false) {
 
     totalRecords = count;
     currentReports = data;
+    syncSelectedReportCache(data);
 
     if (highlightNew && prevIds.size > 0) {
         currentReports.forEach(r => {
@@ -413,10 +688,13 @@ function renderPaginationControls() {
 
 function renderReportRows(reports: Report[]) {
     if (currentReports.length === 0 && reports.length === 0) {
-        DOM.reportsTbody.innerHTML = '<tr><td colspan="10" style="text-align: center;">No se encontraron reportes</td></tr>';
+        const emptyCols = selectionModeEnabled ? 10 : 9;
+        DOM.reportsTbody.innerHTML = `<tr><td colspan="${emptyCols}" style="text-align: center;">No se encontraron reportes</td></tr>`;
+        updateSelectAllVisibleState();
         return;
     }
 
+    DOM.reportsTbody.innerHTML = '';
     reports.forEach(r => {
         const tr = document.createElement('tr');
         
@@ -470,14 +748,22 @@ function renderReportRows(reports: Report[]) {
         const eqDep = r.equipmentSnapshot.dependencyName || 'N/A';
         
         const displaySede = rawSede.length > 20 ? rawSede.substring(0, 20) + '...' : rawSede;
+        const isSelected = selectedReportIds.has(r.id);
 
         tr.setAttribute('data-report-id', r.id);
+        tr.classList.toggle('report-selected-row', isSelected);
         tr.innerHTML = `
+            ${selectionModeEnabled ? `
+            <td class="reports-selection-cell">
+                <label class="report-select-control" title="Seleccionar reporte">
+                    <input type="checkbox" class="report-select-checkbox" data-id="${r.id}" ${isSelected ? 'checked' : ''}>
+                </label>
+            </td>` : ''}
             <td>${dateStr}</td>
             <td title="${clientOrCompany || ''}">${displayClient}</td>
             <td title="${rawSede}">${displaySede}</td>
             <td>${eqDep}</td>
-            <td title="${escapeHtml(r.serviceType || 'N/A')}">${renderReportServiceType(r.serviceType)}</td>
+            <td title="${escapeHtml(r.serviceType || 'N/A')}">${renderReportServiceTypeCell(r.serviceType, r.observations)}</td>
             <td>${eqBrand}</td>
             <td>${eqType}</td>
             <td>${r.workerName}</td>
@@ -493,6 +779,8 @@ function renderReportRows(reports: Report[]) {
         `;
         DOM.reportsTbody.appendChild(tr);
     });
+
+    updateSelectAllVisibleState();
 }
 
 

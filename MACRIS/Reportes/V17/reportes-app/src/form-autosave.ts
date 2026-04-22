@@ -1,14 +1,26 @@
 import { maintenanceReportForm } from './dom';
 
 const DRAFT_KEY = 'report_form_draft_v1';
+const AUTOSAVE_DEBOUNCE_MS = 600;
 
 export const FormAutosave = {
+    _debounceTimer: null as number | null,
+
     init() {
         if (!maintenanceReportForm) return;
 
-        // Auto-guardar en cada cambio o teclado
-        maintenanceReportForm.addEventListener('input', () => this.saveDraft());
-        maintenanceReportForm.addEventListener('change', () => this.saveDraft());
+        // Auto-guardar con debounce para evitar bloquear el hilo principal en cada tecla.
+        // localStorage.setItem es síncrono — sin debounce genera lag visible en Android gama baja.
+        const scheduleSave = () => {
+            if (this._debounceTimer !== null) clearTimeout(this._debounceTimer);
+            this._debounceTimer = window.setTimeout(() => {
+                this._debounceTimer = null;
+                this.saveDraft();
+            }, AUTOSAVE_DEBOUNCE_MS);
+        };
+
+        maintenanceReportForm.addEventListener('input', scheduleSave);
+        maintenanceReportForm.addEventListener('change', scheduleSave);
     },
 
     saveDraft() {

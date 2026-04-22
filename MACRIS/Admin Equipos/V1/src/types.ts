@@ -14,29 +14,38 @@ export type ClientsDatabase = {
         Row: {
           id: string;
           created_at?: string;
+          manualId: string;
           name: string;
           address: string | null;
           phone: string | null;
           email: string | null;
           city: string | null;
+          contactPerson: string | null;
+          category: string | null;
         };
         Insert: {
           id?: string;
           created_at?: string;
+          manualId: string;
           name: string;
           address?: string | null;
           phone?: string | null;
           email?: string | null;
           city?: string | null;
+          contactPerson?: string | null;
+          category?: string | null;
         };
         Update: {
           id?: string;
           created_at?: string;
+          manualId?: string;
           name?: string;
           address?: string | null;
           phone?: string | null;
           email?: string | null;
           city?: string | null;
+          contactPerson?: string | null;
+          category?: string | null;
         };
         Relationships: [];
       };
@@ -79,15 +88,15 @@ export type Database = {
         Relationships: [];
       };
       maintenance_companies: {
-        Row: { id: string; name: string; city_id: string; created_at?: string; };
-        Insert: { id?: string; name: string; city_id: string; created_at?: string; };
-        Update: { id?: string; name?: string; city_id?: string; created_at?: string; };
+        Row: { id: string; name: string; city_id: string | null; client_id: string | null; address: string | null; created_at?: string; };
+        Insert: { id?: string; name: string; city_id?: string | null; client_id?: string | null; address?: string | null; created_at?: string; };
+        Update: { id?: string; name?: string; city_id?: string | null; client_id?: string | null; address?: string | null; created_at?: string; };
         Relationships: [];
       };
       maintenance_dependencies: {
-        Row: { id: string; name: string; company_id: string; sede_id: string | null; created_at?: string; };
-        Insert: { id?: string; name: string; company_id?: string; sede_id?: string; created_at?: string; };
-        Update: { id?: string; name?: string; company_id?: string; sede_id?: string; created_at?: string; };
+        Row: { id: string; name: string; company_id: string | null; client_id: string | null; sede_id: string | null; created_at?: string; };
+        Insert: { id?: string; name: string; company_id?: string | null; client_id?: string | null; sede_id?: string | null; created_at?: string; };
+        Update: { id?: string; name?: string; company_id?: string | null; client_id?: string | null; sede_id?: string | null; created_at?: string; };
         Relationships: [];
       };
       maintenance_equipment: {
@@ -102,6 +111,7 @@ export type Database = {
           refrigerant_type_id: string | null;
           capacity: string | null;
           city_id: string;
+          client_id: string | null;
           company_id: string | null;
           sede_id: string | null;
           dependency_id: string | null;
@@ -122,6 +132,7 @@ export type Database = {
           refrigerant_type_id?: string | null;
           capacity?: string | null;
           city_id: string;
+          client_id?: string | null;
           company_id?: string | null;
           sede_id?: string | null;
           dependency_id?: string | null;
@@ -142,6 +153,7 @@ export type Database = {
           refrigerant_type_id?: string | null;
           capacity?: string | null;
           city_id?: string;
+          client_id?: string | null;
           company_id?: string | null;
           sede_id?: string | null;
           dependency_id?: string | null;
@@ -406,8 +418,10 @@ export interface City {
 
 export interface Company {
     id: string;
+    manualId: string;
     name: string;
     cityId: string;
+    cityName?: string | null;
 }
 
 export interface Sede {
@@ -422,6 +436,7 @@ export interface Dependency {
     id: string;
     name: string;
     companyId: string;
+    clientId?: string | null;
     sedeId?: string | null;
 }
 

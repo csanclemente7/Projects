@@ -6,6 +6,30 @@ import type {
 import { generateId } from './utils';
 import { fetchCities } from './api-reports';
 
+const SUPABASE_FETCH_BATCH_SIZE = 1000;
+
+async function fetchAllRows<T>(queryFactory: () => any): Promise<T[]> {
+    const allRows: T[] = [];
+    let from = 0;
+
+    while (true) {
+        const to = from + SUPABASE_FETCH_BATCH_SIZE - 1;
+        const { data, error } = await queryFactory().range(from, to);
+        if (error) throw error;
+
+        const batch = (data as T[]) || [];
+        allRows.push(...batch);
+
+        if (batch.length < SUPABASE_FETCH_BATCH_SIZE) {
+            break;
+        }
+
+        from += SUPABASE_FETCH_BATCH_SIZE;
+    }
+
+    return allRows;
+}
+
 // --- ID Generation ---
 async function _findNextHighestManualId(
     tableName: 'quotes' | 'clients' | 'items',
@@ -85,8 +109,9 @@ export async function fetchSedes(): Promise<Sede[]> {
 }
 
 export async function fetchDependencies(): Promise<Dependency[]> {
-    const { data, error } = await supabaseOrders.from('maintenance_dependencies').select('*').order('name');
-    if (error) throw error;
+    const data = await fetchAllRows<any>(() =>
+        supabaseOrders.from('maintenance_dependencies').select('*').order('name')
+    );
 
     return (data || []).map(dbDependency => ({
         id: dbDependency.id,

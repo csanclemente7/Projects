@@ -1159,6 +1159,7 @@ function renderClientSedesRow(client: Client, sedes: Sede[]): string {
                     <div class="client-sede-main">
                         <strong>${escapeHtml(sede.name)}</strong>
                         <span>${escapeHtml(sede.cityName || 'Ciudad sin definir')}</span>
+                        <small class="client-sede-id">ID: ${escapeHtml(sede.id)}</small>
                     </div>
                     <div class="client-sede-meta">
                         <span><i class="fas fa-map-marker-alt"></i> ${escapeHtml(sede.address || 'Sin direccion')}</span>
@@ -2313,6 +2314,19 @@ export function syncOrderServicesFromTypes(syncOtro: boolean = true) {
     finalOrderTypeArr.forEach(serviceName => {
         const existingItem = order.items.find(i => i.description === serviceName);
         if (existingItem) return; // Ya existe
+
+        // When order was created from a quote, skip AUTO_SYNC if a quote-copied item
+        // already semantically represents this service type (keyword match).
+        if (order.quoteId) {
+            const keywords = serviceName.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+            const coveredByQuoteItem = order.items.some(i =>
+                i.manualId !== 'AUTO_SYNC' &&
+                isServiceItem(i.description) &&
+                keywords.length > 0 &&
+                keywords.some(kw => i.description.toLowerCase().includes(kw))
+            );
+            if (coveredByQuoteItem) return;
+        }
 
         const isMontaje = serviceName === 'Montaje/instalación';
 
@@ -3882,22 +3896,8 @@ export function openAgendaEditOrderModal(orderId: string) {
         (document.getElementById('agenda-edit-client-address') as HTMLInputElement).value = client.address || '';
     }
 
-    // ── Service fields ────────────────────────────────────────────────
-    (document.getElementById('agenda-edit-order-id') as HTMLInputElement).value = order.id;
-    (document.getElementById('agenda-edit-service-date') as HTMLInputElement).value = order.service_date;
-    (document.getElementById('agenda-edit-service-time') as HTMLInputElement).value = order.service_time || '';
-    (document.getElementById('agenda-edit-status') as HTMLSelectElement).value = order.status;
-    (document.getElementById('agenda-edit-notes') as HTMLTextAreaElement).value = order.notes || '';
-
-    const serviceTypeSelect = document.getElementById('agenda-edit-type') as HTMLSelectElement;
-    serviceTypeSelect.innerHTML = State.getServiceTypes().map(t => `<option value="${t.name}">${t.name}</option>`).join('');
-    const targetType = (order.order_type || '').trim().toLowerCase();
-    const matchOpt = Array.from(serviceTypeSelect.options).find(o => o.value.trim().toLowerCase() === targetType);
-    if (matchOpt) { serviceTypeSelect.value = matchOpt.value; }
-    else if (order.order_type) {
-        serviceTypeSelect.insertAdjacentHTML('beforeend', `<option value="${order.order_type}">${order.order_type}</option>`);
-        serviceTypeSelect.value = order.order_type;
-    }
+    // Service fields and all form values are now set AFTER the form clone below,
+    // so that they operate on newForm's live elements (cloneNode drops JS-set states).
 
     // ── Technicians: assigned chips + add dropdown ────────────────────
     const allTechs = State.getTechnicians()
@@ -3905,9 +3905,10 @@ export function openAgendaEditOrderModal(orderId: string) {
         .sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''));
 
     const localTechIds: string[] = order.technicianIds.filter(id => id !== NO_ASIGNADO_TECHNICIAN_ID);
-    const techChipsEl = document.getElementById('aep-tech-chips') as HTMLElement;
 
     const renderTechChips = () => {
+        const techChipsEl = document.getElementById('aep-tech-chips') as HTMLElement;
+        if (!techChipsEl) return;
         const assigned = allTechs.filter(t => localTechIds.includes(t.id));
         if (assigned.length === 0) {
             techChipsEl.innerHTML = `<span style="font-size:0.82rem; color:var(--color-text-secondary); padding:4px 0;">Sin técnico asignado</span>`;
@@ -3964,9 +3965,11 @@ export function openAgendaEditOrderModal(orderId: string) {
     const localItems: { id?: string; description: string; quantity: number; }[] =
         (order.items || []).map(i => ({ id: i.id, description: i.description, quantity: i.quantity }));
 
-    const itemsList = document.getElementById('aep-items-list') as HTMLElement;
     const renderItems = () => {
-        itemsList.innerHTML = localItems.length === 0
+        // Always query live so it works correctly after the form clone below
+        const el = document.getElementById('aep-items-list') as HTMLElement;
+        if (!el) return;
+        el.innerHTML = localItems.length === 0
             ? `<p style="color:var(--color-text-secondary); font-size:0.85rem; margin:0 0 4px; text-align:center; padding:6px 0;">Sin ítems registrados</p>`
             : localItems.map((item, idx) => `
                 <div class="aep-item-row" data-idx="${idx}">
@@ -3975,19 +3978,19 @@ export function openAgendaEditOrderModal(orderId: string) {
                     <button type="button" class="aep-item-remove-btn" data-idx="${idx}" title="Eliminar"><i class="fas fa-times"></i></button>
                 </div>`).join('');
 
-        itemsList.querySelectorAll('.aep-item-desc').forEach(el => {
-            el.addEventListener('input', (e) => {
+        el.querySelectorAll('.aep-item-desc').forEach(inp => {
+            inp.addEventListener('input', (e) => {
                 const idx = parseInt((e.target as HTMLElement).dataset.idx!);
                 localItems[idx].description = (e.target as HTMLInputElement).value;
             });
         });
-        itemsList.querySelectorAll('.aep-item-qty').forEach(el => {
-            el.addEventListener('input', (e) => {
+        el.querySelectorAll('.aep-item-qty').forEach(inp => {
+            inp.addEventListener('input', (e) => {
                 const idx = parseInt((e.target as HTMLElement).dataset.idx!);
                 localItems[idx].quantity = parseFloat((e.target as HTMLInputElement).value) || 1;
             });
         });
-        itemsList.querySelectorAll('.aep-item-remove-btn').forEach(btn => {
+        el.querySelectorAll('.aep-item-remove-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();
                 const idx = parseInt((e.currentTarget as HTMLElement).dataset.idx!);
@@ -3998,22 +4001,45 @@ export function openAgendaEditOrderModal(orderId: string) {
     };
     renderItems();
 
-    const addItemBtn = document.getElementById('aep-add-item-btn') as HTMLElement;
-    const newAddItemBtn = addItemBtn.cloneNode(true) as HTMLElement;
-    addItemBtn.parentNode?.replaceChild(newAddItemBtn, addItemBtn);
-    newAddItemBtn.addEventListener('click', () => {
-        localItems.push({ description: '', quantity: 1 });
-        renderItems();
-        const inputs = itemsList.querySelectorAll('.aep-item-desc');
-        (inputs[inputs.length - 1] as HTMLInputElement)?.focus();
-    });
-
     // ── Form submit ───────────────────────────────────────────────────
-    // Clone BEFORE photos setup so async photo callbacks always target live DOM nodes
-    // (photos section is outside the <form> in HTML, so cloneNode doesn't affect it)
+    // Clone the form to clear accumulated submit listeners from previous opens.
+    // Photos section is outside the form so it is never affected by this clone.
     const form = document.getElementById('agenda-edit-order-form') as HTMLFormElement;
     const newForm = form.cloneNode(true) as HTMLFormElement;
     form.parentNode?.replaceChild(newForm, form);
+
+    // After clone: re-populate every dynamic value and re-render interactive sections.
+    // cloneNode copies HTML structure but does NOT guarantee JS-set .value / .selected
+    // properties are preserved, and it never copies event listeners.
+
+    // Re-set all plain field values
+    (newForm.querySelector('#agenda-edit-order-id')    as HTMLInputElement).value   = order.id;
+    (newForm.querySelector('#agenda-edit-service-date') as HTMLInputElement).value  = order.service_date;
+    (newForm.querySelector('#agenda-edit-service-time') as HTMLInputElement).value  = order.service_time || '';
+    (newForm.querySelector('#agenda-edit-status')       as HTMLSelectElement).value = order.status;
+    (newForm.querySelector('#agenda-edit-notes')        as HTMLTextAreaElement).value = order.notes || '';
+    if (client) {
+        (newForm.querySelector('#agenda-edit-client-name')    as HTMLInputElement).value = client.name || '';
+        (newForm.querySelector('#agenda-edit-client-phone')   as HTMLInputElement).value = (client as any).phone || '';
+        (newForm.querySelector('#agenda-edit-client-city')    as HTMLInputElement).value = client.city || '';
+        (newForm.querySelector('#agenda-edit-client-address') as HTMLInputElement).value = client.address || '';
+    }
+
+    // Re-populate service type select with correct selection
+    const newServiceTypeSelect = newForm.querySelector('#agenda-edit-type') as HTMLSelectElement;
+    newServiceTypeSelect.innerHTML = State.getServiceTypes().map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+    const orderTypeKey = (order.order_type || '').trim().toLowerCase();
+    const matchedOpt = Array.from(newServiceTypeSelect.options).find(o => o.value.trim().toLowerCase() === orderTypeKey);
+    if (matchedOpt) {
+        newServiceTypeSelect.value = matchedOpt.value;
+    } else if (order.order_type) {
+        newServiceTypeSelect.insertAdjacentHTML('beforeend', `<option value="${order.order_type}">${order.order_type}</option>`);
+        newServiceTypeSelect.value = order.order_type;
+    }
+
+    // Re-render tech chips and items with fresh event listeners on newForm's elements
+    renderTechChips();
+    renderItems();
 
     // ── Photos / Attachments (outside form — never cloned) ────────────
     const photosGrid = document.getElementById('aep-photos-grid') as HTMLElement;
@@ -4094,13 +4120,36 @@ export function openAgendaEditOrderModal(orderId: string) {
         uploadLabel.innerHTML = '<i class="fas fa-camera"></i> Adjuntar foto';
     });
 
-    // Re-wire add-item btn after clone
+    // Re-wire add-item btn after clone (renderItems uses live getElementById so this works correctly)
     const clonedAddItemBtn = newForm.querySelector('#aep-add-item-btn') as HTMLElement;
     clonedAddItemBtn?.addEventListener('click', () => {
         localItems.push({ description: '', quantity: 1 });
         renderItems();
-        const inputs = itemsList.querySelectorAll('.aep-item-desc');
-        (inputs[inputs.length - 1] as HTMLInputElement)?.focus();
+        const inputs = document.getElementById('aep-items-list')?.querySelectorAll('.aep-item-desc');
+        if (inputs) (inputs[inputs.length - 1] as HTMLInputElement)?.focus();
+    });
+
+    // Re-wire add-tech btn after clone (original listener was on the old form, now removed from DOM)
+    const clonedAddTechBtn = newForm.querySelector('#aep-add-tech-btn') as HTMLElement;
+    clonedAddTechBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (techPickerEl) { closeTechPicker(); return; }
+        const unassigned = allTechs.filter(t => !localTechIds.includes(t.id));
+        if (unassigned.length === 0) return;
+        techPickerEl = document.createElement('div');
+        techPickerEl.className = 'aep-tech-picker';
+        techPickerEl.innerHTML = unassigned.map(t =>
+            `<div class="aep-tech-picker-item" data-tech-id="${t.id}">${escapeHtml(t.name ?? '—')}</div>`
+        ).join('');
+        techPickerEl.querySelectorAll('.aep-tech-picker-item').forEach(item => {
+            item.addEventListener('click', () => {
+                localTechIds.push((item as HTMLElement).dataset.techId!);
+                renderTechChips();
+                closeTechPicker();
+            });
+        });
+        clonedAddTechBtn.parentElement!.insertBefore(techPickerEl, clonedAddTechBtn.nextSibling);
+        setTimeout(() => document.addEventListener('click', closeTechPicker, { once: true }), 10);
     });
 
     newForm.addEventListener('submit', async (e) => {
@@ -4152,6 +4201,7 @@ export function openAgendaEditOrderModal(orderId: string) {
             if (idx !== -1) orders[idx] = savedOrder;
             State.setOrders(orders);
 
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = origLabel; }
             closeAgendaEditPanel();
             renderAgendaPage();
             showNotification(

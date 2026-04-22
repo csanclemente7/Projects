@@ -15,6 +15,48 @@ type OrderWithItems = Database['public']['Tables']['orders']['Row'] & {
     items: Database['public']['Tables']['order_items']['Row'][];
 };
 
+const normalizeLookupKey = (value: string | null | undefined): string =>
+    (value || '').trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const SUPABASE_FETCH_BATCH_SIZE = 1000;
+
+async function fetchAllRows<T>(queryFactory: () => any): Promise<T[]> {
+    const allRows: T[] = [];
+    let from = 0;
+
+    while (true) {
+        const to = from + SUPABASE_FETCH_BATCH_SIZE - 1;
+        const { data, error } = await queryFactory().range(from, to);
+        if (error) throw error;
+
+        const batch = (data as T[]) || [];
+        allRows.push(...batch);
+
+        if (batch.length < SUPABASE_FETCH_BATCH_SIZE) {
+            break;
+        }
+
+        from += SUPABASE_FETCH_BATCH_SIZE;
+    }
+
+    return allRows;
+}
+
+async function getNextClientManualId(): Promise<string> {
+    const { data, error } = await supabaseClients
+        .from('clients')
+        .select('manualId')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+    if (error || !data || data.length === 0) {
+        console.warn('Could not fetch remote next client ID, using fallback.', error);
+        return '101';
+    }
+
+    const maxId = parseInt(data[0].manualId, 10);
+    return isNaN(maxId) ? '101' : (maxId + 1).toString();
+}
+
 export async function fetchAppSettings(): Promise<AppSettings> {
     const { data, error } = await supabaseOrders.from('app_settings').select('*');
     if (error) throw error;
@@ -52,14 +94,29 @@ export async function fetchCities(): Promise<City[]> {
 }
 
 export async function fetchCompanies(): Promise<Company[]> {
-    const { data, error } = await supabaseClients.from('clients').select('*').eq('category', 'empresa').order('name');
+    const [{ data, error }, { data: cities, error: citiesError }] = await Promise.all([
+        supabaseClients.from('clients').select('*').eq('category', 'empresa').order('name'),
+        supabaseOrders.from('maintenance_cities').select('id, name')
+    ]);
+
     if (error) throw error;
+    if (citiesError) throw citiesError;
+
+    const cityMap = new Map(
+        ((cities as { id: string; name: string }[]) || []).map(city => [normalizeLookupKey(city.name), city])
+    );
+
     if (data) {
-        return data.map((dbCompany) => ({
-            id: dbCompany.id,
-            name: dbCompany.name,
-            cityId: dbCompany.city || '',
-        }));
+        return data.map((dbCompany) => {
+            const matchedCity = dbCompany.city ? cityMap.get(normalizeLookupKey(dbCompany.city)) : null;
+            return {
+                id: dbCompany.id,
+                manualId: dbCompany.manualId,
+                name: dbCompany.name,
+                cityId: matchedCity?.id || '',
+                cityName: dbCompany.city || matchedCity?.name || null,
+            };
+        });
     }
     return [];
 }
@@ -80,13 +137,15 @@ export async function fetchSedes(): Promise<Sede[]> {
 }
 
 export async function fetchDependencies(): Promise<Dependency[]> {
-    const { data, error } = await supabaseOrders.from('maintenance_dependencies').select('*').order('name');
-    if (error) throw error;
+    const data = await fetchAllRows<any>(() =>
+        supabaseOrders.from('maintenance_dependencies').select('*').order('name')
+    );
     if (data) {
         return data.map((dbDependency) => ({
             id: dbDependency.id,
             name: dbDependency.name,
-            companyId: dbDependency.client_id || dbDependency.company_id,
+            companyId: dbDependency.company_id || dbDependency.client_id || '',
+            clientId: dbDependency.client_id || null,
             sedeId: dbDependency.sede_id || null,
         }));
     }
@@ -384,10 +443,34 @@ export async function saveEntity(type: EntityType, id: string, formData: FormDat
                 if (cityData) cityNameForClient = cityData.name;
             } catch (e) { }
 
-            const companyData = { name: companyName, city: cityNameForClient, category: 'empresa' };
+            const companyData = {
+                name: companyName,
+                city: cityNameForClient,
+                category: 'empresa',
+                ...(isEditing ? {} : { manualId: await getNextClientManualId() })
+            };
             result = isEditing
                 ? await supabaseClients.from('clients').update(companyData).eq('id', id).select().single()
                 : await supabaseClients.from('clients').insert(companyData).select().single();
+
+            if (result.error) throw result.error;
+            if (!result.data?.id) throw new Error('No se pudo guardar la empresa en clients.');
+
+            // Mantiene la misma identidad canónica que Cotizaciones:
+            // toda empresa madre en clients debe reflejarse también en maintenance_companies
+            // con el mismo UUID, para que sedes, dependencias y equipos compartan la misma jerarquía.
+            const rootCompanyData = {
+                id: result.data.id,
+                name: result.data.name,
+                city_id: cityId || null,
+            };
+            const { error: syncCompanyError } = await supabaseOrders
+                .from('maintenance_companies')
+                .upsert(rootCompanyData, { onConflict: 'id' });
+
+            if (syncCompanyError) {
+                throw new Error(`La empresa se guardó, pero no se pudo sincronizar en mantenimiento: ${syncCompanyError.message}`);
+            }
             break;
 
         case 'sede':

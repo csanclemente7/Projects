@@ -7,6 +7,7 @@ import {
     fetchCities,
     fetchCompanies,
     fetchDependencies,
+    fetchSedes,
     fetchAllEquipment,
     fetchServiceTypes,
     fetchAppSettings,
@@ -40,16 +41,19 @@ const REQUEST_TIMEOUT_MS = 12000; // corta llamadas de red colgadas
 const ADMIN_RECENT_REPORTS_DAYS = 4;
 
 /** P4: Serializa solo los campos clave de las órdenes para comparación ligera sin clonar objetos completos. */
+/** Serializa solo los campos operativamente relevantes para el técnico.
+ *  Detecta: cambios de estado, fecha/hora, sede asignada, técnicos y cantidades de ítems.
+ *  Excluye: address, manualId, timestamp — no representan cambios que el técnico deba ver. */
 const serializeOrders = (orders: Order[]) => {
     return JSON.stringify(
         orders.map(o => ({
             id: o.id,
             status: o.status,
-            manualId: o.manualId,
-            address: o.address,
+            service_date: (o as any).service_date ?? null,
+            service_time: (o as any).service_time ?? null,
+            sede_id: (o as any).sede_id ?? null,
             techs: o.assignedTechnicians?.map(t => t.id).sort().join(',') || '',
             items: (o.items || []).map(i => `${i.id}:${(i as any).quantity ?? ''}`).sort().join(','),
-            timestamp: o.timestamp,
         })).sort((a, b) => `${a.id}`.localeCompare(`${b.id}`))
     );
 };
@@ -510,11 +514,8 @@ async function refreshReportsInBackground() {
     } finally {
         isRefreshingReportsInBackground = false;
     }
-
-    // Sincronizar también las órdenes asignadas del técnico para reflejar nuevas asignaciones o cambios.
-    if (State.currentUser?.role === 'worker') {
-        await refreshAssignedOrdersForWorker(State.currentUser, { notifyOnNew: true, onlyIfChanged: true });
-    }
+    // Las órdenes del técnico se actualizan mediante su propio polling dedicado (startOrderPolling).
+    // No se duplica aquí para evitar solapamiento de llamadas de red.
 }
 
 async function handlePostLogin(user: User) {
@@ -724,8 +725,9 @@ async function handlePostLogin(user: User) {
 
     } catch (error) {
         console.error('Failed to load application data after login:', error);
+        hideLoader(); // Must hide loader before logout to prevent permanent spinner
         showAppNotification('Error al cargar los datos. Por favor, intente de nuevo.', 'error');
-        handleLogout(); 
+        handleLogout();
     }
 }
 

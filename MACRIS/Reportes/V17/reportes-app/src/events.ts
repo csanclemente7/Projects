@@ -1787,9 +1787,15 @@ export function setupEventListeners() {
         const confirmed = await UI.showConfirmationModal('¿Está seguro de ELIMINAR TODOS LOS REPORTES? Esta acción es irreversible.', 'ELIMINAR TODO');
         if (confirmed) {
             UI.showLoader('Eliminando todos los reportes...');
-            await apiDeleteAllReports();
-            await refreshReportsState();
-            UI.hideLoader();
+            try {
+                await apiDeleteAllReports();
+                await refreshReportsState();
+            } catch (err) {
+                console.error('Error al eliminar reportes:', err);
+                UI.showAppNotification('Error al eliminar los reportes.', 'error');
+            } finally {
+                UI.hideLoader();
+            }
         }
     });
     D.adminManagementSection.addEventListener('change', (e) => {

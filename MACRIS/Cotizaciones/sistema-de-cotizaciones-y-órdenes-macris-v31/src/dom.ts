@@ -232,16 +232,21 @@ export const agendaRefreshBtn = document.getElementById('agenda-refresh-btn') as
 
 // Reports Page exports
 export const reportsSearchInput = document.getElementById('reports-search') as HTMLInputElement;
+export const reportsSelectionToggleBtn = document.getElementById('reports-selection-toggle-btn') as HTMLButtonElement;
 export const reportsRefreshBtn = document.getElementById('reports-refresh-btn') as HTMLButtonElement;
 export const reportsDateFrom = document.getElementById('reports-date-from') as HTMLInputElement;
 export const reportsDateTo = document.getElementById('reports-date-to') as HTMLInputElement;
 export const reportsServiceTypeFilter = document.getElementById('reports-service-type-filter') as HTMLSelectElement;
 export const reportsPageSize = document.getElementById('reports-page-size') as HTMLSelectElement;
+export const reportsClearFiltersBtn = document.getElementById('reports-clear-filters-btn') as HTMLButtonElement;
 export const reportsFirstPageBtn = document.getElementById('reports-first-page-btn') as HTMLButtonElement;
 export const reportsPrevPageBtn = document.getElementById('reports-prev-page-btn') as HTMLButtonElement;
 export const reportsNextPageBtn = document.getElementById('reports-next-page-btn') as HTMLButtonElement;
 export const reportsLastPageBtn = document.getElementById('reports-last-page-btn') as HTMLButtonElement;
 export const reportsTotalCount = document.getElementById('reports-total-count') as HTMLSpanElement;
+export const reportsSelectedCount = document.getElementById('reports-selected-count') as HTMLSpanElement;
+export const reportsSelectionHeader = document.getElementById('reports-selection-header') as HTMLTableCellElement;
+export const reportsSelectAllVisible = document.getElementById('reports-select-all-visible') as HTMLInputElement;
 export const reportsTbody = document.getElementById('reports-tbody') as HTMLTableSectionElement;
 export const reportsExportExcelBtn = document.getElementById('reports-export-excel-btn') as HTMLButtonElement;
 export const reportsExportZipBtn = document.getElementById('reports-export-zip-btn') as HTMLButtonElement;

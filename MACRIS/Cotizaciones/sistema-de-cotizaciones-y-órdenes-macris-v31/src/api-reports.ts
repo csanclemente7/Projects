@@ -2,6 +2,29 @@ import { supabaseOrders } from './supabase';
 import type { Report, City, Company, Dependency } from './reports-types';
 
 export const SUPABASE_REPORT_BATCH = 10;
+const SUPABASE_FETCH_BATCH_SIZE = 1000;
+
+async function fetchAllRows<T>(queryFactory: () => any): Promise<T[]> {
+    const allRows: T[] = [];
+    let from = 0;
+
+    while (true) {
+        const to = from + SUPABASE_FETCH_BATCH_SIZE - 1;
+        const { data, error } = await queryFactory().range(from, to);
+        if (error) throw error;
+
+        const batch = (data as T[]) || [];
+        allRows.push(...batch);
+
+        if (batch.length < SUPABASE_FETCH_BATCH_SIZE) {
+            break;
+        }
+
+        from += SUPABASE_FETCH_BATCH_SIZE;
+    }
+
+    return allRows;
+}
 
 function mapRowToReport(row: any): Report {
     return {
@@ -84,6 +107,22 @@ export async function fetchAllExportableReports(filters?: { searchTerm?: string,
     return ((data as any[]) || []).map(mapRowToReport);
 }
 
+export async function fetchReportsByIds(ids: string[]): Promise<Report[]> {
+    if (!ids || ids.length === 0) return [];
+
+    const { data, error } = await supabaseOrders
+        .from('maintenance_reports')
+        .select('*')
+        .in('id', ids);
+
+    if (error) {
+        console.error('Error fetching reports by ids:', error);
+        return [];
+    }
+
+    return ((data as any[]) || []).map(mapRowToReport);
+}
+
 export async function updateReportPaymentStatus(id: string, isPaid: boolean) {
     const { error } = await supabaseOrders
         .from('maintenance_reports')
@@ -138,9 +177,14 @@ export async function fetchCompanies(): Promise<Company[]> {
 }
 
 export async function fetchDependencies(): Promise<Dependency[]> {
-    const { data, error } = await supabaseOrders.from('maintenance_dependencies').select('*');
-    if (error) return [];
-    return data as Dependency[];
+    try {
+        return await fetchAllRows<Dependency>(() =>
+            supabaseOrders.from('maintenance_dependencies').select('*').order('name')
+        );
+    } catch (error) {
+        console.error('Error fetching dependencies:', error);
+        return [];
+    }
 }
 export async function updateFullReport(id: string, updates: Partial<any>): Promise<boolean> {
     const { error } = await (supabaseOrders as any)

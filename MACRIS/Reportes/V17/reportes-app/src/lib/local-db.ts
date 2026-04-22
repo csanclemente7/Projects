@@ -136,7 +136,6 @@ export async function initDB() {
       }
     },
   });
-  console.log(`IndexedDB "${DB_NAME}" version ${DB_VERSION} initialized successfully.`);
 }
 
 /**
@@ -149,7 +148,7 @@ export async function addOrUpdateItemInStore<T extends StoreName>(storeName: T, 
     try {
         await db!.put(storeName, item);
     } catch (error) {
-        console.error(`Failed to add/update item in "${storeName}":`, error);
+        console.error(`[IDB] Failed to add/update item in "${storeName}":`, error);
         throw error;
     }
 }
@@ -162,17 +161,12 @@ export async function addOrUpdateItemInStore<T extends StoreName>(storeName: T, 
 export async function cacheAllData<T extends StoreName>(storeName: T, data: MaintenanceDB[T]['value'][]): Promise<void> {
     if (!db) await initDB();
     try {
-        // FIX: Removed the `as StoreName` cast. With the corrected `MaintenanceDB` interface,
-        // TypeScript can now correctly infer that the generic type `T` is a valid store name.
         const tx = db!.transaction(storeName, 'readwrite');
         await tx.store.clear();
-        console.log(`Store "${storeName}" cleared.`);
-        // Use Promise.all for potentially faster writes
         await Promise.all(data.map(item => tx.store.put(item)));
         await tx.done;
-        console.log(`${data.length} items cached successfully into "${storeName}".`);
     } catch (error) {
-        console.error(`Failed to cache data into "${storeName}":`, error);
+        console.error(`[IDB] Failed to cache data into "${storeName}":`, error);
         // Don't re-throw, as this shouldn't be a critical app-breaking error.
     }
 }
@@ -185,13 +179,9 @@ export async function cacheAllData<T extends StoreName>(storeName: T, data: Main
 export async function getAllFromStore<T extends StoreName>(storeName: T): Promise<MaintenanceDB[T]['value'][]> {
     if (!db) await initDB();
     try {
-        // FIX: Removed the `as StoreName` cast. With the corrected `MaintenanceDB` interface,
-        // TypeScript can now correctly infer that the generic type `T` is a valid store name.
-        const data = await db!.getAll(storeName);
-        console.log(`Retrieved ${data.length} items from store "${storeName}".`);
-        return data;
+        return await db!.getAll(storeName);
     } catch (error) {
-        console.error(`Failed to get data from "${storeName}":`, error);
+        console.error(`[IDB] Failed to get data from "${storeName}":`, error);
         return [];
     }
 }
@@ -209,7 +199,6 @@ export async function addReportToQueue(report: Report): Promise<void> {
     status: 'pending_sync',
   };
   await db!.put('reports_queue', queuedReport);
-  console.log('Report added to sync queue:', queuedReport);
 }
 
 /**
@@ -286,7 +275,6 @@ export async function getQueuedReports(): Promise<QueuedReport[]> {
 export async function removeReportFromQueue(localId: string): Promise<void> {
   if (!db) await initDB();
   await db!.delete('reports_queue', localId);
-  console.log(`Report with localId "${localId}" removed from sync queue.`);
 }
 
 
@@ -299,7 +287,6 @@ export async function removeReportFromQueue(localId: string): Promise<void> {
 export async function addEntityToQueue(entity: QueuedEntity): Promise<void> {
   if (!db) await initDB();
   await db!.put('entities_queue', entity);
-  console.log('Entity added to sync queue:', entity);
 }
 
 /**
@@ -318,7 +305,6 @@ export async function getQueuedEntities(): Promise<QueuedEntity[]> {
 export async function removeEntityFromQueue(localId: string): Promise<void> {
   if (!db) await initDB();
   await db!.delete('entities_queue', localId);
-  console.log(`Entity with localId "${localId}" removed from sync queue.`);
 }
 
 /**
