@@ -1,5 +1,5 @@
 import * as DOM from './dom';
-import { fetchReportsBatch, fetchAllExportableReports, fetchReportsByIds, fetchCities, fetchCompanies, fetchDependencies, SUPABASE_REPORT_BATCH, updateReportPaymentStatus, deleteReport, updateFullReport } from './api-reports';
+import { fetchReportsBatch, fetchAllExportableReports, fetchReportsByIds, fetchCities, fetchCompanies, fetchDependencies, fetchReportTechnicians, SUPABASE_REPORT_BATCH, updateReportPaymentStatus, deleteReport, updateFullReport } from './api-reports';
 import { generateZipExport, generateExcelExport, generateMergedPdfExport, getMergedPdfBlob } from './exporter';
 import { generateReportPDF } from './pdf-reports';
 import type { Report, City, Company, Dependency } from './reports-types';
@@ -19,6 +19,37 @@ let selectedReportsCache: Map<string, Report> = new Map();
 let cachedCities: City[] = [];
 let cachedCompanies: Company[] = [];
 let cachedDependencies: Dependency[] = [];
+let cachedTechnicians: string[] = [];
+
+function setFilterActiveState(control: HTMLInputElement | HTMLSelectElement) {
+    const hasValue = control.value.trim() !== '';
+    control.classList.toggle('is-active-filter', hasValue);
+    control.closest('.reports-filter')?.classList.toggle('has-active-filter', hasValue);
+}
+
+function refreshReportsFilterActiveState() {
+    [
+        DOM.reportsSearchInput,
+        DOM.reportsDateFrom,
+        DOM.reportsDateTo,
+        DOM.reportsServiceTypeFilter,
+        DOM.reportsTechFilter,
+        DOM.reportsCityFilter
+    ].forEach(setFilterActiveState);
+}
+
+function populateSelectOptions(select: HTMLSelectElement, options: Array<{ value: string; label: string }>, defaultLabel: string) {
+    const previousValue = select.value;
+    select.innerHTML = `<option value="">${defaultLabel}</option>${options.map(option => (
+        `<option value="${escapeHtml(option.value)}">${escapeHtml(option.label)}</option>`
+    )).join('')}`;
+
+    if (previousValue && options.some(option => option.value === previousValue)) {
+        select.value = previousValue;
+    } else {
+        select.value = '';
+    }
+}
 
 function escapeHtml(value: unknown): string {
     return String(value ?? '').replace(/[&<>"']/g, char => ({
@@ -261,6 +292,7 @@ async function resolveSelectedReportsForExport(): Promise<Report[]> {
 export async function initReportsUI() {
     setupEventListeners();
     await loadReferenceData();
+    refreshReportsFilterActiveState();
     // No cargamos listado al init directo, solo cuando entremos a la pestaña, o podríamos pre-cargarlo.
 }
 
@@ -272,9 +304,33 @@ export async function onSwitchToReportsPage() {
 
 async function loadReferenceData() {
     // Para simplificar, traemos datos maestros 1 vez
-    cachedCities = await fetchCities();
-    cachedCompanies = await fetchCompanies();
-    cachedDependencies = await fetchDependencies();
+    const [cities, companies, dependencies, technicians] = await Promise.all([
+        fetchCities(),
+        fetchCompanies(),
+        fetchDependencies(),
+        fetchReportTechnicians()
+    ]);
+
+    cachedCities = cities;
+    cachedCompanies = companies;
+    cachedDependencies = dependencies;
+    cachedTechnicians = technicians;
+
+    populateSelectOptions(
+        DOM.reportsCityFilter,
+        cachedCities
+            .slice()
+            .sort((a, b) => a.name.localeCompare(b.name, 'es'))
+            .map(city => ({ value: city.id, label: city.name })),
+        'Todas'
+    );
+    populateSelectOptions(
+        DOM.reportsTechFilter,
+        cachedTechnicians.map(name => ({ value: name, label: name })),
+        'Todos'
+    );
+
+    refreshReportsFilterActiveState();
 }
 
 function setupEventListeners() {
@@ -283,6 +339,7 @@ function setupEventListeners() {
     });
 
     DOM.reportsSearchInput.addEventListener('input', debounce(async () => {
+        refreshReportsFilterActiveState();
         await resetAndLoadReports();
     }, 500));
 
@@ -298,14 +355,27 @@ function setupEventListeners() {
     });
 
     DOM.reportsDateFrom.addEventListener('change', async () => {
+        refreshReportsFilterActiveState();
         await resetAndLoadReports();
     });
 
     DOM.reportsDateTo.addEventListener('change', async () => {
+        refreshReportsFilterActiveState();
         await resetAndLoadReports();
     });
 
     DOM.reportsServiceTypeFilter.addEventListener('change', async () => {
+        refreshReportsFilterActiveState();
+        await resetAndLoadReports();
+    });
+
+    DOM.reportsTechFilter.addEventListener('change', async () => {
+        refreshReportsFilterActiveState();
+        await resetAndLoadReports();
+    });
+
+    DOM.reportsCityFilter.addEventListener('change', async () => {
+        refreshReportsFilterActiveState();
         await resetAndLoadReports();
     });
 
@@ -314,6 +384,9 @@ function setupEventListeners() {
         DOM.reportsDateFrom.value = '';
         DOM.reportsDateTo.value = '';
         DOM.reportsServiceTypeFilter.value = '';
+        DOM.reportsTechFilter.value = '';
+        DOM.reportsCityFilter.value = '';
+        refreshReportsFilterActiveState();
         await resetAndLoadReports();
         DOM.reportsSearchInput.focus();
     });
@@ -504,6 +577,8 @@ async function handleExport(type: string) {
     const dateFrom = DOM.reportsDateFrom.value;
     const dateTo = DOM.reportsDateTo.value;
     const serviceType = DOM.reportsServiceTypeFilter.value;
+    const technicianName = DOM.reportsTechFilter.value;
+    const cityId = DOM.reportsCityFilter.value;
 
     DOM.reportsExportExcelBtn.disabled = true;
     DOM.reportsExportZipBtn.disabled = true;
@@ -527,7 +602,7 @@ async function handleExport(type: string) {
 
             reportsToExport = await resolveSelectedReportsForExport();
         } else {
-            reportsToExport = await fetchAllExportableReports({ searchTerm: searchInput, dateFrom, dateTo, serviceType });
+            reportsToExport = await fetchAllExportableReports({ searchTerm: searchInput, dateFrom, dateTo, serviceType, technicianName, cityId });
         }
 
         if (reportsToExport.length === 0) {
@@ -644,7 +719,9 @@ async function loadPage(page: number, highlightNew: boolean = false) {
         searchTerm: DOM.reportsSearchInput.value.trim(),
         dateFrom: DOM.reportsDateFrom.value,
         dateTo: DOM.reportsDateTo.value,
-        serviceType: DOM.reportsServiceTypeFilter.value
+        serviceType: DOM.reportsServiceTypeFilter.value,
+        technicianName: DOM.reportsTechFilter.value,
+        cityId: DOM.reportsCityFilter.value
     };
 
     const offset = (currentPage - 1) * pageSize;

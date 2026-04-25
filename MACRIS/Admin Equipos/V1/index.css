@@ -97,3 +97,51 @@ td { padding: 12px; border-bottom: 1px solid var(--color-border-light); font-siz
 .app-notification.success { background: var(--color-success); color: var(--corporate-bg-very-dark); }
 .app-notification.error { background: var(--color-danger); }
 @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+
+.admin-view-tabs {
+    margin-bottom: 18px;
+}
+
+.admin-view-panel {
+    display: none;
+}
+
+.schedule-status-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--color-border-medium);
+    background: transparent;
+    color: var(--color-text-secondary);
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: default;
+}
+
+.schedule-status-btn.ok {
+    border-color: rgba(0, 255, 154, 0.45);
+    color: var(--color-success);
+    background: rgba(0, 255, 154, 0.08);
+}
+
+.schedule-status-btn.pending {
+    border-color: rgba(255, 238, 0, 0.45);
+    color: var(--color-warning);
+    background: rgba(255, 238, 0, 0.08);
+    cursor: pointer;
+}
+
+.schedule-status-btn.pending:hover {
+    box-shadow: 0 0 8px rgba(255, 238, 0, 0.25);
+    transform: translateY(-1px);
+}
+
+.schedule-status-btn:disabled {
+    opacity: 1;
+}
+
+.admin-schedule-controls .form-control,
+.admin-schedule-controls input[type="search"] {
+    min-height: 42px;
+}

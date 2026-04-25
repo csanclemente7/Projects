@@ -2,6 +2,9 @@ import * as State from './state';
 import { fetchAllReportsForExport } from './api';
 import { showLoader, hideLoader, openModal, closeModal } from './ui';
 import type { Report, WidgetConfig } from './types';
+import { fetchReportsForAnalytics, fetchOrdersForAnalytics, fetchQuotesForAnalytics, fetchQuoteItemsForAnalytics } from './analytics/api';
+import { calcTechnicianLoad, calcCityVolume, calcTopClients, calcDemandByDay, calcServiceTypeVolume, calcQuoteConversion, calcTopItems, calcRecurrenceAlerts } from './analytics/calculations';
+import { destroyAnalyticsCharts, renderTechnicianLoadWidget, renderCityVolumeWidget, renderTopClientsWidget, renderDemandByDayWidget, renderServiceTypeWidget, renderRecurrenceWidget, renderQuoteKPIsWidget, renderTopItemsWidget } from './analytics/widgets';
 
 declare const ApexCharts: any;
 declare const Sortable: any;
@@ -30,6 +33,142 @@ export function getWidgetConfig(): WidgetConfig[] {
 
 export function setWidgetConfig(config: WidgetConfig[]) {
     localStorage.setItem('macris_dashboard_config', JSON.stringify(config));
+}
+
+// ---- Analytics Tab State ----
+let analyticsDateStart = (() => {
+    const d = new Date(); d.setMonth(d.getMonth() - 3);
+    return d.toISOString().split('T')[0];
+})();
+let analyticsDateEnd = new Date().toISOString().split('T')[0];
+
+// ---- Analytics Tab Setup ----
+
+export function setupAnalyticsTabs() {
+    const tabReports = document.getElementById('analytics-tab-reports');
+    const tabOps = document.getElementById('analytics-tab-ops');
+    const tabQuotes = document.getElementById('analytics-tab-quotes');
+    const panelReports = document.getElementById('analytics-panel-reports');
+    const panelOps = document.getElementById('analytics-panel-ops');
+    const panelQuotes = document.getElementById('analytics-panel-quotes');
+
+    if (!tabReports || !tabOps || !tabQuotes) return;
+
+    function activateTab(tab: 'reports' | 'ops' | 'quotes') {
+        [tabReports, tabOps, tabQuotes].forEach(t => t?.classList.remove('active'));
+        [panelReports, panelOps, panelQuotes].forEach(p => { if (p) p.style.display = 'none'; });
+
+        if (tab === 'reports') {
+            tabReports?.classList.add('active');
+            if (panelReports) panelReports.style.display = 'block';
+        } else if (tab === 'ops') {
+            tabOps?.classList.add('active');
+            if (panelOps) { panelOps.style.display = 'block'; loadOpsAnalytics(); }
+        } else {
+            tabQuotes?.classList.add('active');
+            if (panelQuotes) { panelQuotes.style.display = 'block'; loadQuotesAnalytics(); }
+        }
+    }
+
+    tabReports.addEventListener('click', () => activateTab('reports'));
+    tabOps.addEventListener('click', () => activateTab('ops'));
+    tabQuotes.addEventListener('click', () => activateTab('quotes'));
+
+    // Analytics date filter listeners
+    const startInput = document.getElementById('analytics-date-start') as HTMLInputElement;
+    const endInput = document.getElementById('analytics-date-end') as HTMLInputElement;
+    const applyBtn = document.getElementById('analytics-apply-filters');
+
+    if (startInput) startInput.value = analyticsDateStart;
+    if (endInput) endInput.value = analyticsDateEnd;
+
+    applyBtn?.addEventListener('click', () => {
+        analyticsDateStart = startInput?.value || analyticsDateStart;
+        analyticsDateEnd = endInput?.value || analyticsDateEnd;
+        const activeTab = tabOps?.classList.contains('active') ? 'ops' : tabQuotes?.classList.contains('active') ? 'quotes' : null;
+        if (activeTab === 'ops') loadOpsAnalytics();
+        else if (activeTab === 'quotes') loadQuotesAnalytics();
+    });
+}
+
+async function loadOpsAnalytics() {
+    const container = document.getElementById('ops-charts-grid');
+    if (!container) return;
+
+    container.innerHTML = '<div class="analytics-loading"><i class="fas fa-sync fa-spin"></i> Cargando análisis operativo...</div>';
+    destroyAnalyticsCharts();
+
+    try {
+        const reports = await fetchReportsForAnalytics(analyticsDateStart, analyticsDateEnd);
+
+        container.innerHTML = '';
+
+        const techLoad = calcTechnicianLoad(reports);
+        const cityVol = calcCityVolume(reports, State.cities);
+        const topClients = calcTopClients(reports, State.companies);
+        const demandByDay = calcDemandByDay(reports);
+        const serviceTypes = calcServiceTypeVolume(reports);
+        const recurrences = calcRecurrenceAlerts(reports, State.companies);
+
+        // KPI row
+        const kpiRow = document.createElement('div');
+        kpiRow.className = 'analytics-kpis-row analytics-kpis-top';
+        kpiRow.innerHTML = `
+            <div class="analytics-kpi-mini"><span class="analytics-kpi-mini-val">${reports.length}</span><span class="analytics-kpi-mini-lbl">Servicios</span></div>
+            <div class="analytics-kpi-mini"><span class="analytics-kpi-mini-val">${techLoad.length}</span><span class="analytics-kpi-mini-lbl">Técnicos activos</span></div>
+            <div class="analytics-kpi-mini"><span class="analytics-kpi-mini-val">${cityVol.length}</span><span class="analytics-kpi-mini-lbl">Ciudades</span></div>
+            <div class="analytics-kpi-mini"><span class="analytics-kpi-mini-val" style="color:#ff6b6b;">${recurrences.length}</span><span class="analytics-kpi-mini-lbl">Reincidencias</span></div>
+        `;
+        container.appendChild(kpiRow);
+
+        // Charts grid
+        const grid = document.createElement('div');
+        grid.className = 'analytics-charts-grid';
+        container.appendChild(grid);
+
+        renderTechnicianLoadWidget(grid, techLoad);
+        renderCityVolumeWidget(grid, cityVol);
+        renderDemandByDayWidget(grid, demandByDay);
+        renderServiceTypeWidget(grid, serviceTypes);
+        renderTopClientsWidget(grid, topClients);
+        renderRecurrenceWidget(grid, recurrences);
+
+    } catch (e) {
+        console.error('Ops analytics error:', e);
+        container.innerHTML = '<p class="analytics-empty">Error cargando datos. Intenta de nuevo.</p>';
+    }
+}
+
+async function loadQuotesAnalytics() {
+    const container = document.getElementById('quotes-charts-grid');
+    if (!container) return;
+
+    container.innerHTML = '<div class="analytics-loading"><i class="fas fa-sync fa-spin"></i> Cargando análisis de cotizaciones...</div>';
+    destroyAnalyticsCharts();
+
+    try {
+        const [quotes, orders, quoteItems] = await Promise.all([
+            fetchQuotesForAnalytics(),
+            fetchOrdersForAnalytics(analyticsDateStart, analyticsDateEnd),
+            fetchQuoteItemsForAnalytics(),
+        ]);
+
+        container.innerHTML = '';
+
+        const kpis = calcQuoteConversion(quotes, orders);
+        const topItems = calcTopItems(quoteItems);
+
+        const grid = document.createElement('div');
+        grid.className = 'analytics-charts-grid';
+        container.appendChild(grid);
+
+        renderQuoteKPIsWidget(grid, kpis);
+        renderTopItemsWidget(grid, topItems);
+
+    } catch (e) {
+        console.error('Quotes analytics error:', e);
+        container.innerHTML = '<p class="analytics-empty">Error cargando datos. Intenta de nuevo.</p>';
+    }
 }
 
 export function setupDashboard() {

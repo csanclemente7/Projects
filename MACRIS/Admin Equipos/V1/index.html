@@ -74,6 +74,11 @@
         </header>
 
         <main>
+            <div class="tabs admin-view-tabs">
+                <button id="admin-show-equipment-view" class="tab-link active" type="button"><i class="fas fa-list"></i> Inventario</button>
+                <button id="admin-show-schedule-view" class="tab-link" type="button"><i class="fas fa-calendar-check"></i> Cronograma</button>
+            </div>
+
             <section id="admin-equipment-section" class="data-section">
                 <div class="section-header-container">
                     <h2><i class="fas fa-list"></i> Inventario de Equipos</h2>
@@ -139,6 +144,72 @@
                     </table>
                 </div>
                 <div class="pagination-controls" id="admin-equipment-pagination"></div>
+            </section>
+
+            <section id="admin-schedule-section" class="data-section admin-view-panel" style="display: none;">
+                <div class="section-header-container">
+                    <h2><i class="fas fa-calendar-check"></i> Cronograma</h2>
+                    <div class="header-actions-group">
+                        <button id="export-schedule-excel-button" class="btn btn-secondary"><i class="fas fa-file-excel"></i> Descargar Excel</button>
+                    </div>
+                </div>
+
+                <div class="search-controls admin-schedule-controls" style="background: var(--card-bg); padding: 1rem 1.5rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; gap: 1rem; align-items: center; border: 1px solid var(--border-color); margin-bottom: 20px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 0.5rem; flex: 2; min-width: 240px;">
+                        <div style="position: relative; flex: 1;">
+                            <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                            <input type="search" id="admin-schedule-search" placeholder="Buscar por ID, empresa, sede o dependencia..." aria-label="Buscar cronograma" style="width: 100%; padding-left: 2.5rem; border-radius: 20px;">
+                        </div>
+                        <button id="admin-schedule-search-clear" class="btn btn-secondary btn-icon-only" style="border-radius: 50%; width: 42px; height: 42px;" title="Limpiar búsqueda">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1.3; min-width: 180px;">
+                        <i class="fas fa-building" style="color: var(--text-muted);"></i>
+                        <select id="admin-schedule-company-filter" class="form-control" style="flex: 1; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <option value="">Todas las empresas</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1.3; min-width: 180px;">
+                        <i class="fas fa-map-marker-alt" style="color: var(--text-muted);"></i>
+                        <select id="admin-schedule-sede-filter" class="form-control" style="flex: 1; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <option value="">Todas las sedes</option>
+                        </select>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 160px;">
+                        <i class="fas fa-filter" style="color: var(--text-muted);"></i>
+                        <select id="admin-schedule-status-filter" class="form-control" style="flex: 1; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <option value="">Todos los estados</option>
+                            <option value="pending">Pendientes</option>
+                            <option value="ok">Al día</option>
+                        </select>
+                    </div>
+
+                    <div style="font-size: 1.1em; font-weight: 600; color: var(--text-color); border-left: 1px solid var(--border-color); padding-left: 1.5rem; white-space: nowrap;">
+                        <i class="fas fa-calendar-day text-accent" style="margin-right: 0.5rem;"></i><span id="admin-schedule-count" style="color: var(--accent-color);">0</span>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table id="admin-schedule-table">
+                        <thead>
+                            <tr>
+                                <th>ID Manual</th>
+                                <th>Empresa</th>
+                                <th>Sede</th>
+                                <th>Dependencia</th>
+                                <th>Último Mantenimiento</th>
+                                <th>Próximo Mantenimiento</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="pagination-controls" id="admin-schedule-pagination"></div>
             </section>
         </main>
     </div>

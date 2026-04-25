@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self' capacitor://localhost http://localhost;
+    script-src 'self' 'unsafe-inline' https://esm.sh https://cdn.jsdelivr.net data:;
+    style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com;
+    img-src 'self' data: blob: filesystem:;
+    font-src 'self' https://cdnjs.cloudflare.com https://fonts.gstatic.com;
+    connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://data.jsdelivr.com data:;
+    worker-src 'self' blob:;
+  " />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reportes de Mantenimiento - Macris</title>
+  <link rel="icon" href="./MacrisLogo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <link rel="stylesheet" href="index.css" />
+  <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.sh/@google/genai@^1.1.0",
+          "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.43.4",
+          "jsqr": "https://esm.sh/jsqr@1.4.0",
+          "jspdf": "https://esm.sh/jspdf@2.5.1",
+          "qrcode": "https://esm.sh/qrcode@1.5.3",
+          "signature_pad": "https://esm.sh/signature_pad@4.2.0",
+          "jszip": "https://esm.sh/jszip@3.10.1",
+          "idb": "https://esm.sh/idb@8.0.0"
+        }
+      }
+    </script>
+</head>
+
+<body>
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <p>Iniciando aplicación...</p>
+  </div>
+
+  <div id="login-screen">
+    <div class="login-container">
+      <img src="./Macris-horizontal.png" alt="Macris Ingeniería Logo" class="login-logo" />
+      <h2><i class="fas fa-shield-alt"></i> Acceso Técnico</h2>
+      <form id="login-form">
+        <div class="form-group">
+          <label for="username">Nombre del Técnico:</label>
+          <select id="username" name="username" required>
+            <option value="">Cargando técnicos...</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="password">Contraseña (Cédula):</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password"
+            inputmode="numeric" />
+        </div>
+        <button type="submit" class="btn-iniciar-reporte" style="font-weight: 600; letter-spacing: 1px;">
+          <i class="fas fa-fingerprint"></i> INGRESAR
+        </button>
+        <p id="login-error" class="error-message"></p>
+      </form>
+
+      <div class="dev-login-buttons-container">
+        <button id="admin-login-button" class="btn btn-dev-login">
+          <i class="fas fa-user-shield"></i> Acceso Admin
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app-screen" style="display: none">
+    <header>
+      <div class="header-content">
+        <img src="./Macris-horizontal.png" alt="Macris Ingeniería Logo" class="header-logo" />
+        <h1><i class="fas fa-info-circle"></i> Cargando...</h1>
+      </div>
+      <div class="header-actions">
+        <span id="user-points-display" class="user-points-badge" style="display: none !important;"
+          title="Puntos Acumulados"></span>
+        <span id="current-user-display"></span>
+        <button id="user-settings-button" class="btn btn-secondary btn-icon-only" title="Ajustes Visuales">
+          <i class="fas fa-cog"></i>
+        </button>
+        <button id="toggle-fullscreen-button" class="btn btn-secondary btn-icon-only" title="Pantalla Completa">
+          <i class="fas fa-expand"></i>
+        </button>
+        <button id="change-password-action-button" class="btn btn-secondary btn-icon-only" title="Cambiar Contraseña"
+          style="display: none">
+          <i class="fas fa-key"></i>
+        </button>
+        <button id="logout-button" class="btn btn-danger">
+          <i class="fas fa-power-off"></i>
+          <span class="btn-text">Desconectar</span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <!-- WORKER SECTIONS -->
+      <section id="worker-orders-section" class="data-section"
+        style="display: none; background: transparent; border: none; padding: 0">
+        <div class="worker-actions-panel">
+          <div class="actions-header" style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+              <h3 style="margin: 0;"><i class="fas fa-clipboard-list"></i> Órdenes de Servicio Asignadas</h3>
+              <button id="btn-refresh-orders" class="btn btn-outline-primary btn-compact btn-refresh-anim"
+                style="white-space: nowrap; padding: 6px 12px; font-size: 0.7rem; border-radius: 20px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
+                <i class="fas fa-sync-alt"></i> RECARGAR
+              </button>
+            </div>
+            <p style="margin-bottom: 0; font-size: 0.85rem;">Revisa y gestiona las órdenes que te han sido asignadas.
+            </p>
+          </div>
+          <div class="actions-body">
+            <div id="worker-orders-list-container" class="order-card-list">
+              <!-- Order cards will be injected here by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="worker-main-section" class="data-section"
+        style="display: none; background: transparent; border: none; padding: 0">
+        <div class="worker-actions-panel">
+          <div class="actions-header">
+            <h3><i class="far fa-edit"></i> Nuevo reporte</h3>
+            <p>Elige un método para iniciar un reporte de mantenimiento.</p>
+          </div>
+
+          <div class="actions-body">
+            <button id="create-manual-report-button" class="btn-iniciar-reporte">
+              <i class="far fa-edit"></i> Iniciar nuevo reporte
+            </button>
+
+            <div class="actions-grid-2">
+              <button id="scan-qr-camera-button" class="action-card-square">
+                <i class="fas fa-qrcode"></i>
+                <span class="card-title">Escanear QR</span>
+                <span class="card-desc">Identifica el equipo rapidamente</span>
+              </button>
+              <button id="search-by-id-button" class="action-card-square">
+                <i class="fas fa-search"></i>
+                <span class="card-title">Buscar equipo</span>
+                <span class="card-desc">Encuentra un equipo por ID</span>
+              </button>
+            </div>
+
+            <div class="tip-banner">
+              <div class="tip-icon-container">
+                <i class="fas fa-info"></i>
+              </div>
+              <span class="tip-text">TIP: El QR aplica unicamente<br>para algunas empresas</span>
+            </div>
+
+            <button id="scan-qr-file-button" class="btn-link"
+              style="width: 100%; margin-top: 20px; font-size: 0.75rem; color: #64748b; text-decoration: underline;">
+              ¿No tienes cámara? Escanear QR desde un archivo
+            </button>
+            <input type="file" id="qr-file-input" accept="image/*" style="display: none" aria-hidden="true" />
+          </div>
+        </div>
+      </section>
+
+      <section id="worker-my-reports-section" class="data-section"
+        style="display: none; background: transparent; border: none; padding: 0">
+        <div class="worker-actions-panel">
+          <div class="actions-header" style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+              <h3 style="margin: 0;"><i class="fas fa-history"></i> Mis Reportes Enviados</h3>
+              <button id="toggle-my-reports-view-button" class="btn btn-outline-primary btn-compact"
+                style="white-space: nowrap; padding: 6px 12px; font-size: 0.75rem; border-radius: 20px; font-weight: 600;">
+                VER TODOS
+              </button>
+            </div>
+            <p style="margin-bottom: 0; font-size: 0.85rem;">Historial de todos los reportes que has generado.</p>
+          </div>
+          <div class="actions-body">
+
+            <div class="modern-search-bar"
+              style="margin-bottom: 15px; border-radius: 12px; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.02); padding: 5px 10px;">
+              <i class="fas fa-search search-icon" style="color: #00dfff; margin-left: 5px;"></i>
+              <input type="search" id="my-reports-search" placeholder="Buscar en mis reportes..."
+                aria-label="Buscar en mis reportes" style="background: transparent; border: none; color: white;" />
+              <button id="my-reports-search-clear" class="btn-clear-search" title="Limpiar búsqueda">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="table-container" style="border: none; background: transparent; padding: 0;">
+              <table id="my-reports-table">
+                <thead>
+                  <tr>
+                    <th>Fecha</th>
+                    <th style="display: none;">ID Reporte</th>
+                    <th>Tipo Servicio</th>
+                    <th>Equipo</th>
+                    <th>Empresa/Cliente</th>
+                    <th>Dependencia</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="pagination-controls" id="my-reports-pagination"></div>
+          </div> <!-- Cierra actions-body -->
+        </div> <!-- Cierra worker-actions-panel -->
+      </section>
+
+      <!-- ADMIN SECTIONS -->
+      <section id="admin-orders-section" class="data-section" style="display: none">
+        <div class="section-header-container">
+          <h2><i class="fas fa-route"></i> Órdenes de Servicio</h2>
+          <div class="header-actions-group">
+            <button id="ai-reconciliation-btn" class="btn btn-accent btn-compact">
+              <i class="fas fa-brain"></i> Conciliación IA
+            </button>
+            <button id="toggle-order-filters-btn" class="btn btn-secondary btn-compact">
+              <i class="fas fa-filter"></i> Filtros
+            </button>
+          </div>
+        </div>
+        <div id="admin-order-filters-collapsible-area">
+          <div class="filters-grid">
+            <div class="form-group">
+              <label for="filter-order-date-start">Fecha Desde:</label>
+              <input type="date" id="filter-order-date-start" />
+            </div>
+            <div class="form-group">
+              <label for="filter-order-date-end">Fecha Hasta:</label>
+              <input type="date" id="filter-order-date-end" />
+            </div>
+            <div class="form-group">
+              <label for="filter-order-status">Estado:</label>
+              <select id="filter-order-status">
+                <option value="">Todos</option>
+                <option value="pending">Pendiente</option>
+                <option value="en_progreso">En Progreso</option>
+                <option value="completed">Completada</option>
+                <option value="cancelada">Cancelada</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="filter-order-type">Tipo de Servicio:</label>
+              <select id="filter-order-type">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="filter-order-technician">Técnico:</label>
+              <select id="filter-order-technician">
+                <option value="">Todos</option>
+              </select>
+            </div>
+          </div>
+          <div class="search-controls">
+            <input type="search" id="admin-orders-search" placeholder="Buscar por ID, cliente, técnico..."
+              aria-label="Buscar en órdenes de servicio" />
+            <button id="admin-orders-search-clear" class="btn btn-secondary btn-icon-only" title="Limpiar búsqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div id="admin-orders-list-container" class="order-card-list">
+          <!-- Admin order cards will be injected here by JS -->
+        </div>
+        <div class="pagination-controls" id="admin-orders-pagination"></div>
+      </section>
+
+      <section id="admin-reports-section" class="data-section" style="display: none">
+        <div class="section-header-container">
+          <h2><i class="fas fa-file-invoice"></i> Reportes</h2>
+          <div class="header-actions-group">
+            <button id="download-merged-pdf-button" class="btn btn-primary btn-compact"
+              title="Descargar los reportes filtrados unidos en un solo PDF multi-página">
+              <i class="fas fa-file-pdf"></i> DESCARGA PDF
+            </button>
+            <button id="download-zip-button" class="btn btn-accent btn-compact"
+              title="Descargar los reportes filtrados como un archivo ZIP">
+              <i class="fas fa-file-archive"></i> DESCARGAR ZIP
+            </button>
+            <button id="toggle-filters-btn" class="btn btn-secondary btn-compact">
+              <i class="fas fa-filter"></i> Filtros
+            </button>
+            <button id="delete-all-reports-button" class="btn btn-danger btn-subtle-icon"
+              title="Eliminar TODOS los reportes de la base de datos. ¡Acción irreversible!">
+              <i class="fas fa-dumpster-fire"></i>
+            </button>
+          </div>
+        </div>
+        <div id="admin-filters-collapsible-area">
+          <div class="filters-grid">
+            <div class="form-group">
+              <label for="filter-report-date-start">Fecha Desde:</label>
+              <input type="date" id="filter-report-date-start" />
+            </div>
+            <div class="form-group">
+              <label for="filter-report-date-end">Fecha Hasta:</label>
+              <input type="date" id="filter-report-date-end" />
+            </div>
+            <div class="form-group">
+              <label for="filter-report-city">Ciudad:</label>
+              <select id="filter-report-city">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="filter-report-company">Empresa:</label>
+              <select id="filter-report-company">
+                <option value="">Todas</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="filter-report-service-type">Tipo Servicio:</label>
+              <select id="filter-report-service-type">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="filter-report-technician">Técnico:</label>
+              <select id="filter-report-technician">
+                <option value="">Todos</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="filter-report-category">Categoría:</label>
+              <select id="filter-report-category">
+                <option value="">Todas</option>
+                <option value="empresa">Empresa</option>
+                <option value="residencial">Residencial</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="filter-report-paid">Estado de Pago:</label>
+              <select id="filter-report-paid">
+                <option value="">Todos</option>
+                <option value="true">Pagado</option>
+                <option value="false">No Pagado</option>
+              </select>
+            </div>
+          </div>
+          <div class="search-controls">
+            <input type="search" id="admin-reports-search" placeholder="Buscar en todos los reportes..."
+              aria-label="Buscar en todos los reportes" />
+            <button id="admin-reports-search-clear" class="btn btn-secondary btn-icon-only" title="Limpiar búsqueda">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </div>
+        <div class="table-container">
+          <table id="admin-reports-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Técnico</th>
+                <th>Tipo</th>
+                <th>Equipo</th>
+                <th>Empresa/Cliente</th>
+                <th>Dependencia</th>
+                <th>Ciudad</th>
+                <th>Pagado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="pagination-controls" id="admin-reports-pagination"></div>
+      </section>
+
+      <section id="admin-schedule-section" class="data-section" style="display: none">
+        <h2>
+          <i class="fas fa-calendar-alt"></i> Cronograma de Mantenimiento
+        </h2>
+        <p>Equipos con mantenimientos próximos o vencidos.</p>
+        <div class="table-container">
+          <table id="admin-schedule-table">
+            <thead>
+              <tr>
+                <th>Equipo (ID/Modelo)</th>
+                <th>Ubicación</th>
+                <th>Último Mtto.</th>
+                <th>Próximo Mtto.</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination-controls" id="admin-schedule-pagination"></div>
+      </section>
+
+      <section id="admin-equipment-section" class="data-section" style="display: none">
+        <div class="section-header-actions">
+          <button id="add-equipment-button" class="btn btn-accent">
+            <i class="fas fa-plus-circle"></i> Agregar Equipo
+          </button>
+        </div>
+        <h2><i class="fas fa-cogs"></i> Gestión de Equipos</h2>
+        <div class="search-controls">
+          <input type="search" id="admin-equipment-search" placeholder="Buscar equipos por ID Manual, modelo, marca..."
+            aria-label="Buscar equipos" />
+          <button id="admin-equipment-search-clear" class="btn btn-secondary btn-icon-only" title="Limpiar búsqueda">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="table-container">
+          <table id="admin-equipment-table">
+            <thead>
+              <tr>
+                <th>ID Manual</th>
+                <th>Modelo</th>
+                <th>Marca</th>
+                <th>Tipo</th>
+                <th>Categoría</th>
+                <th>Empresa</th>
+                <th>Sede</th>
+                <th>Ubicación</th>
+                <th>Dependencia/Cliente</th>
+                <th>Periodicidad (Meses)</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="pagination-controls" id="admin-equipment-pagination"></div>
+      </section>
+
+      <section id="admin-management-section" class="data-section" style="display: none">
+        <h2><i class="fas fa-sitemap"></i> Gestión y Ajustes</h2>
+        <div class="tabs">
+          <button class="tab-link active" data-tab="cities-tab">
+            <i class="fas fa-city"></i> Ciudades
+          </button>
+          <button class="tab-link" data-tab="companies-tab">
+            <i class="far fa-building"></i> Empresas
+          </button>
+          <button class="tab-link" data-tab="dependencies-tab">
+            <i class="fas fa-map-marker-alt"></i> Dependencias
+          </button>
+          <button class="tab-link" data-tab="employees-tab">
+            <i class="fas fa-users-cog"></i> Empleados
+          </button>
+          <button class="tab-link" data-tab="settings-tab">
+            <i class="fas fa-sliders-h"></i> Ajustes
+          </button>
+        </div>
+
+        <div id="cities-tab" class="tab-content active">
+          <h3><i class="fas fa-city"></i> Ciudades</h3>
+          <button id="add-city-button" class="btn btn-accent btn-compact">
+            <i class="fas fa-plus"></i> Nueva Ciudad
+          </button>
+          <div class="table-container" style="margin-top: 10px">
+            <table id="cities-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="companies-tab" class="tab-content">
+          <h3><i class="far fa-building"></i> Empresas</h3>
+          <button id="add-company-button" class="btn btn-accent btn-compact">
+            <i class="fas fa-plus"></i> Nueva Empresa
+          </button>
+          <div class="table-container" style="margin-top: 10px">
+            <table id="companies-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Ciudad</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="dependencies-tab" class="tab-content">
+          <h3><i class="fas fa-map-marker-alt"></i> Dependencias</h3>
+          <button id="add-dependency-button" class="btn btn-accent btn-compact">
+            <i class="fas fa-plus"></i> Nueva Dependencia
+          </button>
+          <div class="table-container" style="margin-top: 10px">
+            <table id="dependencies-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Empresa</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="employees-tab" class="tab-content">
+          <h3><i class="fas fa-users-cog"></i> Empleados (Técnicos)</h3>
+          <button id="add-employee-button" class="btn btn-accent btn-compact">
+            <i class="fas fa-user-plus"></i> Nuevo Empleado
+          </button>
+          <div class="table-container" style="margin-top: 10px">
+            <table id="employees-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Cédula (Usuario)</th>
+                  <th>Estado</th>
+                  <th>Puntos</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+        <div id="settings-tab" class="tab-content">
+          <h3><i class="fas fa-cogs"></i> Ajustes de la Aplicación</h3>
+          <p class="text-muted">
+            Controla la visibilidad de ciertos elementos para los técnicos.
+          </p>
+          <div id="app-settings-container" class="settings-list">
+            <!-- Settings will be populated by JS -->
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <nav id="bottom-nav" style="display: none">
+    <!-- Navigation items will be populated by JS based on role -->
+  </nav>
+
+  <!-- Report Form Modal -->
+  <div id="report-form-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="close-report-form-modal">&times;</span>
+      <h3>
+        <i class="fas fa-file-signature"></i> Formulario de Reporte de
+        Mantenimiento
+      </h3>
+      <form id="maintenance-report-form">
+        <input type="hidden" id="report-id" name="id" />
+        <input type="hidden" id="report-equipment-id-hidden" name="equipment_id" />
+        <input type="hidden" id="report-order-id-hidden" name="order_id" />
+        <input type="hidden" id="report-order-item-id-hidden" name="order_item_id" />
+
+        <div class="form-section-card">
+          <h3 class="section-card-title">
+            <i class="fas fa-clipboard-list"></i> Información del Servicio
+            <span class="label-hint">Paso 1</span>
+          </h3>
+          <div class="form-group">
+            <label for="report-service-type">Tipo de Servicio:</label>
+            <select id="report-service-type" name="service_type" required></select>
+          </div>
+
+          <div class="form-group" id="report-service-type-other-container"
+            style="display: none; background-color: var(--color-bg-medium); padding: 10px; border-radius: var(--border-radius-sharp); border-left: 3px solid var(--color-accent-primary); margin-top: -10px; margin-bottom: 15px;">
+            <label for="report-service-type-other">Especifique el servicio:</label>
+            <input type="text" id="report-service-type-other" name="service_type_other"
+              placeholder="Ej: Instalar tubería, mover equipo..." />
+          </div>
+
+
+          <!-- Wrapper for Empresa fields -->
+          <div id="report-location-empresa-container" style="display: none">
+            <div class="form-group">
+              <label for="report-company-search">Empresa:</label>
+              <div class="input-with-button company-search-row">
+                <div class="company-search" id="report-company-search-container">
+                  <div class="company-search-field">
+                    <i class="fas fa-search"></i>
+                    <input type="search" id="report-company-search" placeholder="Escriba para buscar empresa..."
+                      autocomplete="off" />
+                  </div>
+                  <div id="report-company-search-results" class="company-search-results"></div>
+                  <div id="report-company-selected-badge" class="company-selected-badge" style="display: none">
+                    <i class="far fa-building"></i>
+                    <span class="company-badge-name"></span>
+                    <button type="button" id="report-company-badge-clear" class="company-badge-clear"
+                      title="Quitar empresa">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                  <select id="report-company" name="company_id" class="visually-hidden" aria-hidden="true"
+                    tabindex="-1"></select>
+                </div>
+                <button type="button" class="btn btn-add-inline" data-entity-type="company"
+                  title="Agregar Nueva Empresa" style="display: none;">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="report-city-empresa">Ciudad:</label>
+              <div class="input-with-button">
+                <select id="report-city-empresa" name="city_id_empresa" required></select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="report-sede">Sede:</label>
+              <div class="input-with-button">
+                <select id="report-sede" name="sede_id">
+                  <option value="">Seleccione una ciudad...</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="report-dependency">Dependencia:</label>
+              <div class="input-with-button">
+                <select id="report-dependency" name="dependency_id"></select>
+                <button type="button" class="btn btn-add-inline" data-entity-type="dependency"
+                  title="Agregar Nueva Dependencia">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wrapper for Residencial fields -->
+          <div id="report-location-residencial-container" style="display: none">
+            <div class="form-group">
+              <label for="report-client-name">Nombre del Cliente:</label>
+              <input type="text" id="report-client-name" name="client_name" />
+            </div>
+            <div class="form-group">
+              <label for="report-city-residencial">Ciudad:</label>
+              <div class="input-with-button">
+                <select id="report-city-residencial" name="city_id_residencial" required></select>
+                <button type="button" class="btn btn-add-inline" data-entity-type="city" title="Agregar Nueva Ciudad">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="report-address">Dirección:</label>
+              <input type="text" id="report-address" name="address" />
+            </div>
+          </div>
+
+        </div> <!-- Cierra form-section-card de Servicio -->
+
+        <div class="form-section-card">
+          <h3 class="section-card-title">
+            <i class="fas fa-fan"></i> Datos del Equipo y Operación
+            <span class="label-hint">Paso 2</span>
+          </h3>
+          <div id="report-equipment-fields-container">
+            <div class="form-group">
+              <button type="button" id="ai-scan-plate-button" class="btn-glow-dark btn-full-width">
+                <i class="fas fa-brain"></i> ESCANEAR PLACA CON CÁMARA
+              </button>
+              <p id="ai-scan-offline-warning" class="offline-warning-message" style="display: none">
+                <i class="fas fa-exclamation-triangle"></i> Se requiere conexión
+                a internet
+              </p>
+            </div>
+            <div class="form-group">
+              <label for="report-equipment-model">Modelo:</label>
+              <input type="text" id="report-equipment-model" name="model" required />
+            </div>
+            <div class="form-group">
+              <label for="report-equipment-brand">Marca:</label>
+              <input type="text" id="report-equipment-brand" name="brand" required />
+            </div>
+            <div class="form-group">
+              <label for="report-equipment-type">Tipo de Equipo:</label>
+              <div class="input-with-button">
+                <select id="report-equipment-type" name="equipment_type_id" required></select>
+                <button type="button" class="btn btn-add-inline" data-entity-type="equipmentType"
+                  title="Agregar Nuevo Tipo de Equipo">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="report-equipment-capacity">Capacidad (BTU/TR):</label>
+              <input type="text" id="report-equipment-capacity" name="capacity" />
+            </div>
+            <div class="form-group">
+              <label for="report-equipment-refrigerant">Refrigerante:</label>
+              <div class="input-with-button">
+                <select id="report-equipment-refrigerant" name="refrigerant_type_id"></select>
+                <button type="button" class="btn btn-add-inline" data-entity-type="refrigerant"
+                  title="Agregar Nuevo Refrigerante">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div id="report-installation-photos-container" style="display: none">
+            <h4 class="subsection-title">Fotografías de la Instalación</h4>
+            <div class="photo-upload-grid">
+              <div class="photo-capture-card">
+                <div class="photo-card-header">
+                  <div class="photo-card-title">
+                    <i class="fas fa-home"></i> Unidad Interna (Evaporadora)
+                  </div>
+                  <div style="display: flex; gap: 5px;">
+                    <button type="button" id="take-internal-unit-photo-button" class="btn btn-secondary btn-compact"
+                      title="Usar Cámara">
+                      <i class="fas fa-camera"></i>
+                    </button>
+                    <button type="button" id="upload-internal-unit-photo-button" class="btn btn-secondary btn-compact"
+                      title="Subir de Galería">
+                      <i class="fas fa-upload"></i>
+                    </button>
+                    <input type="file" id="upload-internal-unit-input" accept="image/*" style="display:none;" />
+                  </div>
+                </div>
+                <div class="photo-card-body photo-capture-area">
+                  <img id="photo-internal-unit-preview" class="photo-preview" src="#"
+                    alt="Vista previa de unidad interna" style="display: none" />
+                  <div id="photo-internal-unit-placeholder" class="photo-placeholder">
+                    <i class="fas fa-camera"></i>
+                    <span>Toma la foto de la unidad interna</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="photo-capture-card">
+                <div class="photo-card-header">
+                  <div class="photo-card-title">
+                    <i class="fas fa-fan"></i> Unidad Externa (Condensadora)
+                  </div>
+                  <div style="display: flex; gap: 5px;">
+                    <button type="button" id="take-external-unit-photo-button" class="btn btn-secondary btn-compact"
+                      title="Usar Cámara">
+                      <i class="fas fa-camera"></i>
+                    </button>
+                    <button type="button" id="upload-external-unit-photo-button" class="btn btn-secondary btn-compact"
+                      title="Subir de Galería">
+                      <i class="fas fa-upload"></i>
+                    </button>
+                    <input type="file" id="upload-external-unit-input" accept="image/*" style="display:none;" />
+                  </div>
+                </div>
+                <div class="photo-card-body photo-capture-area">
+                  <img id="photo-external-unit-preview" class="photo-preview" src="#"
+                    alt="Vista previa de unidad externa" style="display: none" />
+                  <div id="photo-external-unit-placeholder" class="photo-placeholder">
+                    <i class="fas fa-camera"></i>
+                    <span>Toma la foto de la unidad externa</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="report-measurements-container">
+            <h4 class="subsection-title">Mediciones y Observaciones</h4>
+            <div class="form-group">
+              <label for="report-pressure">Presión (PSI):</label>
+              <input type="text" id="report-pressure" name="pressure" />
+            </div>
+            <div class="form-group">
+              <label for="report-amperage">Amperaje (A):</label>
+              <input type="text" id="report-amperage" name="amperage" />
+            </div>
+            <div class="form-group">
+              <label for="report-observations">Observaciones:</label>
+              <textarea id="report-observations" name="observations" rows="4"></textarea>
+            </div>
+          </div>
+
+          <div id="report-installation-items-container" style="display: none">
+            <h4 class="subsection-title"><i class="fas fa-tools"></i> Items y Materiales Utilizados</h4>
+            <p class="text-muted">
+              Ajuste las cantidades si usó más o menos de lo planeado. Los
+              cambios se guardan automáticamente.
+            </p>
+            <div class="table-container">
+              <table id="report-installation-items-table">
+                <thead>
+                  <tr>
+                    <th>Descripción</th>
+                    <th class="quantity-col">Cantidad Usada</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Items will be populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div> <!-- Cierra form-section-card de Equipo -->
+
+        <div class="form-section-card">
+          <h3 class="section-card-title">
+            <i class="fas fa-file-signature"></i> Cierre y Validación
+            <span class="label-hint">Paso 3</span>
+          </h3>
+          <div id="signature-preview-container">
+            <img id="signature-preview-image" style="
+                display: none;
+                max-width: 100%;
+                border: 1px solid #ccc;
+                background-color: #fff;
+              " alt="Firma del Cliente" />
+            <span id="signature-placeholder-text" class="text-muted">La firma aparecerá aquí</span>
+          </div>
+          <button type="button" id="open-signature-modal-button" class="btn btn-secondary btn-full-width"
+            style="margin-top: 10px;">
+            <i class="fas fa-pencil-alt"></i> Abrir Panel de Firma
+          </button>
+
+          <input type="hidden" id="report-order-id-hidden" name="order_id" />
+          <input type="hidden" id="report-order-item-id-hidden" name="order_item_id" />
+          <input type="hidden" id="report-worker-name" name="worker_name" required />
+        </div> <!-- Cierra form-section-card Firma -->
+
+        <div class="modal-actions">
+          <button type="button" id="cancel-report-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i>
+            Atrás
+          </button>
+          <button type="submit" id="save-report-button" class="btn btn-primary">
+            <i class="fas fa-save"></i> Guardar Reporte
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Signature Modal -->
+  <div id="signature-modal" class="modal">
+    <div class="modal-content modal-content-small">
+      <span class="close-button" id="close-signature-modal">&times;</span>
+      <h3><i class="fas fa-signature"></i> Panel de Firma</h3>
+      <p class="text-muted">
+        Por favor, pida al cliente que firme en el siguiente recuadro.
+      </p>
+      <div id="signature-modal-preview">
+        <p id="signature-modal-preview-title" class="text-muted small-text" style="margin: 0 0 6px 0;">Firma actual</p>
+        <img id="signature-modal-preview-image" alt="Vista previa de firma" style="display:none;" />
+        <span id="signature-modal-preview-placeholder" class="text-muted">No hay firma guardada.</span>
+      </div>
+      <div style="
+            width: 100%;
+            max-width: 450px;
+            margin: 0 auto;
+            border: 2px dashed var(--color-border-medium);
+          ">
+        <canvas id="signature-canvas"></canvas>
+      </div>
+      <div class="modal-actions signature-actions"
+        style="display: flex; flex-direction: row; gap: 10px; justify-content: center; flex-wrap: nowrap;">
+        <button type="button" id="clear-signature-button" class="btn btn-warning"
+          style="flex: 1; padding: 10px; font-size: 0.9rem;">
+          <i class="fas fa-eraser"></i> Limpiar
+        </button>
+        <button type="button" id="save-signature-button" class="btn btn-success"
+          style="flex: 1; padding: 10px; font-size: 0.9rem;">
+          <i class="fas fa-check"></i> Aceptar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Camera Scan Modal (QR) -->
+  <div id="camera-scan-modal" class="modal">
+    <div class="modal-content modal-content-small">
+      <span class="close-button" id="close-camera-scan-modal">&times;</span>
+      <h3><i class="fas fa-qrcode"></i> Escanear Código QR</h3>
+      <video id="qr-video" playsinline autoplay muted
+        style="width: 100%; border-radius: var(--border-radius-sharp)"></video>
+      <canvas id="qr-canvas-hidden" style="display: none"></canvas>
+      <p id="camera-scan-feedback">Apuntando a la cámara...</p>
+      <div class="modal-actions">
+        <button type="button" id="cancel-camera-scan-button" class="btn btn-danger">
+          <i class="fas fa-arrow-left"></i> Atrás
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Plate Scan Modal (AI) -->
+  <div id="plate-scan-modal" class="modal">
+    <div class="modal-content modal-content-small">
+      <span class="close-button" id="close-plate-scan-modal">&times;</span>
+      <h3><i class="fas fa-brain"></i> Escanear Placa con IA</h3>
+      <video id="plate-video" playsinline autoplay muted
+        style="width: 100%; border-radius: var(--border-radius-sharp)"></video>
+      <canvas id="plate-canvas-hidden" style="display: none"></canvas>
+      <p id="plate-scan-feedback">Apunta a la placa del equipo...</p>
+      <div class="modal-actions">
+        <button type="button" id="cancel-plate-scan-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i>
+          Atrás</button>
+        <button type="button" id="take-picture-button" class="btn btn-primary"><i class="fas fa-camera"></i> Capturar y
+          Analizar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Entity Form Modal -->
+  <div id="entity-form-modal" class="modal">
+    <div class="modal-content modal-content-small">
+      <span class="close-button" id="close-entity-form-modal">&times;</span>
+      <h3 id="entity-form-title">Editar Entidad</h3>
+      <form id="entity-form">
+        <input type="hidden" id="entity-id" name="id" />
+        <input type="hidden" id="entity-type" name="type" />
+        <div id="entity-form-fields-container">
+          <!-- Dynamic fields will be inserted here by JS -->
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-entity-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i>
+            Atrás
+          </button>
+          <button type="submit" id="save-entity-button" class="btn btn-primary">
+            <i class="fas fa-save"></i> Guardar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- View Report Details Modal -->
+  <div id="view-report-details-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="close-view-report-details-modal">&times;</span>
+      <h3>
+        <i class="fas fa-file-alt"></i> Detalles del Reporte
+        <span id="view-report-id-display" class="text-muted" style="font-size: 0.8rem; margin-left: 10px"></span>
+      </h3>
+      <div id="view-report-details-content" class="report-details-grid">
+        <!-- Content injected by JS -->
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="edit-report-location-button" class="btn btn-secondary"
+          style="display: none; margin-right: auto">
+          <i class="fas fa-map-marked-alt"></i> Editar Empresa/Cliente
+        </button>
+        <button type="button" id="edit-signature-from-view-button" class="btn btn-primary"
+          style="display: none; margin-right: auto">
+          <i class="fas fa-signature"></i> Editar Firma
+        </button>
+        <button type="button" id="close-view-report-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i>
+          Atrás
+        </button>
+        <button type="button" id="download-report-pdf-button" class="btn btn-accent">
+          <i class="fas fa-file-pdf"></i> Descargar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Report Assignment Modal (Unified) -->
+  <div id="edit-report-assignment-modal" class="modal">
+    <div class="modal-content modal-content-small">
+      <span class="close-button" id="close-edit-report-assignment-modal">&times;</span>
+      <h3>
+        <i class="fas fa-map-marked-alt"></i> Editar Asignación del Reporte
+      </h3>
+      <form id="edit-report-assignment-form">
+        <input type="hidden" id="edit-report-assignment-report-id" name="report_id" />
+
+        <div class="form-group">
+          <label>Categoría del Reporte</label>
+          <div class="radio-group" style="
+                display: flex;
+                gap: 15px;
+                background-color: var(--color-bg-light);
+                padding: 10px;
+                border-radius: var(--border-radius-sharp);
+              ">
+            <label style="
+                  display: flex;
+                  align-items: center;
+                  gap: 5px;
+                  cursor: pointer;
+                ">
+              <input type="radio" name="category" value="empresa" id="edit-category-empresa-radio" required />
+              Empresa
+            </label>
+            <label style="
+                  display: flex;
+                  align-items: center;
+                  gap: 5px;
+                  cursor: pointer;
+                ">
+              <input type="radio" name="category" value="residencial" id="edit-category-residencial-radio" required />
+              Residencial
+            </label>
+          </div>
+        </div>
+
+        <!-- Fields for Empresa Category -->
+        <div id="edit-assignment-empresa-fields" style="display: none">
+          <div class="form-group">
+            <label for="edit-report-company">Empresa:</label>
+            <select id="edit-report-company" name="company_id"></select>
+          </div>
+          <div class="form-group">
+            <label for="edit-report-city">Ciudad (Automático):</label>
+            <input type="text" id="edit-report-city" name="city_name" readonly disabled />
+          </div>
+          <div class="form-group">
+            <label for="edit-report-dependency">Dependencia:</label>
+            <select id="edit-report-dependency" name="dependency_id"></select>
+          </div>
+          <p id="edit-report-dependency-warning" class="info-message" style="display: none"></p>
+        </div>
+
+        <!-- Fields for Residencial Category -->
+        <div id="edit-assignment-residencial-fields" style="display: none">
+          <div class="form-group">
+            <label for="edit-report-client-name">Nombre del Cliente:</label>
+            <input type="text" id="edit-report-client-name" name="client_name" />
+          </div>
+          <div class="form-group">
+            <label for="edit-report-client-address">Dirección:</label>
+            <input type="text" id="edit-report-client-address" name="address" />
+          </div>
+          <div class="form-group">
+            <label for="edit-report-client-city">Ciudad:</label>
+            <select id="edit-report-client-city" name="city_id"></select>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancel-edit-report-assignment-button" class="btn btn-secondary"><i
+              class="fas fa-arrow-left"></i> Atrás
+          </button>
+          <button type="submit" id="save-edit-report-assignment-button" class="btn btn-primary">
+            <i class="fas fa-save"></i> Guardar Cambios
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Order Details Modal -->
+  <div id="order-details-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="close-order-details-modal">&times;</span>
+      <h3>
+        <i class="fas fa-tasks"></i> Detalles de la orden #<span id="order-manual-id-header"></span>
+      </h3>
+
+      <div style="display: none;">
+        <h4><i class="fas fa-user-tie"></i> Información del Cliente</h4>
+        <div class="report-details-grid">
+          <div>
+            <strong>Nombre:</strong> <span id="order-client-name"></span>
+          </div>
+          <div>
+            <strong>Dirección:</strong> <span id="order-client-address"></span>
+          </div>
+          <div>
+            <strong>Ciudad:</strong> <span id="order-client-city"></span>
+          </div>
+          <div>
+            <strong>Teléfono:</strong> <span id="order-client-phone"></span>
+          </div>
+          <div>
+            <strong>Email:</strong> <span id="order-client-email"></span>
+          </div>
+        </div>
+      </div>
+
+      <h4><i class="fas fa-info-circle"></i> Detalles del Servicio</h4>
+      <div class="report-details-grid">
+        <div>
+          <strong>Fecha Programada:</strong>
+          <span id="order-service-date"></span>
+        </div>
+        <div>
+          <strong>Tipo de Orden:</strong> <span id="order-type"></span>
+        </div>
+        <div style="grid-column: 1 / -1">
+          <strong>Notas:</strong> <span id="order-notes"></span>
+        </div>
+        <div style="grid-column: 1 / -1">
+          <strong>Anexos (Fotos):</strong>
+          <div id="order-images-container" style="display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap;"></div>
+        </div>
+      </div>
+
+      <h4><i class="fas fa-users"></i> Técnicos Asignados</h4>
+      <div id="order-assigned-technicians-list" class="assigned-technicians-list">
+        <!-- Technicians will be listed here -->
+      </div>
+
+      <h4><i class="fas fa-box-open"></i> Insumos y Materiales Autorizados</h4>
+      <div class="table-container" style="margin-bottom: 20px;">
+        <table id="order-materials-table">
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th>Descripción</th>
+              <th style="min-width: 100px;">Cantidad</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <div id="order-materials-empty"
+          style="display: none; padding: 10px; text-align: center; color: var(--color-text-muted);">No hay materiales
+          requeridos.</div>
+      </div>
+
+      <h4><i class="fas fa-clipboard-check"></i> Servicios a Realizar</h4>
+      <div id="order-services-container" class="services-cards-container"
+        style="display: flex; flex-direction: column; gap: 12px;">
+        <div id="order-services-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        <div id="order-services-empty"
+          style="display: none; padding: 10px; text-align: center; color: var(--color-text-muted);">No hay servicios
+          definidos.</div>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="start-report-from-order-button" class="btn btn-primary" style="display: none">
+          <i class="fas fa-file-signature"></i> Iniciar Reporte
+        </button>
+        <button type="button" id="close-order-details-button" class="btn btn-secondary"><i
+            class="fas fa-arrow-left"></i> Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Password Modal -->
+  <div id="admin-password-modal" class="modal">
+    <div class="modal-content modal-content-small">
+      <span class="close-button" id="close-admin-password-modal">&times;</span>
+      <h3><i class="fas fa-user-shield"></i> Acceso Administrador</h3>
+      <form id="admin-password-form">
+        <div class="form-group">
+          <label for="admin-password-input">Contraseña de Admin:</label>
+          <input type="password" id="admin-password-input" name="admin_password" required
+            autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-fingerprint"></i> Ingresar
+        </button>
+        <p id="admin-password-error" class="error-message"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div id="change-password-modal" class="modal">
+    <div class="modal-content modal-content-small">
+      <span class="close-button" id="close-change-password-modal">&times;</span>
+      <h3><i class="fas fa-key"></i> Cambiar Contraseña de Administrador</h3>
+      <form id="change-password-form">
+        <div class="form-group">
+          <label for="current-password-input">Contraseña Actual:</label>
+          <input type="password" id="current-password-input" name="current_password" required />
+        </div>
+        <div class="form-group">
+          <label for="new-password-input">Nueva Contraseña:</label>
+          <input type="password" id="new-password-input" name="new_password" required />
+        </div>
+        <div class="form-group">
+          <label for="confirm-new-password-input">Confirmar Nueva Contraseña:</label>
+          <input type="password" id="confirm-new-password-input" name="confirm_new_password" required />
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-change-password-button" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Atrás
+          </button>
+          <button type="submit" id="save-password-button" class="btn btn-primary">
+            Guardar Cambios
+          </button>
+        </div>
+        <p id="change-password-error" class="error-message"></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirmation Modal -->
+  <div id="confirmation-modal" class="modal">
+    <div class="modal-content modal-content-small">
+      <span class="close-button" id="close-confirmation-modal-button">&times;</span>
+      <h3><i class="fas fa-exclamation-triangle"></i> Confirmar Acción</h3>
+      <p id="confirmation-message">¿Está seguro de que desea continuar?</p>
+      <div class="modal-actions">
+        <button id="cancel-action-button" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i> Atrás
+        </button>
+        <button id="confirm-action-button" class="btn btn-danger">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Image Preview Modal -->
+  <div id="image-preview-modal" class="modal">
+    <div class="modal-content-image-preview">
+      <span class="close-button" id="close-image-preview-modal">&times;</span>
+      <img id="image-preview-content" src="#" alt="Vista previa de la imagen" />
+    </div>
+  </div>
+
+  <!-- Category Selection Modal -->
+  <div id="category-selection-modal" class="modal">
+    <div class="modal-content modal-content-small">
+      <span class="close-button" id="close-category-selection-modal">&times;</span>
+      <h3>
+        <i class="fas fa-building"></i> Seleccionar Categoría de Cliente
+      </h3>
+      <p>
+        Indique si el equipo a reportar pertenece a una empresa o es
+        residencial.
+      </p>
+      <div class="category-selection-actions">
+        <button id="select-category-empresa" class="btn btn-primary">
+          <i class="far fa-building"></i> Empresa
+        </button>
+        <button id="select-category-residencial" class="btn btn-accent">
+          <i class="fas fa-home"></i> Residencial
+        </button>
+      </div>
+      <div class="modal-actions">
+        <button id="repeat-client-data-button" class="btn-link"
+          style="display: none; padding: 5px; font-size: 0.85rem; color: var(--color-accent-primary); text-decoration: underline; background: none; border: none; cursor: pointer; text-align: center; margin: 0 auto; width: auto; font-weight: 500;">Repetir
+          datos de cliente</button>
+        <button id="cancel-category-selection-button" class="btn btn-secondary"><i class="fas fa-arrow-left"></i>
+          Atrás</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Equipment Selection Modal -->
+  <div id="equipment-selection-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="close-equipment-selection-modal">&times;</span>
+      <h3><i class="fas fa-search"></i> Buscar Equipo Existente</h3>
+      <div class="form-group">
+        <label for="equipment-selection-search-input">Buscar por ID Manual, modelo, marca, cliente...</label>
+        <input type="search" id="equipment-selection-search-input" placeholder="Escriba para buscar..." />
+      </div>
+      <div id="equipment-selection-search-results" class="search-results-container">
+        <!-- Search results will be populated here -->
+      </div>
+      <div class="modal-actions">
+        <button type="button" id="cancel-equipment-selection-button" class="btn btn-secondary"><i
+            class="fas fa-arrow-left"></i> Atrás
+        </button>
+        <button type="button" id="create-new-equipment-from-selection-btn" class="btn btn-accent">
+          <i class="fas fa-plus"></i> Equipo no está en la lista
+        </button>
+        <button type="button" id="continue-without-equipment-button" class="btn btn-warning">
+          <i class="fas fa-exclamation-circle"></i> Continuar sin equipo
+          (Manual)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo Capture Modal (for Installation) -->
+  <div id="photo-capture-modal" class="modal">
+    <div class="modal-content modal-content-small">
+      <span class="close-button" id="close-photo-capture-modal">&times;</span>
+      <h3 id="photo-capture-title">
+        <i class="fas fa-camera-retro"></i> Capturar Fotografía
+      </h3>
+      <video id="photo-capture-video" playsinline autoplay muted
+        style="width: 100%; border-radius: var(--border-radius-sharp)"></video>
+      <canvas id="photo-capture-canvas-hidden" style="display: none"></canvas>
+      <p id="photo-capture-feedback">Apuntando a la cámara...</p>
+
+      <div style="text-align: center; margin-bottom: 15px;">
+        <input type="file" id="photo-capture-upload-input" accept="image/*" style="display: none;" />
+        <button type="button" id="photo-capture-upload-button" class="btn btn-secondary"
+          style="width: 100%; border: 1px dashed var(--color-border-medium);">
+          <i class="fas fa-images"></i> Subir desde Galería
+        </button>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" id="cancel-photo-capture-button" class="btn btn-secondary">
+          <i class="fas fa-arrow-left"></i> Atrás
+        </button>
+        <button type="button" id="capture-photo-button" class="btn btn-primary">
+          <i class="fas fa-camera"></i> Capturar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Reconciliation Modal -->
+  <div id="ai-reconciliation-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-button" id="close-ai-reconciliation-modal">&times;</span>
+      <h3><i class="fas fa-brain"></i> Sugerencias de Conciliación de IA</h3>
+      <p class="text-muted">
+        La IA ha encontrado las siguientes posibles coincidencias entre
+        órdenes pendientes y reportes manuales. Revise y confirme para
+        vincularlos.
+      </p>
+      <div id="ai-reconciliation-results" class="ai-reconciliation-list">
+        <!-- AI suggestions will be populated here by JS -->
+      </div>
+      <div class="modal-actions">
+        <button id="close-ai-reconciliation-btn" class="btn btn-secondary">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Redeem Points Modal -->
+  <div id="redeem-points-modal" class="modal">
+    <div class="modal-content modal-content-small">
+      <span class="close-button" id="close-redeem-points-modal">&times;</span>
+      <h3><i class="fas fa-gift"></i> Redimir Puntos</h3>
+      <form id="redeem-points-form">
+        <input type="hidden" id="redeem-points-user-id" name="user_id" />
+        <p>Empleado: <strong id="redeem-points-employee-name"></strong></p>
+        <p>
+          Puntos Actuales: <strong id="redeem-points-current-points"></strong>
+        </p>
+        <div class="form-group">
+          <label for="points-to-redeem">Puntos a Redimir:</label>
+          <input type="number" id="points-to-redeem" name="points_to_redeem" required min="1" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-redeem-points-button" class="btn btn-secondary"><i
+              class="fas fa-arrow-left"></i> Atrás
+          </button>
+          <button type="submit" id="confirm-redeem-points-button" class="btn btn-primary">
+            <i class="fas fa-check"></i> Confirmar
+          </button>
+        </div>
+        <p id="redeem-points-error" class="error-message"></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="app-notification-area"></div>
+  <input type="file" id="admin-photo-upload-input" accept="image/jpeg,image/png" style="display: none"
+    aria-hidden="true" />
+
+  <!-- Visor de PDF interno (Iframe oculto) -->
+  <div id="pdf-viewer-container" style="
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: #111;
+        z-index: 9999;
+      ">
+    <div style="position: absolute; top: 10px; right: 10px; z-index: 10000">
+      <button id="close-pdf-viewer" class="btn btn-danger" style="padding: 10px 15px">
+        <i class="fas fa-times"></i> Cerrar
+      </button>
+    </div>
+    <iframe id="pdfViewer" style="width: 100%; height: 100%; border: none; background: white"></iframe>
+  </div>
+
+  <!-- User Settings Modal -->
+  <div id="user-settings-modal" class="modal">
+    <div class="modal-content modal-content-small">
+      <span class="close-button" id="close-user-settings-modal">&times;</span>
+      <h3><i class="fas fa-sliders-h"></i> Ajustes de Interfaz</h3>
+      <p>Estas preferencias visuales se aplican solo a tu cuenta en este dispositivo.</p>
+
+      <div class="settings-list" style="margin-top: 20px;">
+        <div class="setting-item">
+          <div class="setting-description" style="flex-grow: 1;">
+            <strong>Modo de Color</strong><br />
+            <small>Cambia entre modo oscuro y claro</small>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="user-theme-toggle">
+            <span class="slider round"></span>
+          </label>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-description" style="flex-grow: 1;">
+            <strong>Tamaño del Texto</strong><br />
+            <small>Ajusta el tamaño general de las letras (<span id="user-text-scale-display">100%</span>)</small>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button id="user-text-decrease" class="btn btn-secondary btn-compact"><i class="fas fa-minus"></i></button>
+            <button id="user-text-increase" class="btn btn-secondary btn-compact"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+
+        <div class="setting-item">
+          <div class="setting-description" style="flex-grow: 1;">
+            <strong>Tamaño de Botones</strong><br />
+            <small>Aumenta o reduce el tamaño de la interfaz (<span id="user-btn-scale-display">100%</span>)</small>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button id="user-btn-decrease" class="btn btn-secondary btn-compact"><i class="fas fa-minus"></i></button>
+            <button id="user-btn-increase" class="btn btn-secondary btn-compact"><i class="fas fa-plus"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-actions" style="margin-top: 25px;">
+        <button class="btn btn-primary" id="close-user-settings-btn">Guardar y Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="index.tsx"></script>
+</body>
+
+</html>

@@ -1,0 +1,23 @@
+[package]
+name = "cotizaciones_desktop"
+version = "0.0.0"
+description = "Aplicacion de escritorio Windows para Cotizaciones Macris"
+authors = ["MACRIS"]
+license = ""
+repository = ""
+default-run = "cotizaciones_desktop"
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "cotizaciones_desktop_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.0.0", features = [] }
+
+[dependencies]
+rusqlite = { version = "0.31", features = ["bundled"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tauri = { version = "2.0.0", features = [] }

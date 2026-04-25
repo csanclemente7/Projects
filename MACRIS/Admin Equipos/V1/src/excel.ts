@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import * as State from './state';
-import { Equipment } from './types';
+import { AdminScheduleRow, Equipment } from './types';
 
 export type ParsedEquipment = Omit<Equipment, 'id' | 'timestamp' | 'created_at' | 'equipment_type_id' | 'refrigerant_type_id'> & {
     equipment_type_id: string | null;
@@ -23,6 +23,104 @@ export interface ExcelValidationResult {
     data: Partial<ParsedEquipment> | null;
     errors: string[];
     rawRow: any; // Fila cruda original
+}
+
+export function exportScheduleToExcel(
+    rows: AdminScheduleRow[],
+    options: { companyTitle: string; sedeTitle: string }
+) {
+    const generatedAt = new Intl.DateTimeFormat('es-CO', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'America/Bogota',
+    }).format(new Date());
+
+    const worksheetData: (string | number)[][] = [
+        ['📅 CRONOGRAMA DE MANTENIMIENTO'],
+        [],
+        ['🏢 Empresa', options.companyTitle],
+        ['📍 Sede', options.sedeTitle],
+        ['🕒 Generado', generatedAt],
+        ['📊 Registros', rows.length],
+        [],
+        ['🆔 ID Manual', '🏷 Marca', '🧊 Tipo de equipo', '📍 Dependencia', 'Estado'],
+        ...rows.map(row => [
+            row.equipment.manualId || 'N/A',
+            row.equipment.brand || 'N/A',
+            row.equipment.typeName || row.equipment.type || 'N/A',
+            row.dependencyName || 'N/A',
+            row.isPending ? '⚠️ Pendiente' : '🟢 OK',
+        ]),
+    ];
+
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    worksheet['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } },
+    ];
+    worksheet['!cols'] = [
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 22 },
+        { wch: 36 },
+        { wch: 16 },
+    ];
+    worksheet['!rows'] = [
+        { hpt: 28 },
+        {},
+        { hpt: 20 },
+        { hpt: 20 },
+        { hpt: 20 },
+        { hpt: 20 },
+        {},
+        { hpt: 24 },
+    ];
+    worksheet['!autofilter'] = { ref: 'A8:E8' };
+
+    const applyCellStyle = (address: string, style: Record<string, any>) => {
+        const cell = worksheet[address];
+        if (cell) {
+            (cell as any).s = style;
+        }
+    };
+
+    const titleStyle = {
+        font: { bold: true, sz: 16, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '00A8C5' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+    };
+    const labelStyle = {
+        font: { bold: true, color: { rgb: '00A8C5' } },
+        fill: { fgColor: { rgb: 'EAFBFF' } },
+    };
+    const headerStyle = {
+        font: { bold: true, color: { rgb: 'FFFFFF' } },
+        fill: { fgColor: { rgb: '1F4E78' } },
+        alignment: { horizontal: 'center', vertical: 'center' },
+    };
+    const pendingStyle = {
+        font: { bold: true, color: { rgb: '9C6500' } },
+        fill: { fgColor: { rgb: 'FFF2CC' } },
+    };
+    const okStyle = {
+        font: { bold: true, color: { rgb: '006100' } },
+        fill: { fgColor: { rgb: 'E2F0D9' } },
+    };
+
+    applyCellStyle('A1', titleStyle);
+    ['A3', 'A4', 'A5', 'A6', 'B3', 'B4', 'B5', 'B6'].forEach(address => applyCellStyle(address, labelStyle));
+    ['A8', 'B8', 'C8', 'D8', 'E8'].forEach(address => applyCellStyle(address, headerStyle));
+
+    rows.forEach((row, index) => {
+        const excelRow = index + 9;
+        applyCellStyle(`E${excelRow}`, row.isPending ? pendingStyle : okStyle);
+    });
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Cronograma');
+
+    const safeCompany = options.companyTitle.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_');
+    const safeSede = options.sedeTitle.replace(/[\\/:*?"<>|]/g, '').replace(/\s+/g, '_');
+    XLSX.writeFile(workbook, `cronograma_${safeCompany}_${safeSede}.xlsx`);
 }
 
 // Limpia strings de Excel

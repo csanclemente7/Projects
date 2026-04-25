@@ -527,6 +527,19 @@ export interface ScheduledMaintenanceItem { // Renamed from ScheduledMaintenance
     lastMaintenanceDate: string;
 }
 
+export interface AdminScheduleRow {
+    equipment: Equipment;
+    companyName: string;
+    sedeName: string;
+    dependencyName: string;
+    lastMaintenanceDateLabel: string;
+    nextMaintenanceDate: Date | null;
+    nextMaintenanceDateLabel: string;
+    isPending: boolean;
+    statusText: string;
+    statusTitle: string;
+}
+
 export interface Client {
     id: string;
     name: string;

@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; 
+                   script-src 'self' 'unsafe-inline' https://www.macrisrefrigeracion.com https://macrisrefrigeracion.com data:;
+                   style-src 'self' 'unsafe-inline'; 
+                   img-src 'self' https://www.macrisrefrigeracion.com https://macrisrefrigeracion.com data: blob:; 
+                   font-src 'self' data:; 
+                   connect-src 'self' https://ctitnuadeqdwsgulhpjg.supabase.co wss://ctitnuadeqdwsgulhpjg.supabase.co https://fzcalgofrhbqvowazdpk.supabase.co wss://fzcalgofrhbqvowazdpk.supabase.co https://*.supabase.co wss://*.supabase.co;
+                   frame-src 'self' blob: data:;
+                   worker-src 'self';
+                   manifest-src 'self';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0f4c81">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Cotizaciones">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Cotizaciones - Macris</title>
+    <link rel="manifest" href="%BASE_URL%manifest.webmanifest">
+    <link rel="icon" type="image/png" href="%BASE_URL%icons/icon-192.png">
+    <link rel="apple-touch-icon" href="%BASE_URL%icons/apple-touch-icon.png">
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <!-- PWA SPLASH SCREEN -->
+    <div id="pwa-splash">
+        <img src="icon_cotizaciones.png" alt="MACRIS" class="pwa-splash-logo" id="pwa-splash-logo" />
+    </div>
+
+    <div id="login-overlay">
+        <div class="login-split-graphic">
+            <div class="login-brand-content">
+                <img src="MacrisLogoBlanco.png" alt="Macris Logo" class="login-brand-logo">
+                <h1 class="login-brand-title">Gestión Operativa<br>y Cotizaciones</h1>
+                <p class="login-brand-subtitle">Plataforma centralizada para la ingeniería,<br>administración y el
+                    control de órdenes.</p>
+
+                <div class="login-pulse-container">
+                    <div class="pulse-ring pulse-ring-1"></div>
+                    <div class="pulse-ring pulse-ring-2"></div>
+                    <div class="pulse-ring pulse-ring-3"></div>
+                    <div class="pulse-icon">
+                        <i class="fas fa-microchip"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="login-split-form">
+            <div class="login-container">
+                <h3>Iniciar Sesión</h3>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="username-input">Usuario</label>
+                        <input type="text" id="username-input" required autocomplete="username" placeholder="admin">
+                    </div>
+                    <div class="form-group">
+                        <label for="password-input">Clave de Acceso</label>
+                        <input type="password" id="password-input" required autocomplete="current-password">
+                    </div>
+                    <p id="login-error-msg" class="login-error"></p>
+                    <button type="submit" class="btn btn-primary login-btn">Ingresar</button>
+                    <button id="user-recovery-open" class="login-recovery-link" type="button">Olvidé la clave</button>
+                    <a id="admin-portal-link" class="btn btn-accent admin-login-link" href="#">Ir a Portal Admin</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="loader-overlay">
+        <img src="MacrisLogoBlanco.png" alt="Cargando..." class="loader-logo">
+        <div class="spinner"></div>
+        <p class="loader-text">Cargando datos...</p>
+    </div>
+
+    <div id="app-container" hidden>
+        <aside id="main-nav">
+            <div class="nav-header">
+                <img src="MacrisLogoBlanco.png" alt="Macris Logo" class="logo logo-full">
+                <img src="Logo_macris.png" alt="M" class="logo logo-small">
+            </div>
+            <button id="nav-collapse-btn" class="nav-collapse-btn" title="Plegar menú">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <nav class="nav-links">
+                <a href="#" class="nav-link active" data-page="page-quotes"><i
+                        class="fas fa-file-invoice-dollar"></i><span>Nueva cotización</span></a>
+                <a href="#" class="nav-link" data-page="page-saved-quotes"><i class="fas fa-archive"></i><span>Mis
+                        Cotizaciones</span></a>
+                <a href="#" class="nav-link" data-page="page-orders"><i
+                        class="fas fa-clipboard-list"></i><span>Órdenes</span></a>
+                <a href="#" class="nav-link" data-page="page-agenda"><i
+                        class="fas fa-calendar-alt"></i><span>Agenda</span></a>
+                <a href="#" class="nav-link" data-page="page-reports"><i
+                        class="fas fa-chart-bar"></i><span>Reportes</span></a>
+                <a href="#" class="nav-link" data-page="page-clients"><i
+                        class="fas fa-users"></i><span>Clientes</span></a>
+                <a href="#" class="nav-link" data-page="page-items"><i
+                        class="fas fa-box-open"></i><span>Insumos</span></a>
+                <a href="#" class="nav-link" data-page="page-technicians"><i
+                        class="fas fa-hard-hat"></i><span>Técnicos</span></a>
+                <a href="#" class="nav-link" data-page="page-settings"><i
+                        class="fas fa-cog"></i><span>Ajustes</span></a>
+            </nav>
+            <div class="sidebar-bottom">
+                <div id="current-user-badge" class="sidebar-user-info">
+                    <i id="admin-portal-btn" class="fas fa-user-circle user-avatar-icon" style="cursor: pointer;"
+                        title="Portal Admin"></i>
+                    <div class="user-details">
+                        <span id="current-user-name"></span>
+                        <div id="connection-status" class="sidebar-connection">
+                            <div class="status-indicator"></div>
+                            <span class="status-text">En línea</span>
+                        </div>
+                        <div id="sync-status-detail" class="sidebar-sync-detail">Sin cambios pendientes</div>
+                    </div>
+                </div>
+
+                <button id="current-user-logout" class="sidebar-logout-btn" title="Cerrar sesión">
+                    <i class="fas fa-sign-out-alt"></i> Salir
+                </button>
+            </div>
+        </aside>
+
+        <main id="main-content-area">
+            <!-- QUOTES PAGE -->
+            <div id="page-quotes" class="page active">
+                <header class="app-header">
+                    <div class="header-main-title">
+                        <h1>Generador de Cotizaciones</h1>
+                    </div>
+                </header>
+                <div id="quote-tabs-bar"></div>
+                <div class="page-content">
+                    <div class="quote-workspace">
+                        <div class="quote-header card">
+                            <div class="quote-header-left">
+                                <h2>Cotización <span id="quote-id-display">#...</span></h2>
+                                <div class="form-group">
+                                    <label for="quote-date">Fecha</label>
+                                    <input type="text" id="quote-date" placeholder="Seleccionar fecha...">
+                                </div>
+                            </div>
+                            <div class="quote-header-right">
+                                <h3>Cliente</h3>
+                                <div class="form-group">
+                                    <div class="input-with-button">
+                                        <input type="text" id="client-search" placeholder="Buscar por nombre o ID..."
+                                            autocomplete="off" data-lpignore="true" data-1p-ignore>
+                                        <button id="add-client-btn" class="btn btn-add-inline" title="Nuevo Cliente"><i
+                                                class="fas fa-plus"></i></button>
+                                        <button id="edit-client-btn" class="btn btn-add-inline"
+                                            title="Editar Cliente"><i class="fas fa-edit"></i></button>
+                                    </div>
+                                    <div id="client-search-results"></div>
+                                </div>
+                                <div id="quote-city-container" class="form-group"
+                                    style="display: none; margin-top: 10px;">
+                                    <label for="quote-city-select">Ciudad del Cliente</label>
+                                    <select id="quote-city-select" class="form-control">
+                                        <option value="">Seleccione una ciudad...</option>
+                                    </select>
+                                </div>
+                                <div id="quote-sede-container" class="form-group"
+                                    style="display: none; margin-top: 10px;">
+                                    <label for="quote-sede-select">Sede del Cliente</label>
+                                    <div class="input-with-button">
+                                        <select id="quote-sede-select" class="form-control">
+                                            <option value="">Cargando sedes...</option>
+                                        </select>
+                                        <button id="quote-add-sede-btn" class="btn btn-add-inline" title="Nueva Sede"><i
+                                                class="fas fa-plus"></i></button>
+                                        <button id="quote-edit-sede-btn" class="btn btn-add-inline" title="Editar Sede"><i
+                                                class="fas fa-edit"></i></button>
+                                    </div>
+                                </div>
+                                <div id="client-details" class="client-details-display"></div>
+                            </div>
+                        </div>
+
+                        <div class="quote-items card">
+                            <h3>Ítems de la Cotización</h3>
+                            <div class="table-container">
+                                <table id="quote-items-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-desc">Descripción</th>
+                                            <th class="col-qty">Cant.</th>
+                                            <th class="col-price">Vlr. Unitario</th>
+                                            <th class="col-total">Vlr. Total</th>
+                                            <th class="col-actions"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="quote-items-tbody">
+                                        <!-- Items will be added here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="add-item-form-container">
+                                <div class="form-group">
+                                    <label for="item-search">Agregar Ítem</label>
+                                    <div class="input-with-button">
+                                        <input type="search" id="item-search" placeholder="Buscar por código o nombre..."
+                                            autocomplete="off" data-lpignore="true" data-1p-ignore>
+                                        <button id="add-new-item-quote-page-btn" class="btn btn-add-inline"
+                                            title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div id="item-search-results"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="quote-summary-terms card">
+                            <div class="summary-and-terms-wrapper">
+                                <div class="quote-summary">
+                                    <h3>Resumen</h3>
+                                    <div class="summary-row">
+                                        <span>Subtotal</span>
+                                        <span id="summary-subtotal">$0</span>
+                                    </div>
+                                    <div class="summary-row">
+                                        <div class="vat-toggle-container">
+                                            <label class="switch-label" for="vat-toggle-switch">Incluir IVA</label>
+                                            <label class="switch">
+                                                <input type="checkbox" id="vat-toggle-switch">
+                                                <span class="slider round"></span>
+                                            </label>
+                                        </div>
+                                        <span id="summary-tax-amount">$0</span>
+                                    </div>
+                                    <div class="summary-row total-row">
+                                        <span>Total</span>
+                                        <span id="summary-total">$0</span>
+                                    </div>
+                                </div>
+                                <div class="quote-terms">
+                                    <h3>Términos y Condiciones</h3>
+                                    <textarea id="quote-terms-textarea"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card nc-notes-card" style="margin-bottom: 20px;">
+                            <h3 style="margin-top: 0; margin-bottom: 15px;"><i class="fas fa-lock" style="margin-right: 8px; color: var(--corporate-accent-teal); font-size: 0.9rem;"></i>Notas Internas <span
+                                    style="font-size: 0.8rem; font-weight: normal; color: var(--color-text-secondary);">(Uso
+                                    interno adm. - NO aparece en PDF)</span></h3>
+                            <textarea id="quote-internal-notes-textarea" class="form-control form-control-textarea"
+                                rows="3" placeholder="Observaciones privadas sobre esta cotización..."></textarea>
+                        </div>
+
+                        <div class="quote-annex-images card" style="margin-bottom: 20px;">
+                            <div class="annex-card-header">
+                                <h3><i class="fas fa-image"></i> Fotografías / Anexos Técnicos <span style="font-size: 0.75rem; font-weight: 400; opacity: 0.75;">(Opcional)</span></h3>
+                                <label for="quote-annex-upload" class="btn btn-outline"
+                                    style="cursor: pointer; padding: 6px 14px; font-size: 13px; margin: 0;">
+                                    <i class="fas fa-upload"></i> Subir
+                                </label>
+                                <input type="file" id="quote-annex-upload" multiple accept="image/*"
+                                    style="display: none;">
+                            </div>
+                            <div id="quote-annex-preview-container"
+                                style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px;">
+                                <!-- Uploaded image previews will appear here -->
+                            </div>
+                        </div>
+
+                        <div class="quote-main-actions card">
+                            <button id="delete-current-quote-btn" class="btn btn-danger btn-danger-solid"
+                                style="display: none;"><i class="fas fa-trash"></i><span>Eliminar</span></button>
+                            <button id="duplicate-quote-btn" class="btn btn-duplicate"
+                                style="display: none; margin-right: auto;"><i class="fas fa-copy"></i> Duplicar</button>
+                            <button id="save-quote-btn" class="btn btn-success"><i class="fas fa-save"></i> Guardar
+                                Cotización</button>
+                            <button id="generate-pdf-btn" class="btn btn-secondary"><i class="fas fa-file-pdf"></i>
+                                Generar PDF</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ORDER WORKSPACE PAGE (hidden by default) -->
+            <div id="page-order-workspace" class="page">
+                <header class="app-header">
+                    <div class="header-main-title">
+                        <i class="fas fa-clipboard-check"></i>
+                        <h1 id="order-workspace-title">Nueva Orden de Servicio</h1>
+                    </div>
+                    <button id="back-to-orders-list-btn" class="btn btn-secondary"><i
+                            class="fas fa-arrow-left"></i><span>Volver</span></button>
+                </header>
+                <div class="page-content">
+                    <div class="quote-workspace"> <!-- Reusing styling -->
+
+                        <!-- Order Details: Client, Date, Time, Techs -->
+                        <div class="card">
+                            <div class="quote-header"> <!-- Reusing styling -->
+                                <div class="quote-header-left">
+                                    <h3>Datos del Servicio</h3>
+                                    <div class="form-group">
+                                        <label for="order-date">Fecha de Servicio</label>
+                                        <input type="text" id="order-date" placeholder="Seleccionar fecha...">
+                                    </div>
+                                    <div class="form-group-row">
+                                        <div class="form-group">
+                                            <label for="order-time">Hora de Inicio</label>
+                                            <input type="time" id="order-time" class="form-control">
+                                            <div class="time-presets" style="display: flex; gap: 8px; margin-top: 8px;">
+                                                <button type="button" class="btn btn-sm preset-time-btn"
+                                                    style="padding: 4px 8px; font-size: 0.75rem; min-width: auto; background-color: var(--color-background-alt); border: 1px solid var(--color-border); color: var(--color-text-secondary);"
+                                                    data-time="07:00">7:00 AM</button>
+                                                <button type="button" class="btn btn-sm preset-time-btn"
+                                                    style="padding: 4px 8px; font-size: 0.75rem; min-width: auto; background-color: var(--color-background-alt); border: 1px solid var(--color-border); color: var(--color-text-secondary);"
+                                                    data-time="10:30">10:30 AM</button>
+                                                <button type="button" class="btn btn-sm preset-time-btn"
+                                                    style="padding: 4px 8px; font-size: 0.75rem; min-width: auto; background-color: var(--color-background-alt); border: 1px solid var(--color-border); color: var(--color-text-secondary);"
+                                                    data-time="14:30">2:30 PM</button>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="order-difficulty">Nivel de Dificultad</label>
+                                            <select id="order-difficulty" class="form-control">
+                                                <option value="">Seleccionar (Opcional)</option>
+                                                <option value="facil">Fácil</option>
+                                                <option value="medio">Medio</option>
+                                                <option value="dificil">Difícil</option>
+                                            </select>
+                                            <input type="hidden" id="order-duration-hours" value="0">
+                                            <input type="hidden" id="order-duration-minutes" value="0">
+                                            <div id="order-duration-hint"
+                                                style="font-size: 0.75rem; color: var(--color-text-secondary); margin-top: 4px; min-height: 14px;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div
+                                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                            <label for="order-type" style="margin-bottom: 0;">Tipo de Orden</label>
+                                        </div>
+                                        <div id="order-type-selector" class="custom-select-container" tabindex="0">
+                                            <div id="order-type-selected-pills" class="pill-input-container">
+                                                <span class="custom-select-placeholder">Seleccionar tipos...</span>
+                                            </div>
+                                            <i class="fas fa-chevron-down custom-select-arrow"></i>
+                                        </div>
+                                        <div id="order-type-dropdown"
+                                            class="custom-select-dropdown search-results-popover">
+                                            <!-- Options injected via JS -->
+                                        </div>
+                                        <select id="order-type" style="display: none;">
+                                            <option value="" disabled selected>Cargando...</option>
+                                        </select>
+
+                                        <input type="text" id="order-type-custom" class="form-control"
+                                            placeholder="Especifique el tipo..."
+                                            style="display: none; margin-top: 10px;">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="order-status">Estado</label>
+                                        <select id="order-status">
+                                            <option value="pending">Pendiente</option>
+                                            <option value="scheduled">Programada</option>
+                                            <option value="in_progress">En Progreso</option>
+                                            <option value="completed">Completada</option>
+                                            <option value="cancelled">Cancelada</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="quote-header-right">
+                                    <h3>Cliente</h3>
+                                    <div class="form-group">
+                                        <div class="input-with-button">
+                                            <input type="text" id="order-client-search"
+                                                placeholder="Buscar por nombre o ID..." autocomplete="off"
+                                                data-lpignore="true" data-1p-ignore>
+                                            <button id="order-add-client-btn" class="btn btn-add-inline"
+                                                title="Nuevo Cliente"><i class="fas fa-plus"></i></button>
+                                            <button id="order-edit-client-btn" class="btn btn-add-inline"
+                                                title="Editar Cliente"><i class="fas fa-edit"></i></button>
+                                        </div>
+                                        <div id="order-client-search-results"></div>
+                                    </div>
+                                    <div id="order-city-container" class="form-group"
+                                        style="display: none; margin-top: 10px;">
+                                        <label for="order-city-select">Ciudad del Cliente</label>
+                                        <select id="order-city-select" class="form-control">
+                                            <option value="">Seleccione una ciudad...</option>
+                                        </select>
+                                    </div>
+                                    <div id="order-sede-container" class="form-group"
+                                        style="display: none; margin-top: 10px;">
+                                        <label for="order-sede-select">Sede del Cliente</label>
+                                        <div class="input-with-button">
+                                            <select id="order-sede-select" class="form-control">
+                                                <option value="">Cargando sedes...</option>
+                                            </select>
+                                            <button id="order-add-sede-btn" class="btn btn-add-inline"
+                                                title="Nueva Sede"><i class="fas fa-plus"></i></button>
+                                            <button id="order-edit-sede-btn" class="btn btn-add-inline"
+                                                title="Editar Sede"><i class="fas fa-edit"></i></button>
+                                        </div>
+                                    </div>
+                                    <div id="order-client-details" class="client-details-display"></div>
+                                    <div class="form-group">
+                                        <label for="order-client-city">Ciudad del Servicio</label>
+                                        <input type="text" id="order-client-city" class="form-control"
+                                            placeholder="Ej: Buga, Cali...">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="form-group">
+                                <label for="technician-selector">Técnicos Asignados</label>
+                                <div id="technician-selector" class="custom-select-container" tabindex="0">
+                                    <div id="technician-selected-pills" class="pill-input-container">
+                                        <!-- Selected technician pills will be injected here -->
+                                        <span class="custom-select-placeholder">Seleccionar técnicos...</span>
+                                    </div>
+                                    <i class="fas fa-chevron-down custom-select-arrow"></i>
+                                </div>
+                                <div id="technician-dropdown" class="custom-select-dropdown search-results-popover">
+                                    <!-- Technician list will be injected here -->
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <!-- Order Services (Mano de Obra) -->
+                        <div class="quote-items card order-services-section" style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3>Servicios a Realizar <span>(Mano de Obra)</span></h3>
+                            </div>
+                            <div class="table-container">
+                                <table id="order-services-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-desc">Descripción del Servicio</th>
+                                            <th class="col-qty">Cant.</th>
+                                            <th class="col-actions"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="order-services-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Order Materials (Insumos) -->
+                        <div class="quote-items card">
+                            <h3>Materiales e Insumos <span>(Opcional)</span></h3>
+                            <div class="table-container">
+                                <table id="order-materials-table">
+                                    <thead>
+                                        <tr>
+                                            <th class="col-desc">Descripción del Material</th>
+                                            <th class="col-qty">Cant.</th>
+                                            <th class="col-actions"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="order-materials-tbody"></tbody>
+                                </table>
+                            </div>
+                            <div class="add-item-form-container">
+                                <div class="form-group">
+                                    <label for="order-item-search">Agregar Servicio o Material</label>
+                                    <div class="input-with-button">
+                                        <input type="text" id="order-item-search"
+                                            placeholder="Buscar por código o nombre..." autocomplete="off"
+                                            data-lpignore="true" data-1p-ignore>
+                                        <button id="order-add-new-item-btn" class="btn btn-add-inline"
+                                            title="Nuevo Insumo"><i class="fas fa-plus"></i></button>
+                                    </div>
+                                    <div id="order-item-search-results"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Order Status & Notes -->
+                        <div class="card">
+                            <h3>Notas Internas</h3>
+                            <div class="form-group">
+                                <label for="order-notes">Notas (No visibles para el cliente ni técnicos)</label>
+                                <textarea id="order-notes" rows="6"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="card" style="margin-top: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <h3 style="margin: 0;"><i class="fas fa-camera"
+                                        style="color: var(--color-text-secondary); margin-right: 8px;"></i> Fotografías
+                                    / Anexos (Opcional)</h3>
+                                <label for="order-annex-upload" class="btn btn-outline"
+                                    style="cursor: pointer; padding: 6px 14px; font-size: 13px; margin: 0;">
+                                    <i class="fas fa-upload"></i> Subir
+                                </label>
+                                <input type="file" id="order-annex-upload" multiple accept="image/*"
+                                    style="display: none;">
+                            </div>
+                            <div id="order-annex-preview-container"
+                                style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px;">
+                            </div>
+                        </div>
+
+                        <!-- Order Actions -->
+                        <div class="quote-main-actions card">
+                            <button id="save-order-btn" class="btn btn-success"><i class="fas fa-save"></i> Guardar
+                                Orden</button>
+                            <button id="generate-order-pdf-btn" class="btn btn-secondary"><i
+                                    class="fas fa-file-pdf"></i> Generar PDF</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ORDERS PAGE -->
+            <div id="page-orders" class="page">
+                <header class="page-header">
+                    <div class="page-header-main">
+                        <h2>Gestión de Órdenes <span id="order-count-badge" class="header-count-badge"></span></h2>
+                        <div class="page-actions">
+                            <input type="text" id="order-list-search" placeholder="Buscar orden..." autocomplete="off"
+                                data-lpignore="true" data-1p-ignore>
+                            <button id="orders-refresh-btn" class="btn btn-primary btn-icon-only manual-refresh-btn"
+                                title="Actualizar">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button id="add-new-order-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i>
+                                <span>Nueva Orden</span></button>
+                        </div>
+                    </div>
+                </header>
+                <div class="tabs-container">
+                    <button class="tab-link active" data-tab="pending">Pendientes</button>
+                    <button class="tab-link" data-tab="completed">Completadas</button>
+                </div>
+                <div class="page-content">
+                    <div id="orders-list-container" class="management-list-container">
+                        <!-- Orders table will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- AGENDA PAGE -->
+            <div id="page-agenda" class="page">
+                <header class="page-header agenda-header">
+                    <h2 class="agenda-main-title">Agenda de Servicios</h2>
+                    <div id="agenda-nav">
+                        <button id="agenda-prev-btn" class="btn btn-secondary btn-icon-only" title="Anterior">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h3 id="agenda-title"></h3>
+                        <button id="agenda-next-btn" class="btn btn-secondary btn-icon-only" title="Siguiente">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="agenda-header-right">
+                        <button id="agenda-refresh-btn" class="btn btn-primary btn-icon-only" title="Actualizar">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                        <div id="agenda-view-switcher" class="btn-group">
+                            <button class="btn btn-secondary" data-view="day">Día</button>
+                            <button class="btn btn-secondary active" data-view="week">Semana</button>
+                            <button class="btn btn-secondary" data-view="month">Mes</button>
+                        </div>
+                    </div>
+                </header>
+                <div class="page-content" id="agenda-page-content">
+                    <div id="agenda-container">
+                        <!-- Calendar/Timeline will be rendered here -->
+                    </div>
+                    <div id="agenda-tech-dropdown" class="custom-select-dropdown search-results-popover"
+                        style="display: none; position: absolute; z-index: 1000; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 250px;">
+                        <!-- Technician list will be injected here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- CLIENTS PAGE -->
+            <div id="page-clients" class="page">
+                <header class="page-header">
+                    <div class="page-header-main">
+                        <h2>Gestión de Clientes <span id="client-count-badge" class="header-count-badge"></span></h2>
+                        <div class="page-actions">
+                            <input type="text" id="client-list-search" placeholder="Buscar cliente..."
+                                autocomplete="off" data-lpignore="true" data-1p-ignore>
+                            <button id="clients-refresh-btn" class="btn btn-primary btn-icon-only manual-refresh-btn"
+                                title="Actualizar">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button id="add-new-client-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i>
+                                <span>Agregar Cliente</span></button>
+                            <button id="add-new-sede-page-btn" class="btn btn-secondary" style="margin-left: 10px;"><i
+                                    class="fas fa-building"></i>
+                                <span>Agregar Sede</span></button>
+                        </div>
+                    </div>
+                    <button id="delete-all-clients-btn" class="btn btn-icon-only btn-subtle-danger"
+                        title="Eliminar todos los clientes"><i class="fas fa-trash-alt"></i></button>
+                </header>
+                <div class="page-content">
+                    <div id="clients-list-container" class="management-list-container">
+                        <!-- Client table will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- ITEMS PAGE -->
+            <div id="page-items" class="page">
+                <header class="page-header">
+                    <div class="page-header-main">
+                        <h2>Gestión de Insumos <span id="item-count-badge" class="header-count-badge"></span></h2>
+                        <div class="page-actions">
+                            <input type="text" id="item-list-search" placeholder="Buscar insumo o servicio..."
+                                autocomplete="off" data-lpignore="true" data-1p-ignore>
+                            <button id="items-refresh-btn" class="btn btn-primary btn-icon-only manual-refresh-btn"
+                                title="Actualizar">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button id="add-new-item-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i>
+                                <span>Agregar Insumo</span></button>
+                        </div>
+                    </div>
+                    <button id="delete-all-items-btn" class="btn btn-icon-only btn-subtle-danger"
+                        title="Eliminar todos los insumos"><i class="fas fa-trash-alt"></i></button>
+                </header>
+                <div class="page-content">
+                    <div id="items-list-container" class="management-list-container">
+                        <!-- Item table will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TECHNICIANS PAGE -->
+            <div id="page-technicians" class="page">
+                <header class="page-header">
+                    <div class="page-header-main">
+                        <h2>Gestión de Técnicos <span id="technician-count-badge" class="header-count-badge"></span>
+                        </h2>
+                        <div class="page-actions">
+                            <input type="text" id="technician-list-search" placeholder="Buscar técnico..."
+                                autocomplete="off" data-lpignore="true" data-1p-ignore>
+                            <button id="technicians-refresh-btn"
+                                class="btn btn-primary btn-icon-only manual-refresh-btn" title="Actualizar">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button id="add-new-technician-page-btn" class="btn btn-primary"><i class="fas fa-plus"></i>
+                                <span>Agregar Técnico</span></button>
+                        </div>
+                    </div>
+                </header>
+                <div class="page-content">
+                    <div id="technicians-list-container" class="management-list-container">
+                        <!-- Technician table will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SAVED QUOTES PAGE -->
+            <div id="page-saved-quotes" class="page">
+                <header class="page-header">
+                    <div class="page-header-main">
+                        <h2>Mis Cotizaciones <span id="saved-quotes-count-badge" class="header-count-badge"></span></h2>
+                        <div class="page-actions">
+                            <input type="text" id="saved-quotes-search" placeholder="Buscar por ID o cliente..."
+                                autocomplete="off" data-lpignore="true" data-1p-ignore>
+                            <button id="saved-quotes-refresh-btn"
+                                class="btn btn-primary btn-icon-only manual-refresh-btn" title="Actualizar">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button id="delete-all-quotes-btn" class="btn btn-icon-only btn-subtle-danger"
+                        title="Eliminar todas las cotizaciones"><i class="fas fa-trash-alt"></i></button>
+                </header>
+                <div class="page-content">
+                    <div id="saved-quotes-page-container" class="management-list-container">
+                        <!-- Saved quotes table will be rendered here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- REPORTS PAGE -->
+            <div id="page-reports" class="page">
+                <header class="page-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>Reportes Históricos</h2>
+                    <div style="display: flex; gap: 8px;">
+                        <button id="reports-export-excel-btn" class="btn btn-outline"
+                            style="color: #28a745; border-color: #28a745;">
+                            <i class="fas fa-file-excel"></i> Excel
+                        </button>
+                        <button id="reports-export-zip-btn" class="btn btn-outline"
+                            style="color: #17a2b8; border-color: #17a2b8;">
+                            <i class="fas fa-file-archive"></i> ZIP Todos
+                        </button>
+                        <button id="reports-export-merged-btn" class="btn btn-outline"
+                            style="color: #d9534f; border-color: #d9534f;">
+                            <i class="fas fa-file-pdf"></i> Unir PDFs
+                        </button>
+                        <button id="reports-export-whatsapp-btn" class="btn btn-primary"
+                            style="background-color: #25D366; border-color: #25D366; color: white;">
+                            <i class="fas fa-share-alt"></i> Compartir
+                        </button>
+                    </div>
+                </header>
+                <div class="page-content">
+                    <div class="filters-container"
+                        style="background: var(--surface); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid var(--border); display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div class="reports-filter reports-filter-search">
+                            <div class="reports-search-toolbar" style="display: flex; gap: 8px;">
+                                <button id="reports-selection-toggle-btn" class="btn btn-outline" type="button" title="Activar selección manual" aria-label="Activar selección manual">
+                                    <i class="fas fa-check-square"></i>
+                                </button>
+                                <div class="reports-search-field">
+                                    <label for="reports-search"
+                                        style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Buscar</label>
+                                    <input type="text" id="reports-search" class="form-control"
+                                        placeholder="Técnico, equipo, tipo..." autocomplete="off">
+                                </div>
+                                <button id="reports-refresh-btn" class="btn btn-primary" title="Actualizar" style="padding: 0 12px;">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="reports-filter reports-filter-date">
+                            <label
+                                style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Desde</label>
+                            <input type="date" id="reports-date-from" class="form-control">
+                        </div>
+                        <div class="reports-filter reports-filter-date">
+                            <label
+                                style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Hasta</label>
+                            <input type="date" id="reports-date-to" class="form-control">
+                        </div>
+                        <div class="reports-filter reports-filter-service">
+                            <label
+                                style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Tipo de Servicio</label>
+                            <select id="reports-service-type-filter" class="form-control">
+                                <option value="">Todos</option>
+                                <option value="Preventivo">Preventivo</option>
+                                <option value="Correctivo">Correctivo</option>
+                                <option value="Montaje">Montaje/Instalación</option>
+                                <option value="Desmonte">Desmonte</option>
+                            </select>
+                        </div>
+                        <div class="reports-filter reports-filter-tech">
+                            <label
+                                style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Técnico</label>
+                            <select id="reports-tech-filter" class="form-control">
+                                <option value="">Todos</option>
+                            </select>
+                        </div>
+                        <div class="reports-filter reports-filter-city">
+                            <label
+                                style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">Ciudad</label>
+                            <select id="reports-city-filter" class="form-control">
+                                <option value="">Todas</option>
+                            </select>
+                        </div>
+                        <div class="reports-filter reports-filter-page-size">
+                            <label
+                                style="display: block; font-size: 0.85rem; margin-bottom: 5px; color: var(--text-secondary);">No.
+                                Páginas</label>
+                            <div class="reports-page-size-toolbar">
+                                <select id="reports-page-size" class="form-control">
+                                    <option value="10">10</option>
+                                    <option value="25">25</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                                <button id="reports-clear-filters-btn" class="btn btn-outline" type="button" title="Limpiar filtros" aria-label="Limpiar filtros">
+                                    <i class="fas fa-eraser"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="reports-count-bar" style="margin-bottom: 10px; font-size: 0.85rem; color: var(--color-text-secondary);">
+                        <span id="reports-count-label"><i class="fas fa-list-ol" style="margin-right:5px;"></i><span id="reports-total-count">—</span> reportes encontrados</span>
+                        <span id="reports-selected-count" hidden>0 seleccionados</span>
+                    </div>
+
+                    <div style="text-align: center; margin-bottom: 10px; display: none;" id="reports-loading-indicator">
+                        <i class="fas fa-spinner fa-spin fa-2x" style="color: var(--primary);"></i>
+                        <p style="color: var(--text-secondary); margin-top: 5px;">Cargando reportes...</p>
+                    </div>
+
+                    <div class="table-responsive"
+                        style="border: 1px solid var(--color-border-light); border-radius: 8px; overflow-y: auto; overflow-x: auto; max-height: 65vh; background: var(--surface);">
+                        <table id="reports-data-table" class="table" style="margin-bottom: 0;">
+                            <thead>
+                                <tr>
+                                    <th id="reports-selection-header" class="reports-selection-column" hidden>
+                                        <label class="reports-select-all-label" for="reports-select-all-visible" title="Seleccionar filas visibles">
+                                            <input type="checkbox" id="reports-select-all-visible">
+                                        </label>
+                                    </th>
+                                    <th>Fecha</th>
+                                    <th>Cliente/Empresa</th>
+                                    <th>Sede</th>
+                                    <th>Dependencia</th>
+                                    <th>Tipo de Servicio</th>
+                                    <th>Marca</th>
+                                    <th>Tipo Eq.</th>
+                                    <th>Técnico</th>
+                                    <th style="text-align: right; width: 140px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reports-tbody">
+                                <!-- Filas generadas dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="pagination-controls"
+                        style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding: 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;">
+                        <span id="reports-page-info" style="color: var(--text-secondary); font-size: 0.9rem;">Página 1
+                            de 1</span>
+                        <div style="display: flex; gap: 5px;">
+                            <button id="reports-first-page-btn" class="btn btn-outline" style="padding: 5px 10px;"><i
+                                    class="fas fa-angle-double-left"></i></button>
+                            <button id="reports-prev-page-btn" class="btn btn-outline" style="padding: 5px 10px;"><i
+                                    class="fas fa-angle-left"></i></button>
+                            <button id="reports-next-page-btn" class="btn btn-outline" style="padding: 5px 10px;"><i
+                                    class="fas fa-angle-right"></i></button>
+                            <button id="reports-last-page-btn" class="btn btn-outline" style="padding: 5px 10px;"><i
+                                    class="fas fa-angle-double-right"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SETTINGS PAGE -->
+            <div id="page-settings" class="page">
+                <header class="page-header">
+                    <h2>Ajustes</h2>
+                </header>
+                <div class="page-content">
+                    <div class="quote-workspace">
+                        <div class="card">
+                            <h3>Apariencia</h3>
+                            <p class="text-secondary-p">Personalice el aspecto de la aplicación.</p>
+                            <div class="settings-group">
+                                <div class="setting-item">
+                                    <h4>Tema de la Aplicación</h4>
+                                    <div id="theme-options-container" class="theme-options">
+                                        <label class="theme-option">
+                                            <input type="radio" name="theme" value="light">
+                                            <div class="theme-preview-box">
+                                                <i class="fas fa-sun"></i>
+                                                <span>Claro</span>
+                                            </div>
+                                        </label>
+                                        <label class="theme-option">
+                                            <input type="radio" name="theme" value="dark">
+                                            <div class="theme-preview-box">
+                                                <i class="fas fa-moon"></i>
+                                                <span>Oscuro</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Tamaño de la Fuente</h4>
+                                    <div class="font-size-control">
+                                        <input type="range" id="font-size-slider" min="14" max="20" step="1" value="16">
+                                        <span id="font-size-value">16px</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Datos de la Empresa</h3>
+                            <p class="text-secondary-p">Esta información aparecerá en los encabezados de sus documentos
+                                PDF.</p>
+                            <div class="settings-group" style="flex-direction: column;">
+                                <div class="setting-item">
+                                    <h4>Nombre de la Empresa</h4>
+                                    <div class="form-group">
+                                        <input type="text" id="company-name-setting" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Dirección (Línea 1)</h4>
+                                    <div class="form-group">
+                                        <input type="text" id="company-address1-setting" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Dirección (Línea 2)</h4>
+                                    <div class="form-group">
+                                        <input type="text" id="company-address2-setting" class="form-control"
+                                            placeholder="Ej: Buga, Valle del Cauca">
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Sitio Web</h4>
+                                    <div class="form-group">
+                                        <input type="text" id="company-website-setting" class="form-control"
+                                            placeholder="Ej: www.miempresa.com">
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Teléfono de Contacto</h4>
+                                    <div class="form-group">
+                                        <input type="text" id="company-phone-setting" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Email de Contacto</h4>
+                                    <div class="form-group">
+                                        <input type="email" id="company-email-setting" class="form-control">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-actions" style="margin-top: 10px; justify-content: flex-end;">
+                                <button id="save-company-data-btn" class="btn btn-primary"><i class="fas fa-save"></i>
+                                    <span>Guardar Datos</span></button>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Impuestos</h3>
+                            <p class="text-secondary-p">Configure los valores de impuestos por defecto.</p>
+                            <div class="settings-group">
+                                <div class="setting-item">
+                                    <h4>Valor del IVA (%)</h4>
+                                    <div class="form-group">
+                                        <input type="number" id="vat-rate-setting" class="form-control" min="0"
+                                            step="0.1" value="19">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Textos de Cotización y PDF</h3>
+                            <p class="text-secondary-p">Personalice los textos por defecto que aparecen en las
+                                cotizaciones y los documentos PDF.</p>
+                            <div class="settings-group" style="flex-direction: column;">
+                                <div class="setting-item">
+                                    <h4>Términos y Condiciones (Sin IVA)</h4>
+                                    <div class="form-group">
+                                        <textarea id="terms-no-vat-setting" class="form-control" rows="5"></textarea>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Términos y Condiciones (Con IVA)</h4>
+                                    <div class="form-group">
+                                        <textarea id="terms-with-vat-setting" class="form-control" rows="5"></textarea>
+                                    </div>
+                                </div>
+                                <div class="setting-item">
+                                    <h4>Texto de Pie de Página (PDF)</h4>
+                                    <div class="form-group">
+                                        <textarea id="pdf-footer-text-setting" class="form-control" rows="4"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-actions" style="margin-top: 10px; justify-content: flex-end;">
+                                <button id="save-texts-btn" class="btn btn-primary"><i class="fas fa-save"></i>
+                                    <span>Guardar Textos</span></button>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Seguridad</h3>
+                            <p class="text-secondary-p">Cambie la clave de acceso para iniciar sesión en la aplicación.
+                            </p>
+                            <form id="change-password-form">
+                                <div class="settings-group" style="flex-direction: column;">
+                                    <div class="setting-item">
+                                        <h4>Clave Actual</h4>
+                                        <div class="form-group">
+                                            <input type="password" id="current-password" class="form-control" required
+                                                autocomplete="current-password">
+                                        </div>
+                                    </div>
+                                    <div class="setting-item">
+                                        <h4>Nueva Clave</h4>
+                                        <div class="form-group">
+                                            <input type="password" id="new-password" class="form-control" required
+                                                autocomplete="new-password">
+                                        </div>
+                                    </div>
+                                    <div class="setting-item">
+                                        <h4>Confirmar Nueva Clave</h4>
+                                        <div class="form-group">
+                                            <input type="password" id="confirm-password" class="form-control" required
+                                                autocomplete="new-password">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-actions" style="margin-top: 10px; justify-content: flex-end;">
+                                    <button type="submit" id="change-password-btn" class="btn btn-primary"><i
+                                            class="fas fa-key"></i> <span>Cambiar Clave</span></button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="card">
+                            <h3>Diseño de PDF</h3>
+                            <p class="text-secondary-p">Elija una plantilla para sus cotizaciones en PDF y
+                                previsualícela.</p>
+                            <div id="pdf-template-options-container" class="template-options-container">
+                                <!-- PDF Template Options will be injected here by UI.ts -->
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Generación de PDF</h3>
+                            <p class="text-secondary-p">Seleccione cómo se debe mostrar el PDF después de generarlo.</p>
+                            <div id="pdf-output-options-container" class="theme-options">
+                                <label class="theme-option">
+                                    <input type="radio" name="pdf-output" value="preview" checked>
+                                    <div class="theme-preview-box">
+                                        <i class="fas fa-window-maximize"></i>
+                                        <span>Vista Previa</span>
+                                    </div>
+                                </label>
+                                <label class="theme-option">
+                                    <input type="radio" name="pdf-output" value="download">
+                                    <div class="theme-preview-box">
+                                        <i class="fas fa-download"></i>
+                                        <span>Descarga Directa</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <h3>Datos de la Aplicación</h3>
+                            <p class="text-secondary-p">Guarde una copia de seguridad o restaure sus datos. También
+                                puede eliminar todos los datos para empezar de cero.</p>
+                            <div class="database-actions">
+                                <button id="backup-btn" class="btn btn-primary"><i class="fas fa-download"></i>
+                                    <span>Descargar Copia</span></button>
+                                <label for="restore-input" class="btn btn-secondary"><i class="fas fa-upload"></i>
+                                    <span>Restaurar Archivo</span></label>
+                                <input type="file" id="restore-input" accept=".json" style="display: none;">
+                                <button id="logout-btn" class="btn btn-warning"><i class="fas fa-sign-out-alt"></i>
+                                    <span>Cerrar Sesión</span></button>
+                                <button id="reset-app-btn" class="btn btn-danger"><i class="fas fa-power-off"></i>
+                                    <span>Reiniciar Aplicación</span></button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Mobile Navigation -->
+    <nav id="mobile-nav-bar" hidden>
+        <a href="#" class="nav-link active" data-page="page-quotes"><i
+                class="fas fa-file-invoice-dollar"></i><span>Cotizar</span></a>
+        <a href="#" class="nav-link" data-page="page-saved-quotes"><i
+                class="fas fa-archive"></i><span>Guardadas</span></a>
+        <a href="#" class="nav-link" data-page="page-orders"><i
+                class="fas fa-clipboard-list"></i><span>Órdenes</span></a>
+        <a href="#" class="nav-link" data-page="page-agenda"><i class="fas fa-calendar-alt"></i><span>Agenda</span></a>
+        <a href="#" class="nav-link" data-page="page-reports"><i class="fas fa-chart-bar"></i><span>Reportes</span></a>
+        <a href="#" class="nav-link" data-page="page-clients"><i class="fas fa-users"></i><span>Clientes</span></a>
+        <a href="#" class="nav-link" data-page="page-items"><i class="fas fa-box-open"></i><span>Insumos</span></a>
+        <a href="#" class="nav-link" data-page="page-technicians"><i
+                class="fas fa-hard-hat"></i><span>Técnicos</span></a>
+    </nav>
+    <a href="#" id="mobile-settings-btn" class="nav-link" data-page="page-settings" title="Ajustes">
+        <i class="fas fa-cog"></i>
+    </a>
+
+
+    <!-- Generic Modal for Client/Item/Technician Editing -->
+    <div id="entity-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-btn">&times;</span>
+            <h3 id="modal-title">Editar Entidad</h3>
+            <form id="modal-form">
+                <div id="modal-fields"></div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary cancel-modal-btn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Source Modal -->
+    <div id="order-source-modal" class="modal">
+        <div class="modal-content modal-content-confirm">
+            <span class="close-modal-btn">&times;</span>
+            <h3>Crear Nueva Orden</h3>
+            <p>¿Cómo desea crear la orden de servicio?</p>
+            <div class="modal-actions">
+                <input type="text" id="order-source-quote-search" class="form-control"
+                    placeholder="Buscar cotización por ID o cliente..." style="display: none; margin-bottom: 10px;">
+                <div id="order-source-quote-search-results" class="search-results-popover"></div>
+                <button id="create-order-from-quote-btn" class="btn btn-primary"><i class="fas fa-file-import"></i>
+                    Desde Cotización</button>
+                <button id="create-order-manually-btn" class="btn btn-secondary"><i class="fas fa-pencil-alt"></i>
+                    Manualmente</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- PDF Preview Modal -->
+    <div id="pdf-preview-modal" class="modal">
+        <div class="modal-content modal-content-pdf">
+            <div class="pdf-modal-header">
+                <h3>Vista Previa de Cotización</h3>
+                <div class="modal-actions">
+                    <button id="download-pdf-btn" class="btn btn-primary"><i class="fas fa-download"></i>
+                        <span>Descargar y guardar</span></button>
+                    <span class="close-modal-btn">&times;</span>
+                </div>
+            </div>
+            <iframe id="pdf-iframe"></iframe>
+        </div>
+    </div>
+
+    <!-- Description Edit Modal -->
+    <div id="description-edit-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-btn">&times;</span>
+            <h3 id="description-modal-title">Editar Descripción</h3>
+            <form id="description-edit-form">
+                <div class="form-group">
+                    <label for="description-edit-textarea">Descripción del Ítem</label>
+                    <textarea id="description-edit-textarea" class="form-control" rows="5" required></textarea>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary cancel-modal-btn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Value Edit Modal -->
+    <div id="value-edit-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal-btn">&times;</span>
+            <h3 id="value-modal-title">Editar Valor</h3>
+            <form id="value-edit-form">
+                <div class="form-group">
+                    <label id="value-modal-label" for="value-edit-input">Valor</label>
+                    <input id="value-edit-input" class="form-control" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    <button type="button" class="btn btn-secondary cancel-modal-btn">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Share Options Modal -->
+    <div class="modal" id="share-options-modal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <span class="close-modal-btn">&times;</span>
+            <h3 style="margin-bottom: 20px;">Compartir Reporte(s)</h3>
+            <p style="margin-bottom: 20px; color: var(--text-secondary); font-size: 0.9rem;">Selecciona el medio por el
+                cual deseas compartir los documentos generados.</p>
+
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <button id="share-whatsapp-btn" class="btn"
+                    style="background-color: #25D366; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">
+                    <i class="fab fa-whatsapp fa-lg"></i> Compartir vía WhatsApp
+                </button>
+                <button id="share-gmail-btn" class="btn"
+                    style="background-color: #EA4335; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">
+                    <i class="fab fa-google fa-lg"></i> Redactar en Gmail
+                </button>
+                <button id="share-outlook-btn" class="btn"
+                    style="background-color: #0078D4; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1rem; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">
+                    <i class="fab fa-microsoft fa-lg"></i> Redactar en Outlook
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Details Slide-in Panel -->
+    <div id="report-details-overlay" class="report-details-overlay"></div>
+    <div id="report-details-panel" class="report-details-panel">
+        <div class="rdp-header">
+            <div class="rdp-header-left">
+                <i class="fas fa-file-alt"></i>
+                <span>Detalles del Reporte</span>
+            </div>
+            <button class="rdp-close-btn" id="report-details-close-btn" title="Cerrar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="report-details-body" class="rdp-body"></div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal confirmation-modal" id="confirmation-modal">
+        <div class="modal-content modal-content-confirm">
+            <h3 id="confirmation-modal-title">Confirmar Acción</h3>
+            <p id="confirmation-modal-text">¿Está seguro de que desea continuar?</p>
+            <div class="modal-actions">
+                <button id="confirmation-modal-cancel-btn" class="btn btn-secondary">Cancelar</button>
+                <button id="confirmation-modal-confirm-btn" class="btn btn-danger">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-area"></div>
+
+    <div id="user-recovery-modal" class="modal">
+        <div class="modal-content">
+            <span id="user-recovery-close" class="close-modal-btn">&times;</span>
+            <h3>Recuperar clave</h3>
+            <p class="text-secondary-p">Ingresa tu usuario para generar un codigo local de recuperacion.</p>
+            <div id="user-recovery-step-send">
+                <div class="form-group">
+                    <label for="recovery-username">Usuario</label>
+                    <input id="recovery-username" type="text" placeholder="usuario">
+                </div>
+                <p class="text-secondary-p">Se enviara el codigo a: <span id="recovery-user-email">-</span></p>
+                <button id="recovery-user-send" class="btn btn-primary">Enviar codigo</button>
+            </div>
+            <div id="user-recovery-step-verify" style="display:none;">
+                <div class="form-group">
+                    <label for="recovery-user-code">Codigo</label>
+                    <input id="recovery-user-code" type="text" placeholder="000000" maxlength="6">
+                </div>
+                <div class="form-group">
+                    <label for="recovery-user-password">Nueva clave</label>
+                    <input id="recovery-user-password" type="password" placeholder="Nueva clave">
+                </div>
+                <div class="form-group">
+                    <label for="recovery-user-confirm">Confirmar clave</label>
+                    <input id="recovery-user-confirm" type="password" placeholder="Confirmar clave">
+                </div>
+                <button id="recovery-user-verify" class="btn btn-primary">Actualizar clave</button>
+            </div>
+            <p id="recovery-user-error" class="login-error"></p>
+        </div>
+    </div>
+
+    <!-- Agenda Edit Order Panel (slide-in) -->
+    <div id="agenda-edit-overlay"></div>
+    <div id="agenda-edit-order-modal" class="agenda-edit-panel">
+        <div class="aep-header">
+            <div class="aep-header-info">
+                <h3><i class="fas fa-pencil-alt" style="margin-right:8px; opacity:.7;"></i>Edición Rápida — <span id="aep-order-number"></span></h3>
+                <span id="aep-status-badge" class="aep-status-badge"></span>
+            </div>
+            <button class="aep-close-btn" id="agenda-edit-close-btn" title="Cerrar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="aep-body">
+            <form id="agenda-edit-order-form">
+                <input type="hidden" id="agenda-edit-order-id">
+
+                <!-- Client Section -->
+                <div class="aep-section">
+                    <h4 class="aep-section-title"><i class="fas fa-user"></i> Datos del Cliente</h4>
+                    <div class="form-group" style="margin-bottom:10px;">
+                        <label>Nombre</label>
+                        <input type="text" id="agenda-edit-client-name" class="form-control" required>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Teléfono</label>
+                            <input type="text" id="agenda-edit-client-phone" class="form-control">
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Ciudad</label>
+                            <input type="text" id="agenda-edit-client-city" class="form-control">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>Dirección</label>
+                        <input type="text" id="agenda-edit-client-address" class="form-control">
+                    </div>
+                </div>
+
+                <!-- Service Scheduling Section -->
+                <div class="aep-section">
+                    <h4 class="aep-section-title"><i class="fas fa-calendar-alt"></i> Programación</h4>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Fecha</label>
+                            <input type="date" id="agenda-edit-service-date" class="form-control" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Hora</label>
+                            <input type="time" id="agenda-edit-service-time" class="form-control">
+                        </div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; margin-bottom:12px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Estado</label>
+                            <select id="agenda-edit-status" class="form-control" required>
+                                <option value="pending">Pendiente</option>
+                                <option value="scheduled">Programada</option>
+                                <option value="in_progress">En Progreso</option>
+                                <option value="completed">Completada</option>
+                                <option value="cancelled">Cancelada</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label>Tipo de Servicio</label>
+                            <select id="agenda-edit-type" class="form-control" required>
+                                <!-- populated dynamically -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Technicians Section -->
+                <div class="aep-section">
+                    <h4 class="aep-section-title"><i class="fas fa-hard-hat"></i> Técnicos Asignados</h4>
+                    <div id="aep-tech-chips" class="aep-tech-chips"></div>
+                    <button type="button" class="aep-add-tech-btn" id="aep-add-tech-btn">
+                        <i class="fas fa-plus"></i> Agregar técnico
+                    </button>
+                </div>
+
+                <!-- Items Section -->
+                <div class="aep-section">
+                    <h4 class="aep-section-title"><i class="fas fa-boxes-stacked"></i> Insumos / Servicios</h4>
+                    <div id="aep-items-list"></div>
+                    <button type="button" class="aep-add-item-btn" id="aep-add-item-btn">
+                        <i class="fas fa-plus"></i> Agregar ítem
+                    </button>
+                </div>
+
+                <!-- Notes Section -->
+                <div class="aep-section">
+                    <h4 class="aep-section-title"><i class="fas fa-sticky-note"></i> Notas / Observaciones</h4>
+                    <textarea id="agenda-edit-notes" class="form-control" rows="3"
+                        placeholder="Restricciones, observaciones, detalles del servicio..."></textarea>
+                </div>
+
+                <!-- Photos / Attachments Section (always visible) -->
+            </form>
+            <!-- Photos section is OUTSIDE the form so cloneNode never detaches the grid -->
+            <div class="aep-section" id="aep-photos-section">
+                <h4 class="aep-section-title"><i class="fas fa-images"></i> Fotografías / Anexos</h4>
+                <div id="aep-photos-grid" class="aep-photos-grid"></div>
+                <label for="aep-photo-upload" class="aep-upload-btn" id="aep-upload-label">
+                    <i class="fas fa-camera"></i> Adjuntar foto
+                </label>
+                <input type="file" id="aep-photo-upload" accept="image/*" multiple style="display:none;">
+            </div>
+        </div>
+        <div class="aep-footer">
+            <button type="button" class="btn btn-secondary" id="agenda-edit-full-workspace-btn">
+                <i class="fas fa-external-link-alt"></i> Vista Avanzada
+            </button>
+            <div style="display:flex; gap:8px;">
+                <button type="button" class="btn btn-secondary" id="agenda-edit-cancel-btn">Cancelar</button>
+                <button type="submit" form="agenda-edit-order-form" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Viewer Modal -->
+    <div id="image-viewer-modal">
+        <button id="image-viewer-close" class="image-viewer-btn"><i class="fas fa-times"></i></button>
+        <img id="image-viewer-img" src="" alt="Vista previa">
+        <div class="image-viewer-controls">
+            <button id="image-viewer-prev" class="image-viewer-btn"><i class="fas fa-arrow-left"></i></button>
+            <span id="image-viewer-counter" style="font-size: 16px; font-weight: bold;"></span>
+            <button id="image-viewer-next" class="image-viewer-btn"><i class="fas fa-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <!-- Agenda Day Panel (slide-in) -->
+    <div id="agenda-panel-overlay"></div>
+    <div id="agenda-day-panel">
+        <div class="adp-handle"></div>
+        <div id="agenda-panel-header"></div>
+        <div id="agenda-panel-body"></div>
+    </div>
+
+    <script type="module" src="index.tsx"></script>
+</body>
+
+</html>

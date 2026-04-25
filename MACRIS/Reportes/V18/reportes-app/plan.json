@@ -1,0 +1,114 @@
+{
+  "title": "Plan de Conversión a App Móvil Offline",
+  "description": "Este es un plan detallado paso a paso para transformar la aplicación web de reportes en una aplicación móvil nativa (Android/iOS) con capacidades offline completas, utilizando IndexedDB para el almacenamiento local y Capacitor para el empaquetado nativo.",
+  "phases": [
+    {
+      "title": "Fase 1: Fundamentos del Almacenamiento Offline (Sin Service Workers)",
+      "steps": [
+        {
+          "id": 1,
+          "title": "Crear el Archivo del Plan de Acción",
+          "description": "Crear este mismo archivo `plan.json` para documentar y rastrear el progreso de la conversión de la aplicación. Este archivo servirá como nuestra guía y hoja de ruta.",
+          "status": "completado",
+          "testing_steps": "Verificar que el archivo `plan.json` exista en la raíz del proyecto y contenga el plan detallado.",
+          "notes": "Este es el primer paso para organizar el trabajo. Cada paso subsiguiente será marcado como 'completado' a medida que avancemos."
+        },
+        {
+          "id": 2,
+          "title": "Integrar una Base de Datos Local (IndexedDB)",
+          "description": "Añadiremos una librería para simplificar el uso de IndexedDB (la base de datos del navegador) y crearemos un módulo (`src/lib/local-db.ts`) para gestionar la base de datos local. Esta base de datos almacenará los datos necesarios para que la app funcione sin internet.",
+          "status": "completado",
+          "testing_steps": "Después de la implementación, abriremos las herramientas de desarrollador del navegador, iremos a la pestaña 'Application' -> 'IndexedDB' y verificaremos que se ha creado una nueva base de datos con las 'tablas' (Object Stores) que definamos (ej: 'reports_queue', 'app_cache').",
+          "notes": "ACTUALIZACIÓN: Siguiendo la sugerencia, hemos creado 'tablas' (Object Stores) específicas para cada tipo de dato (cities, companies, equipment, etc.) en lugar de un 'app_cache' genérico. Esto nos ahorra reprocesos y organiza mejor los datos locales. La versión de la DB se ha incrementado para aplicar estos cambios."
+        },
+        {
+          "id": 3,
+          "title": "Cachear Datos Esenciales en la Base de Datos Local",
+          "description": "Modificaremos el inicio de la aplicación para que, cuando haya internet, descargue los datos esenciales (listas de técnicos, ciudades, empresas, tipos de equipo, etc.) y los guarde en las tablas correspondientes de nuestra base de datos local (IndexedDB).",
+          "status": "completado",
+          "testing_steps": "Con conexión a internet, iniciaremos la app. Luego, en las herramientas de desarrollador, inspeccionaremos el contenido de las tablas 'cities', 'companies', 'users', etc., en IndexedDB y confirmaremos que contienen los datos descargados de Supabase.",
+          "notes": "Esto es crucial para que los formularios de reportes puedan llenarse incluso sin conexión."
+        },
+        {
+          "id": 4,
+          "title": "Implementar Carga Offline Completa (Service Worker y Datos Locales)",
+          "description": "Se implementa un Service Worker para cachear los archivos principales de la aplicación (el 'app shell': HTML, CSS, JS), permitiendo que la aplicación se cargue y se muestre incluso sin conexión. Una vez cargada, la lógica existente lee los datos esenciales (técnicos, ciudades, etc.) desde la base de datos local (IndexedDB) para lograr una experiencia 'offline-first' completa. Adicionalmente, se automatiza el proceso de compilación para que el archivo `sw.js` se copie a la carpeta `dist` automáticamente, asegurando que siempre se despliegue la última versión.",
+          "status": "completado",
+          "testing_steps": "1. Construir la aplicación: Ejecutar `npm install` y luego `npm run build`.\n2. Servir la versión de producción: Navegar a la carpeta `dist` y ejecutar `npm run preview`.\n3. Limpieza inicial: Abrir la app en el navegador (ej. `http://localhost:4173/`), abrir las herramientas de desarrollador, ir a la pestaña 'Application' y hacer clic en 'Clear site data' para asegurar un estado limpio.\n4. Carga y Cacheo Online: Con conexión a internet, recargar la página (Ctrl+Shift+R). Esperar a que todos los datos se carguen (verificar en IndexedDB que las tablas están llenas).\n5. Simular Desconexión: En las herramientas de desarrollador, ir a la pestaña 'Network' y activar la opción 'Offline'.\n6. Prueba de Carga Offline: Recargar la página. La aplicación debe cargar instantáneamente desde el caché del Service Worker. Las listas (como la de técnicos en el login) deben estar pobladas.\n7. Prueba de Login Offline: Iniciar sesión como técnico o admin. La aplicación debe permitir el acceso y mostrar las órdenes y reportes cacheados sin necesidad de recargar la página.",
+          "notes": "Se añadió un script al `package.json` para copiar `sw.js` a la carpeta `dist` durante el proceso de `build`, eliminando un paso manual propenso a errores. Esto combina el cacheo del 'app shell' con el cacheo de datos, transformando la aplicación a una verdadera Progressive Web App (PWA)."
+        }
+      ]
+    },
+    {
+      "title": "Fase 2: Creación de Reportes Offline",
+      "steps": [
+        {
+          "id": 5,
+          "title": "Guardar Nuevos Reportes Localmente",
+          "description": "Se modifica la función que guarda un reporte. Si la app está offline (o si el envío online falla), el reporte se guarda en una 'cola de espera' (`reports_queue`) en IndexedDB. Crucialmente, también permite editar estos reportes locales (agregar firmas/fotos) antes de que se sincronicen.",
+          "status": "completado",
+          "testing_steps": "Con el internet desconectado, crear y guardar un nuevo reporte. Verificar que aparece en `reports_queue` en IndexedDB. Editar el reporte para agregar una firma o una foto. Verificar que el registro en IndexedDB se actualiza. Recargar la página y confirmar que el reporte en cola sigue visible en 'Mis Reportes'.",
+          "notes": "La experiencia del técnico es fluida: el reporte guardado localmente aparece inmediatamente en 'Mis Reportes' con un ícono de nube que indica que está pendiente de sincronización. Las funciones que requieren internet (como el escaneo con IA) se deshabilitan automáticamente. Los reportes en cola persisten incluso si se recarga la aplicación."
+        }
+      ]
+    },
+    {
+      "title": "Fase 3: Sincronización con el Servidor",
+      "steps": [
+        {
+          "id": 6,
+          "title": "Crear el Módulo de Sincronización",
+          "description": "Se implementa un nuevo módulo (`src/lib/sync.ts`) que contiene la lógica para sincronizar los datos locales con Supabase. Este módulo se activa automáticamente tanto al iniciar la aplicación (si hay conexión) como en el momento en que el dispositivo recupera la conexión a internet.",
+          "status": "completado",
+          "testing_steps": "Con reportes en la cola offline, activar la conexión a internet. La sincronización debe empezar automáticamente, mostrando una notificación. También, al recargar la app con conexión, debe intentar sincronizar cualquier reporte pendiente de una sesión anterior.",
+          "notes": "La activación automática en el evento 'online' y al arranque asegura que los reportes pendientes se procesen tan pronto como sea posible, sin intervención del usuario. La centralización de esta lógica mantiene el código organizado y previene ejecuciones múltiples simultáneas."
+        },
+        {
+          "id": 7,
+          "title": "Implementar la Lógica de Subida y Manejo de Errores",
+          "description": "La función de sincronización lee los reportes de la cola local. Por cada reporte, intenta subirlo a Supabase. Si la subida es exitosa, se elimina de la cola local, se actualiza el estado de la orden de servicio asociada y se otorga el punto al técnico. Si falla, se notifica al usuario y el reporte permanece en la cola.",
+          "status": "completado",
+          "testing_steps": "1. Crear reporte offline. 2. Volver online. El reporte debe subirse, desaparecer de la cola y el punto debe sumarse. 3. Probar un caso de error (ej. forzar un error de red a mitad de la subida). El reporte debe permanecer en la cola para el siguiente intento.",
+          "notes": "La lógica es robusta: 1. Verifica que haya una sesión de usuario activa para evitar errores de autenticación. 2. Procesa los reportes secuencialmente. 3. Maneja errores comunes como reportes duplicados, eliminándolos de la cola para evitar bucles. 4. Proporciona notificaciones visuales claras al usuario durante todo el proceso (inicio, éxito, error y finalización)."
+        }
+      ]
+    },
+    {
+      "title": "Fase 4: Empaquetado como Aplicación Móvil Nativa",
+      "steps": [
+        {
+          "id": 8,
+          "title": "Introducir Capacitor JS",
+          "description": "Integraremos Capacitor, la herramienta que nos permitirá 'envolver' nuestra aplicación web en un contenedor nativo de Android e iOS. Esto nos dará acceso a funcionalidades del dispositivo y nos permitirá compilar los archivos APK (Android) y IPA (iOS).",
+          "status": "pendiente",
+          "testing_steps": "Tras instalar y configurar Capacitor, ejecutaremos `npx cap sync`. Deberíamos ver aparecer las carpetas `android` y `ios` en nuestro proyecto.",
+          "notes": "Capacitor es el sucesor moderno de Cordova/PhoneGap y se integra muy bien con frameworks web modernos."
+        },
+        {
+          "id": 9,
+          "title": "Configurar Permisos Nativos y Acceso a APIs",
+          "description": "Aunque el navegador ya pide permiso para la cámara, en una app nativa debemos declarar estos permisos explícitamente en los archivos de configuración de Android (`AndroidManifest.xml`) y iOS (`Info.plist`). También configuraremos el acceso a la red para permitir la comunicación con Supabase.",
+          "status": "pendiente",
+          "testing_steps": "Abriremos el proyecto nativo en Android Studio, compilaremos y ejecutaremos la app en un emulador o dispositivo. La app deberá solicitar permiso para usar la cámara la primera vez que se intente escanear un QR.",
+          "notes": "Este es un paso obligatorio para que las tiendas de aplicaciones acepten la app."
+        },
+        {
+          "id": 10,
+          "title": "Compilar y Probar en Emuladores/Dispositivos",
+          "description": "Aprenderemos el flujo de trabajo para compilar nuestra app web, sincronizar los cambios con los proyectos nativos y ejecutar la aplicación en un emulador de Android y un simulador de iOS (requiere macOS) para realizar pruebas completas del flujo offline/online.",
+          "status": "pendiente",
+          "testing_steps": "La aplicación debe instalarse y ejecutarse correctamente en un emulador de Android. Todas las funcionalidades, incluyendo el guardado offline y la sincronización, deben funcionar como en el navegador.",
+          "notes": "Las pruebas en dispositivos reales son cruciales para detectar problemas de rendimiento o compatibilidad."
+        },
+        {
+          "id": 11,
+          "title": "Generar Archivos de Producción (APK/IPA)",
+          "description": "El último paso es generar los archivos finales para distribución. Para Android, crearemos un 'APK' o 'AAB' firmado. Para iOS, crearemos un 'Archive' que luego se sube a la App Store Connect. Te guiaré a través de los comandos y pasos básicos en Android Studio y Xcode.",
+          "status": "pendiente",
+          "testing_steps": "Generaremos un archivo .apk de prueba y lo instalaremos manualmente en un dispositivo Android para confirmar que funciona fuera del entorno de desarrollo.",
+          "notes": "Este proceso suele requerir la creación de cuentas de desarrollador de Google Play y Apple App Store."
+        }
+      ]
+    }
+  ]
+}

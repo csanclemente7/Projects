@@ -2,7 +2,7 @@
 import * as D from './dom';
 import { formatDate } from './utils';
 import * as State from './state';
-import { Equipment } from './types';
+import { AdminScheduleRow, Equipment } from './types';
 import { saveEntity, fetchEquipment, deleteEntity } from './api';
 
 // FIX: Added global variable to track the camera stream for the plate scanner and prevent undefined reference errors
@@ -63,6 +63,89 @@ function dependencyMatchesLocation(
         return dependency.sedeId === sedeId || dependency.companyId === sedeId;
     }
     return dependency.companyId === companyId && !dependency.sedeId;
+}
+
+function addMonthsPreservingDay(baseDate: string, months: number): Date {
+    const date = new Date(baseDate);
+    const originalDay = date.getDate();
+    date.setMonth(date.getMonth() + months);
+    if (date.getDate() !== originalDay) {
+        date.setDate(0);
+    }
+    date.setHours(0, 0, 0, 0);
+    return date;
+}
+
+function getTodayStart(): Date {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today;
+}
+
+function getScheduleBaseDate(equipment: Equipment): string | null {
+    return equipment.lastMaintenanceDate || equipment.created_at || null;
+}
+
+function getScheduleStatusTitle(nextMaintenanceDate: Date | null, isPending: boolean): string {
+    if (!nextMaintenanceDate) return 'Sin fecha base para calcular el cronograma';
+
+    const today = getTodayStart();
+    const diffMs = nextMaintenanceDate.getTime() - today.getTime();
+    const daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    if (isPending) {
+        if (daysRemaining < 0) return `Vencido hace ${Math.abs(daysRemaining)} días`;
+        if (daysRemaining === 0) return 'Vence hoy';
+        return `Pendiente: vence en ${daysRemaining} días`;
+    }
+
+    return `Faltan ${daysRemaining} días para el próximo mantenimiento`;
+}
+
+function buildAdminScheduleRows(): AdminScheduleRow[] {
+    const today = getTodayStart();
+
+    return State.equipmentList
+        .filter(equipment => equipment.category === 'empresa')
+        .map(equipment => {
+            const companyName = State.companies.find(company => company.id === equipment.companyId)?.name || 'N/A';
+            const sedeName = State.sedes.find(sede => sede.id === equipment.sedeId)?.name || 'N/A';
+            const dependencyName = State.dependencies.find(dep => dep.id === equipment.dependencyId)?.name || 'N/A';
+            const baseDate = getScheduleBaseDate(equipment);
+            const nextMaintenanceDate = baseDate && equipment.periodicityMonths > 0
+                ? addMonthsPreservingDay(baseDate, equipment.periodicityMonths)
+                : null;
+            const daysUntilNextMaintenance = nextMaintenanceDate
+                ? Math.ceil((nextMaintenanceDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+                : null;
+            const isPending = !equipment.lastMaintenanceDate
+                || !nextMaintenanceDate
+                || (daysUntilNextMaintenance !== null && daysUntilNextMaintenance <= 7);
+
+            return {
+                equipment,
+                companyName,
+                sedeName,
+                dependencyName,
+                lastMaintenanceDateLabel: equipment.lastMaintenanceDate
+                    ? formatDate(equipment.lastMaintenanceDate, false)
+                    : 'Sin registro',
+                nextMaintenanceDate,
+                nextMaintenanceDateLabel: nextMaintenanceDate
+                    ? formatDate(nextMaintenanceDate, false)
+                    : 'Sin fecha',
+                isPending,
+                statusText: isPending ? 'Pendiente' : 'OK',
+                statusTitle: getScheduleStatusTitle(nextMaintenanceDate, isPending),
+            };
+        })
+        .sort((a, b) => {
+            if (a.isPending !== b.isPending) return a.isPending ? -1 : 1;
+            const aTime = a.nextMaintenanceDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+            const bTime = b.nextMaintenanceDate?.getTime() ?? Number.MAX_SAFE_INTEGER;
+            if (aTime !== bTime) return aTime - bTime;
+            return (a.equipment.manualId || '').localeCompare(b.equipment.manualId || '', 'es');
+        });
 }
 
 type QuickAddType = 'city' | 'company' | 'dependency';
@@ -162,6 +245,21 @@ export const populateDropdown = (
     });
 };
 
+export function showAdminView(view: 'equipment' | 'schedule') {
+    const showingEquipment = view === 'equipment';
+    if (D.adminEquipmentSection) D.adminEquipmentSection.style.display = showingEquipment ? 'block' : 'none';
+    if (D.adminScheduleSection) D.adminScheduleSection.style.display = showingEquipment ? 'none' : 'block';
+
+    D.adminShowEquipmentViewButton?.classList.toggle('active', showingEquipment);
+    D.adminShowScheduleViewButton?.classList.toggle('active', !showingEquipment);
+
+    if (showingEquipment) {
+        renderAdminEquipmentTable();
+    } else {
+        renderAdminScheduleTable();
+    }
+}
+
 export function updateAdminEquipmentFilters() {
     if (!D.adminEquipmentCompanyFilter || !D.adminEquipmentSedeFilter) return;
 
@@ -206,6 +304,79 @@ export function updateAdminEquipmentFilters() {
     if (!sedeFound && currentSedeId) {
         D.adminEquipmentSedeFilter.value = '';
     }
+}
+
+export function updateAdminScheduleFilters() {
+    if (!D.adminScheduleCompanyFilter || !D.adminScheduleSedeFilter) return;
+
+    const enterpriseEquipment = State.equipmentList.filter(equipment => equipment.category === 'empresa');
+    const currentCompanyId = D.adminScheduleCompanyFilter.value;
+    const currentSedeId = D.adminScheduleSedeFilter.value;
+
+    const uniqueCompanyIds = new Set(enterpriseEquipment.map(equipment => equipment.companyId).filter(Boolean));
+    const activeCompanies = State.companies
+        .filter(company => uniqueCompanyIds.has(company.id))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+    D.adminScheduleCompanyFilter.innerHTML = '<option value="">Todas las empresas</option>';
+    activeCompanies.forEach(company => {
+        const option = new Option(company.name, company.id);
+        if (company.id === currentCompanyId) option.selected = true;
+        D.adminScheduleCompanyFilter.appendChild(option);
+    });
+
+    const effectiveCompanyId = D.adminScheduleCompanyFilter.value;
+    const equipmentsForSede = effectiveCompanyId
+        ? enterpriseEquipment.filter(equipment => equipment.companyId === effectiveCompanyId)
+        : enterpriseEquipment;
+    const uniqueSedeIds = new Set(equipmentsForSede.map(equipment => equipment.sedeId).filter(Boolean));
+    const activeSedes = State.sedes
+        .filter(sede => uniqueSedeIds.has(sede.id))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+    let sedeFound = false;
+    D.adminScheduleSedeFilter.innerHTML = '<option value="">Todas las sedes</option>';
+
+    if (!effectiveCompanyId) {
+        D.adminScheduleSedeFilter.disabled = true;
+    } else {
+        D.adminScheduleSedeFilter.disabled = false;
+        activeSedes.forEach(sede => {
+            const option = new Option(sede.name, sede.id);
+            if (sede.id === currentSedeId) {
+                option.selected = true;
+                sedeFound = true;
+            }
+            D.adminScheduleSedeFilter.appendChild(option);
+        });
+    }
+
+    if (!sedeFound && currentSedeId) {
+        D.adminScheduleSedeFilter.value = '';
+    }
+}
+
+export function getFilteredAdminScheduleRows(): AdminScheduleRow[] {
+    const rows = buildAdminScheduleRows();
+    const term = State.tableSearchTerms.adminSchedule.toLowerCase();
+    const companyFilterId = D.adminScheduleCompanyFilter?.value;
+    const sedeFilterId = D.adminScheduleSedeFilter?.value;
+    const statusFilter = D.adminScheduleStatusFilter?.value;
+
+    return rows.filter(row => {
+        const matchesCompany = !companyFilterId || row.equipment.companyId === companyFilterId;
+        const matchesSede = !sedeFilterId || row.equipment.sedeId === sedeFilterId;
+        const matchesStatus = !statusFilter || (statusFilter === 'pending' ? row.isPending : !row.isPending);
+        const searchStr = `${row.equipment.manualId} ${row.companyName} ${row.sedeName} ${row.dependencyName}`.toLowerCase();
+        return matchesCompany && matchesSede && matchesStatus && searchStr.includes(term);
+    });
+}
+
+export function getAdminScheduleFilterTitles() {
+    return {
+        companyTitle: D.adminScheduleCompanyFilter?.selectedOptions[0]?.textContent?.trim() || 'Todas las empresas',
+        sedeTitle: D.adminScheduleSedeFilter?.selectedOptions[0]?.textContent?.trim() || 'Todas las sedes',
+    };
 }
 
 export function renderAdminEquipmentTable() {
@@ -275,6 +446,71 @@ export function renderAdminEquipmentTable() {
         const prevDisabled = paginationState.currentPage <= 1 ? 'disabled' : '';
         const nextDisabled = paginationState.currentPage >= totalPages ? 'disabled' : '';
         D.adminEquipmentPaginationContainer.innerHTML = `
+            <div class="pagination-summary">
+                Mostrando ${from}-${to} de ${totalItems} registros
+            </div>
+            <div class="pagination-actions">
+                <button class="btn btn-secondary" data-page="${paginationState.currentPage - 1}" ${prevDisabled}>Anterior</button>
+                <span class="pagination-page-indicator">Página ${paginationState.currentPage} de ${totalPages}</span>
+                <button class="btn btn-secondary" data-page="${paginationState.currentPage + 1}" ${nextDisabled}>Siguiente</button>
+            </div>
+        `;
+    }
+}
+
+export function renderAdminScheduleTable() {
+    if (!D.adminScheduleTableBody) return;
+
+    updateAdminScheduleFilters();
+
+    const filtered = getFilteredAdminScheduleRows();
+    const paginationState = State.tablePaginationStates.adminSchedule;
+
+    if (D.adminScheduleCount) {
+        D.adminScheduleCount.textContent = filtered.length.toString();
+    }
+
+    const totalItems = filtered.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / paginationState.itemsPerPage));
+    if (paginationState.currentPage > totalPages) {
+        paginationState.currentPage = totalPages;
+    }
+    if (paginationState.currentPage < 1) {
+        paginationState.currentPage = 1;
+    }
+
+    const startIndex = (paginationState.currentPage - 1) * paginationState.itemsPerPage;
+    const paginated = filtered.slice(startIndex, startIndex + paginationState.itemsPerPage);
+
+    D.adminScheduleTableBody.innerHTML = paginated.map(row => {
+        const statusClass = row.isPending ? 'schedule-status-btn pending' : 'schedule-status-btn ok';
+        const statusIcon = row.isPending ? 'fa-triangle-exclamation' : 'fa-circle-check';
+        const statusAction = row.isPending
+            ? `data-id="${row.equipment.id}" title="${row.statusTitle}. Registrar mantenimiento hoy"`
+            : `disabled title="${row.statusTitle}"`;
+
+        return `<tr>
+            <td data-label="ID Manual"><code>${row.equipment.manualId || 'N/A'}</code></td>
+            <td data-label="Empresa"><strong>${row.companyName}</strong></td>
+            <td data-label="Sede">${row.sedeName}</td>
+            <td data-label="Dependencia">${row.dependencyName}</td>
+            <td data-label="Último Mantenimiento">${row.lastMaintenanceDateLabel}</td>
+            <td data-label="Próximo Mantenimiento">${row.nextMaintenanceDateLabel}</td>
+            <td data-label="Estado">
+                <button class="${statusClass}" data-id="${row.equipment.id}" title="${row.isPending ? `${row.statusTitle}. Registrar mantenimiento hoy` : `${row.statusTitle}. Marcar como pendiente`}">
+                    <i class="fas ${statusIcon}"></i>
+                    <span>${row.statusText}</span>
+                </button>
+            </td>
+        </tr>`;
+    }).join('');
+
+    if (D.adminSchedulePaginationContainer) {
+        const from = totalItems === 0 ? 0 : startIndex + 1;
+        const to = Math.min(startIndex + paginationState.itemsPerPage, totalItems);
+        const prevDisabled = paginationState.currentPage <= 1 ? 'disabled' : '';
+        const nextDisabled = paginationState.currentPage >= totalPages ? 'disabled' : '';
+        D.adminSchedulePaginationContainer.innerHTML = `
             <div class="pagination-summary">
                 Mostrando ${from}-${to} de ${totalItems} registros
             </div>

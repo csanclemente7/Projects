@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy"
+          content="default-src 'self';
+                   script-src 'self' 'unsafe-inline' https://www.macrisrefrigeracion.com https://macrisrefrigeracion.com;
+                   style-src 'self' 'unsafe-inline';
+                   img-src 'self' https://www.macrisrefrigeracion.com https://macrisrefrigeracion.com data:;
+                   font-src 'self' data:;
+                   connect-src 'self' https://ctitnuadeqdwsgulhpjg.supabase.co wss://ctitnuadeqdwsgulhpjg.supabase.co https://fzcalgofrhbqvowazdpk.supabase.co wss://fzcalgofrhbqvowazdpk.supabase.co https://*.supabase.co wss://*.supabase.co;">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Admin - Macris</title>
+    <link rel="stylesheet" href="./admin.css">
+</head>
+<body>
+    <div id="admin-login" class="admin-login">
+        <div class="login-card">
+            <div class="login-brand">
+                <img src="../MacrisLogo.png" alt="Macris" class="admin-logo">
+                <span class="brand-chip">MACRIS</span>
+                <h1>Portal Admin</h1>
+                <p>Gestion de usuarios y resumen operativo.</p>
+            </div>
+            <form id="admin-login-form" class="login-form">
+                <div class="field">
+                    <label for="admin-username">Usuario</label>
+                    <input id="admin-username" type="text" autocomplete="username" placeholder="admin" required>
+                </div>
+                <div class="field">
+                    <label for="admin-password">Clave</label>
+                    <input id="admin-password" type="password" autocomplete="current-password" required>
+                </div>
+                <p id="admin-login-error" class="form-error"></p>
+                <button type="submit" class="btn primary">Ingresar</button>
+            </form>
+            <button id="admin-recovery-open" class="link-btn" type="button">Olvide la clave</button>
+            <a id="admin-to-main" class="app-link app-link-cta" href="#">Ir a Cotizaciones</a>
+        </div>
+    </div>
+
+    <div id="admin-app" class="admin-app hidden" hidden>
+        <header class="admin-header">
+            <div class="header-title">
+                <img src="../MacrisLogo.png" alt="Macris" class="admin-logo small">
+                <span class="brand-chip">MACRIS</span>
+                <div>
+                    <h2>Panel de Administracion</h2>
+                    <p>Usuarios, cotizaciones y ordenes en un solo lugar.</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <a id="admin-to-main-header" class="btn ghost app-link" href="#">Ir a Cotizaciones</a>
+                <button id="admin-logout" class="btn ghost">Cerrar sesion</button>
+            </div>
+        </header>
+
+        <main class="admin-layout">
+            <section class="card">
+                <div class="card-header">
+                    <h3>Usuarios</h3>
+                    <button id="refresh-users" class="btn ghost">Actualizar</button>
+                </div>
+                <div class="user-forms">
+                    <div class="user-panel">
+                        <h4>Crear usuario</h4>
+                        <form id="user-form" class="user-form">
+                            <div class="field">
+                                <label for="user-name">Nombre</label>
+                                <input id="user-name" type="text" required placeholder="Ej: Ana Torres">
+                            </div>
+                            <div class="field">
+                                <label for="user-username">Usuario</label>
+                                <input id="user-username" type="text" required placeholder="Ej: ana.torres">
+                            </div>
+                            <div class="field">
+                                <label for="user-email">Correo</label>
+                                <input id="user-email" type="email" required placeholder="correo@empresa.com">
+                            </div>
+                            <div class="field">
+                                <label for="user-password">Clave (opcional)</label>
+                                <input id="user-password" type="password" placeholder="Si queda vacio usa la clave admin">
+                                <p class="helper-text subtle-hint">Si se deja vacio, usa la clave admin actual.</p>
+                            </div>
+                            <div class="form-actions">
+                                <p id="user-form-error" class="form-error"></p>
+                                <button type="submit" class="btn primary">Crear usuario</button>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="user-panel">
+                        <h4>Correo de recuperacion (Admin)</h4>
+                        <div class="field">
+                            <label for="recovery-email-primary">Correo principal</label>
+                            <input id="recovery-email-primary" type="email" placeholder="correo@empresa.com">
+                        </div>
+                        <div class="field">
+                            <label for="recovery-email-backups">Correos de respaldo</label>
+                            <input id="recovery-email-backups" type="text" placeholder="correo2@empresa.com, correo3@empresa.com">
+                            <p class="helper-text subtle-hint">Separar con coma. Se usa el primero para recuperar la clave del admin.</p>
+                        </div>
+                        <div class="form-actions">
+                            <p id="recovery-email-error" class="form-error"></p>
+                            <button id="recovery-email-save" type="button" class="btn primary">Guardar correo</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="user-list-header">
+                    <input id="user-search" class="user-search" type="text" placeholder="Buscar usuario por nombre o usuario...">
+                </div>
+                <div id="user-list" class="user-list"></div>
+            </section>
+
+            <section class="card">
+                <div class="card-header">
+                    <h3>Analitica</h3>
+                    <div class="card-actions">
+                        <span id="analytics-updated" class="timestamp">Sin actualizar</span>
+                        <button id="refresh-analytics" class="btn ghost">Actualizar</button>
+                    </div>
+                </div>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <span>Total cotizaciones</span>
+                        <strong id="metric-quotes">-</strong>
+                    </div>
+                    <div class="metric-card">
+                        <span>Total ordenes</span>
+                        <strong id="metric-orders">-</strong>
+                    </div>
+                    <div class="metric-card">
+                        <span>Valor cotizado</span>
+                        <strong id="metric-quotes-revenue">-</strong>
+                    </div>
+                    <div class="metric-card">
+                        <span>Ingresos estimados</span>
+                        <strong id="metric-orders-revenue">-</strong>
+                    </div>
+                    <div class="metric-card">
+                        <span>Items vendidos</span>
+                        <strong id="metric-items-sold">-</strong>
+                    </div>
+                </div>
+                <div class="charts-grid">
+                    <div class="panel chart-panel">
+                        <h4>Volumen de ordenes (ultimos 6 meses)</h4>
+                        <div id="orders-line-chart" class="chart chart-line"></div>
+                    </div>
+                    <div class="panel chart-panel">
+                        <h4>Top items en ordenes</h4>
+                        <div id="top-items-bar-chart" class="chart chart-bar"></div>
+                    </div>
+                </div>
+                <div class="analytics-grid">
+                    <div class="panel">
+                        <h4>Top productos en ordenes</h4>
+                        <ol id="top-order-items" class="data-list"></ol>
+                    </div>
+                    <div class="panel">
+                        <h4>Top productos en cotizaciones</h4>
+                        <ol id="top-quote-items" class="data-list"></ol>
+                    </div>
+                    <div class="panel">
+                        <h4>Ordenes por estado</h4>
+                        <ul id="orders-by-status" class="data-list"></ul>
+                    </div>
+                    <div class="panel">
+                        <h4>Servicios mas solicitados</h4>
+                        <ol id="top-service-types" class="data-list"></ol>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="user-edit-modal" class="modal hidden" hidden>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Editar usuario</h3>
+                <button id="user-edit-close" type="button" class="btn ghost modal-close">Cerrar</button>
+            </div>
+            <p id="user-edit-hint" class="helper-text"></p>
+            <form id="user-edit-form" class="user-form">
+                <div class="field">
+                    <label for="edit-user-name">Nombre</label>
+                    <input id="edit-user-name" type="text" placeholder="Nombre del usuario">
+                </div>
+                <div class="field">
+                    <label for="edit-user-username">Usuario</label>
+                    <input id="edit-user-username" type="text" placeholder="usuario">
+                </div>
+                <div class="field">
+                    <label for="edit-user-email">Correo</label>
+                    <input id="edit-user-email" type="email" placeholder="correo@empresa.com">
+                </div>
+                <div class="field">
+                    <label for="edit-user-password">Nueva clave</label>
+                    <input id="edit-user-password" type="password" placeholder="Dejar vacio para no cambiar">
+                </div>
+                <label class="toggle-row">
+                    <input id="edit-user-active" type="checkbox">
+                    <span>Usuario activo</span>
+                </label>
+                <p id="user-edit-error" class="form-error"></p>
+                <div class="modal-actions">
+                    <button id="edit-user-reset" type="button" class="btn ghost">Restablecer clave</button>
+                    <button type="submit" class="btn primary">Guardar cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="admin-recovery-modal" class="modal hidden" hidden>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Recuperar clave</h3>
+                <button id="admin-recovery-close" type="button" class="btn ghost modal-close">Cerrar</button>
+            </div>
+            <p class="helper-text">La aplicación generará un código localmente para recuperacion.</p>
+            <div id="recovery-step-send" class="recovery-step">
+                <div class="field">
+                    <label for="recovery-email-select">Enviar a</label>
+                    <select id="recovery-email-select"></select>
+                    <p class="helper-text subtle-hint">Se enviara a: <span id="recovery-email-label">-</span></p>
+                </div>
+                <button id="recovery-send" type="button" class="btn primary">Enviar codigo</button>
+            </div>
+            <div id="recovery-step-verify" class="recovery-step hidden" hidden>
+                <div class="field">
+                    <label for="recovery-code">Codigo</label>
+                    <input id="recovery-code" type="text" placeholder="000000" maxlength="6">
+                </div>
+                <div class="field">
+                    <label for="recovery-new-password">Nueva clave</label>
+                    <input id="recovery-new-password" type="password" placeholder="Nueva clave">
+                </div>
+                <div class="field">
+                    <label for="recovery-confirm-password">Confirmar clave</label>
+                    <input id="recovery-confirm-password" type="password" placeholder="Confirmar clave">
+                </div>
+                <button id="recovery-verify" type="button" class="btn primary">Actualizar clave</button>
+            </div>
+            <p id="recovery-error" class="form-error"></p>
+        </div>
+    </div>
+
+    <div id="user-delete-modal" class="modal hidden" hidden>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Eliminar usuario</h3>
+                <button id="user-delete-close" type="button" class="btn ghost modal-close">Cerrar</button>
+            </div>
+            <p id="user-delete-text" class="helper-text"></p>
+            <div class="modal-actions">
+                <button id="user-delete-cancel" type="button" class="btn ghost">Cancelar</button>
+                <button id="user-delete-confirm" type="button" class="btn danger">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./admin.ts"></script>
+</body>
+</html>

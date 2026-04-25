@@ -82,7 +82,7 @@ export async function loadSharedLookupData() {
     }
 }
 
-import { setupDashboard } from './dashboard';
+import { setupDashboard, setupAnalyticsTabs } from './dashboard';
 import { initQrGenerator } from './qr-bulk-generator';
 
 export async function main() {
@@ -94,6 +94,7 @@ export async function main() {
     initDependencyMerge();
     initBackupRestore();
     setupDashboard();
+    setupAnalyticsTabs();
     initQrGenerator();
 
     D.logoutBtn?.addEventListener('click', () => {

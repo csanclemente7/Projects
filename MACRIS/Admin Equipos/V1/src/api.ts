@@ -590,6 +590,17 @@ export async function saveMultipleEquipments(equipments: any[]): Promise<{ data:
     return { data, error };
 }
 
+export async function updateEquipmentLastMaintenanceDate(id: string, lastMaintenanceDate: string | null) {
+    const { data, error } = await supabaseOrders
+        .from('maintenance_equipment')
+        .update({ last_maintenance_date: lastMaintenanceDate })
+        .eq('id', id)
+        .select()
+        .single();
+
+    return { data, error };
+}
+
 export async function deleteEntity(type: EntityType, id: string) {
     switch (type) {
         case 'city':

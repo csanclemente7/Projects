@@ -10,6 +10,9 @@ export const appScreen = document.getElementById('app-screen') as HTMLDivElement
 export const logoutButton = document.getElementById('logout-button') as HTMLButtonElement;
 export const currentUserDisplay = document.getElementById('current-user-display') as HTMLSpanElement;
 
+export const adminShowEquipmentViewButton = document.getElementById('admin-show-equipment-view') as HTMLButtonElement;
+export const adminShowScheduleViewButton = document.getElementById('admin-show-schedule-view') as HTMLButtonElement;
+
 // Main Equipment Section
 export const adminEquipmentSection = document.getElementById('admin-equipment-section') as HTMLElement;
 export const addEquipmentButton = document.getElementById('add-equipment-button') as HTMLButtonElement;
@@ -20,6 +23,18 @@ export const adminEquipmentSedeFilter = document.getElementById('admin-equipment
 export const adminEquipmentCount = document.getElementById('admin-equipment-count') as HTMLSpanElement;
 export const adminEquipmentTableBody = document.getElementById('admin-equipment-table')?.getElementsByTagName('tbody')[0] as HTMLTableSectionElement;
 export const adminEquipmentPaginationContainer = document.getElementById('admin-equipment-pagination') as HTMLDivElement;
+
+// Schedule Section
+export const adminScheduleSection = document.getElementById('admin-schedule-section') as HTMLElement;
+export const exportScheduleExcelButton = document.getElementById('export-schedule-excel-button') as HTMLButtonElement;
+export const adminScheduleSearchInput = document.getElementById('admin-schedule-search') as HTMLInputElement;
+export const adminScheduleSearchClearButton = document.getElementById('admin-schedule-search-clear') as HTMLButtonElement;
+export const adminScheduleCompanyFilter = document.getElementById('admin-schedule-company-filter') as HTMLSelectElement;
+export const adminScheduleSedeFilter = document.getElementById('admin-schedule-sede-filter') as HTMLSelectElement;
+export const adminScheduleStatusFilter = document.getElementById('admin-schedule-status-filter') as HTMLSelectElement;
+export const adminScheduleCount = document.getElementById('admin-schedule-count') as HTMLSpanElement;
+export const adminScheduleTableBody = document.getElementById('admin-schedule-table')?.getElementsByTagName('tbody')[0] as HTMLTableSectionElement;
+export const adminSchedulePaginationContainer = document.getElementById('admin-schedule-pagination') as HTMLDivElement;
 
 // Equipment Form Modal
 export const entityFormModal = document.getElementById('entity-form-modal') as HTMLDivElement;

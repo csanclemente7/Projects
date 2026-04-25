@@ -2,7 +2,7 @@
 import { fetchCities, fetchCompanies, fetchSedes, fetchDependencies, fetchUsers, fetchEquipmentTypes, fetchRefrigerantTypes, fetchEquipment } from './api';
 import { setupEventListeners } from './events';
 import * as D from './dom';
-import { hideLoader, showLoader, renderAdminEquipmentTable } from './ui';
+import { hideLoader, showLoader, renderAdminEquipmentTable, renderAdminScheduleTable, showAdminView } from './ui';
 import { checkForPersistedSession } from './auth';
 import * as State from './state';
 
@@ -43,6 +43,8 @@ async function loadAdminData() {
         State.setUsers(users);
 
         renderAdminEquipmentTable();
+        renderAdminScheduleTable();
+        showAdminView('equipment');
     } catch (err) {
         console.error("Error al cargar datos administrativos:", err);
     } finally {

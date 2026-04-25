@@ -1,0 +1,41 @@
+.local-fa-icon {
+    font-style: normal;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    height: 1em;
+    line-height: 1;
+    vertical-align: -0.125em;
+}
+
+.local-fa-icon svg {
+    width: 1em;
+    height: 1em;
+    display: block;
+    overflow: visible;
+}
+
+.local-fa-icon.fa-lg {
+    font-size: 1.333333em;
+    line-height: 0.75em;
+    vertical-align: -0.225em;
+}
+
+.local-fa-icon.fa-2x {
+    font-size: 2em;
+}
+
+.local-fa-icon.fa-spin svg {
+    animation: local-fa-spin 1s linear infinite;
+    transform-origin: center;
+}
+
+@keyframes local-fa-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

@@ -3,9 +3,9 @@ import * as D from './dom';
 import * as Auth from './auth';
 import * as UI from './ui';
 import * as State from './state';
-import { saveEntity, saveMultipleEquipments, fetchEquipment, deleteEntity as apiDeleteEntity, fetchCities, fetchCompanies, fetchSedes, fetchDependencies } from './api';
+import { saveEntity, saveMultipleEquipments, fetchEquipment, deleteEntity as apiDeleteEntity, fetchCities, fetchCompanies, fetchSedes, fetchDependencies, updateEquipmentLastMaintenanceDate } from './api';
 import { extractDataFromImage } from './ai';
-import { parseExcelEquipments, ExcelValidationResult } from './excel';
+import { parseExcelEquipments, exportScheduleToExcel } from './excel';
 
 const normalizeEntityName = (value: string) => String(value || '')
     .trim()
@@ -53,9 +53,14 @@ async function refreshEquipment() {
         State.setEquipmentList(list);
         State.setDependencies(freshDeps);
         UI.renderAdminEquipmentTable();
+        UI.renderAdminScheduleTable();
     } finally {
         UI.hideLoader();
     }
+}
+
+function getTodayIsoDate(): string {
+    return new Date().toISOString().slice(0, 10);
 }
 
 function getVisibleDependenciesForForm(companyId: string, sedeId: string) {
@@ -130,6 +135,66 @@ async function handleDelete(id: string) {
     } finally {
         UI.hideLoader();
     }
+}
+
+async function handleMarkEquipmentMaintainedToday(id: string) {
+    const equipment = State.equipmentList.find(item => item.id === id);
+    if (!equipment) {
+        UI.showAppNotification('No se encontró el equipo a actualizar.', 'error');
+        return;
+    }
+
+    const equipmentLabel = equipment.manualId || `${equipment.brand} ${equipment.model}`.trim();
+    const confirmed = await UI.showConfirmationModal(`¿Registrar mantenimiento de hoy para ${equipmentLabel}?`);
+    if (!confirmed) return;
+
+    UI.showLoader('Actualizando cronograma...');
+    try {
+        const { error } = await updateEquipmentLastMaintenanceDate(id, getTodayIsoDate());
+        if (error) throw error;
+        UI.showAppNotification('Cronograma actualizado correctamente.', 'success');
+        await refreshEquipment();
+    } catch (err: any) {
+        UI.showAppNotification(err?.message || 'No se pudo actualizar el cronograma.', 'error');
+    } finally {
+        UI.hideLoader();
+    }
+}
+
+async function handleMarkEquipmentPending(id: string) {
+    const equipment = State.equipmentList.find(item => item.id === id);
+    if (!equipment) {
+        UI.showAppNotification('No se encontró el equipo a actualizar.', 'error');
+        return;
+    }
+
+    const equipmentLabel = equipment.manualId || `${equipment.brand} ${equipment.model}`.trim();
+    const confirmed = await UI.showConfirmationModal(`¿Marcar ${equipmentLabel} como pendiente? Esto limpiará el último mantenimiento registrado.`);
+    if (!confirmed) return;
+
+    UI.showLoader('Actualizando cronograma...');
+    try {
+        const { error } = await updateEquipmentLastMaintenanceDate(id, null);
+        if (error) throw error;
+        UI.showAppNotification('Equipo marcado como pendiente.', 'success');
+        await refreshEquipment();
+    } catch (err: any) {
+        UI.showAppNotification(err?.message || 'No se pudo actualizar el cronograma.', 'error');
+    } finally {
+        UI.hideLoader();
+    }
+}
+
+function handleScheduleExport() {
+    const rows = UI.getFilteredAdminScheduleRows();
+    if (rows.length === 0) {
+        UI.showAppNotification('No hay registros para exportar con los filtros actuales.', 'warning');
+        return;
+    }
+
+    const titles = UI.getAdminScheduleFilterTitles();
+    exportScheduleToExcel(rows, titles);
+    UI.showAppNotification('Cronograma exportado a Excel.', 'success');
 }
 
 async function handleQuickAdd(type: 'city' | 'company' | 'sede' | 'dependency') {
@@ -320,6 +385,14 @@ export function setupEventListeners() {
 
     D.logoutButton?.addEventListener('click', Auth.handleLogout);
 
+    D.adminShowEquipmentViewButton?.addEventListener('click', () => {
+        UI.showAdminView('equipment');
+    });
+
+    D.adminShowScheduleViewButton?.addEventListener('click', () => {
+        UI.showAdminView('schedule');
+    });
+
     // Acciones de Equipos
     D.addEquipmentButton?.addEventListener('click', () => UI.openEquipmentForm());
     
@@ -339,6 +412,38 @@ export function setupEventListeners() {
         UI.renderAdminEquipmentTable();
     });
 
+    D.adminScheduleSearchInput?.addEventListener('input', (e) => {
+        State.setTableSearchTerm('adminSchedule', (e.target as HTMLInputElement).value);
+        State.tablePaginationStates.adminSchedule.currentPage = 1;
+        UI.renderAdminScheduleTable();
+    });
+
+    D.adminScheduleSearchClearButton?.addEventListener('click', () => {
+        if (!D.adminScheduleSearchInput) return;
+        D.adminScheduleSearchInput.value = '';
+        State.setTableSearchTerm('adminSchedule', '');
+        State.tablePaginationStates.adminSchedule.currentPage = 1;
+        UI.renderAdminScheduleTable();
+        D.adminScheduleSearchInput.focus();
+    });
+
+    D.adminScheduleCompanyFilter?.addEventListener('change', () => {
+        State.tablePaginationStates.adminSchedule.currentPage = 1;
+        UI.renderAdminScheduleTable();
+    });
+
+    D.adminScheduleSedeFilter?.addEventListener('change', () => {
+        State.tablePaginationStates.adminSchedule.currentPage = 1;
+        UI.renderAdminScheduleTable();
+    });
+
+    D.adminScheduleStatusFilter?.addEventListener('change', () => {
+        State.tablePaginationStates.adminSchedule.currentPage = 1;
+        UI.renderAdminScheduleTable();
+    });
+
+    D.exportScheduleExcelButton?.addEventListener('click', handleScheduleExport);
+
     D.adminEquipmentPaginationContainer?.addEventListener('click', (e) => {
         const button = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-page]');
         if (!button || button.disabled) return;
@@ -346,6 +451,15 @@ export function setupEventListeners() {
         if (!Number.isFinite(requestedPage) || requestedPage < 1) return;
         State.tablePaginationStates.adminEquipment.currentPage = requestedPage;
         UI.renderAdminEquipmentTable();
+    });
+
+    D.adminSchedulePaginationContainer?.addEventListener('click', (e) => {
+        const button = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-page]');
+        if (!button || button.disabled) return;
+        const requestedPage = Number(button.dataset.page);
+        if (!Number.isFinite(requestedPage) || requestedPage < 1) return;
+        State.tablePaginationStates.adminSchedule.currentPage = requestedPage;
+        UI.renderAdminScheduleTable();
     });
 
     // Excel Import Flow
@@ -513,6 +627,16 @@ export function setupEventListeners() {
     // Delegación para botones de la tabla
     document.body.addEventListener('click', (e) => {
         const target = e.target as HTMLElement;
+        const scheduleStatusBtn = target.closest<HTMLButtonElement>('.schedule-status-btn.pending[data-id]');
+        if (scheduleStatusBtn) {
+            handleMarkEquipmentMaintainedToday(scheduleStatusBtn.dataset.id!);
+            return;
+        }
+        const scheduleStatusOkBtn = target.closest<HTMLButtonElement>('.schedule-status-btn.ok[data-id]');
+        if (scheduleStatusOkBtn) {
+            handleMarkEquipmentPending(scheduleStatusOkBtn.dataset.id!);
+            return;
+        }
         const editBtn = target.closest<HTMLButtonElement>('.edit-equipment-btn');
         if (editBtn) {
             UI.openEquipmentForm(editBtn.dataset.id);

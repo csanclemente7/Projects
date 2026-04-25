@@ -1042,7 +1042,7 @@ body.dark-theme #page-technicians .management-list-container {
     padding: 16px 18px !important;
     margin-bottom: 16px !important;
     box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-    grid-template-columns: minmax(320px, 2.5fr) minmax(132px, 0.82fr) minmax(132px, 0.82fr) minmax(150px, 0.88fr) minmax(150px, 0.7fr) !important;
+    grid-template-columns: minmax(215px, 1.65fr) minmax(142px, 0.88fr) minmax(142px, 0.88fr) minmax(124px, 0.82fr) minmax(124px, 0.82fr) minmax(108px, 0.68fr) minmax(114px, 0.62fr) !important;
     align-items: end;
 }
 
@@ -1053,6 +1053,25 @@ body.dark-theme #page-technicians .management-list-container {
     letter-spacing: 0.05em;
     color: var(--color-text-secondary) !important;
     margin-bottom: 6px !important;
+}
+
+#page-reports .reports-filter.has-active-filter label {
+    color: var(--corporate-accent-teal) !important;
+}
+
+#page-reports .reports-filter input.is-active-filter,
+#page-reports .reports-filter select.is-active-filter {
+    border-color: var(--corporate-accent-teal) !important;
+    background: rgba(0, 168, 197, 0.09) !important;
+    color: var(--corporate-accent-teal) !important;
+    font-weight: 600;
+    box-shadow: 0 0 0 3px rgba(0, 168, 197, 0.12);
+}
+
+body.dark-theme #page-reports .reports-filter input.is-active-filter,
+body.dark-theme #page-reports .reports-filter select.is-active-filter {
+    background: rgba(0, 223, 255, 0.10) !important;
+    box-shadow: 0 0 0 3px rgba(0, 223, 255, 0.12);
 }
 
 #page-reports .reports-search-toolbar {
@@ -1105,7 +1124,8 @@ body.dark-theme #page-technicians .management-list-container {
 }
 
 #page-reports .reports-filter-page-size {
-    min-width: 150px;
+    min-width: 114px;
+    max-width: 114px;
 }
 
 #page-reports .reports-page-size-toolbar {
@@ -1115,16 +1135,26 @@ body.dark-theme #page-technicians .management-list-container {
 }
 
 #page-reports .reports-filter-page-size #reports-page-size {
-    min-width: 0;
-    flex: 1 1 auto;
+    min-width: 64px;
+    width: 64px;
+    flex: 0 0 64px;
 }
 
 #page-reports .reports-filter-service {
-    min-width: 140px;
+    min-width: 124px;
 }
 
 #page-reports .reports-filter-date {
-    min-width: 132px;
+    min-width: 142px;
+}
+
+#page-reports .reports-filter-tech,
+#page-reports .reports-filter-city {
+    min-width: 124px;
+}
+
+#page-reports .reports-filter-city {
+    min-width: 108px;
 }
 
 #reports-clear-filters-btn {
